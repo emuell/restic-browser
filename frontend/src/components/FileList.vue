@@ -13,10 +13,24 @@
             clearable
             clear-icon="mdi-close-circle-outline"
           ></v-text-field>
-          <v-checkbox v-model="caseSensitive" dark hide-details label="Case sensitive search"></v-checkbox>
+          <v-layout>
+            <v-checkbox
+              style="margin-bottom: 14px; margin-top: 20px;"
+              v-model="caseSensitive"
+              dark
+              hide-details
+              label="Case sensitive search"
+            ></v-checkbox>
+            <v-btn
+              color="info"
+              style="margin-top:16px"
+              right
+              v-if="selectedItems.length>0"
+            >Extract Files</v-btn>
+          </v-layout>
         </v-sheet>
         <v-card-text>
-          <v-treeview :items="files" selectable>
+          <v-treeview :items="files" selectable v-model="selectedItems">
             <template v-slot:prepend="{ item, open }">
               <v-icon v-if="item.type == 'dir'">{{ open ? 'mdi-folder-open' : 'mdi-folder' }}</v-icon>
               <v-icon v-else>{{ filetypes[item.file] }}</v-icon>
@@ -51,6 +65,7 @@ export default {
       caseSensitive: false,
       search: "",
       open: ["root"],
+      selectedItems: [],
       filetypes: {
         html: "mdi-language-html5",
         js: "mdi-nodejs",

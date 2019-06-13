@@ -61,6 +61,8 @@ github.com/leaanthony/sail v0.1.0 h1:MHA3a99TL8YcbRzRdLp7tlTORcr+4SXFtcxWmg4UUis
 github.com/leaanthony/sail v0.1.0/go.mod h1:PK+IrFBAjXzivWtlx1k0SBR8owMKfdzgRxtGsqbdNAo=
 github.com/leaanthony/sail v0.2.2 h1:iPrLcTozpyfqoTD2j3BCvmFcA4if+knaM6ycR9+lciE=
 github.com/leaanthony/sail v0.2.2/go.mod h1:PK+IrFBAjXzivWtlx1k0SBR8owMKfdzgRxtGsqbdNAo=
+github.com/leaanthony/sail v0.3.0 h1:Fl/KcAWsS7B84Q9zDo0bjFjiMUN5YDXdz5XQiGvuld0=
+github.com/leaanthony/sail v0.3.0/go.mod h1:PK+IrFBAjXzivWtlx1k0SBR8owMKfdzgRxtGsqbdNAo=
 github.com/leaanthony/slicer v1.3.1 h1:n2iIV2sxvL/3bpnmVY0vBjXf3yYFWcB6CYLVMrzJxRw=
 github.com/leaanthony/slicer v1.3.1/go.mod h1:VMB/HGvr3uR3MRpFWHWAm0w+DHQLzPHYe2pKfpFlQIQ=
 github.com/leaanthony/spinner v0.5.0 h1:HQykt/iTy7fmINEREtRbWrt+8j4MxC8dtvWBxEWM9oA=
