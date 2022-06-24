@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Wails: Debug Restoric",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/Restoric.exe",
+      "preLaunchTask": "build debug",
+      "cwd": "${workspaceFolder}",
+      "env": {}
+    },
+    {
+      "name": "Wails: Production Restoric",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/Restoric.exe",
+      "preLaunchTask": "build",
+      "cwd": "${workspaceFolder}",
+      "env": {}
+    },
+  ]
+}
