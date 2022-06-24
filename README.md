@@ -2,6 +2,10 @@
 
 A PoC [Restic](https://github.com/restic/restic) User Interface using the [Wails](https://wails.app) framework.
 
+## Installation
+
+* Follow https://wails.io/docs/gettingstarted/installation
+
 ## Development
 
 * During development, the repository to test against is hard coded in `lib/restoric.go`.

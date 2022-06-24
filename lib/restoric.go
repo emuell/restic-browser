@@ -1,11 +1,15 @@
 package lib
 
-import "github.com/wailsapp/wails"
-import "fmt"
+import (
+	"context"
+	"fmt"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+)
 
 type Restoric struct {
 	restic    *Restic
-	runtime   *wails.Runtime
+	context   *context.Context
 	repo      *Repository
 	snapshots map[string]*Snapshot
 }
@@ -17,10 +21,24 @@ func NewRestoric(restic *Restic) *Restoric {
 	}
 }
 
+func (r *Restoric) Startup(ctx context.Context) {
+	r.context = &ctx
+}
+
 func (r *Restoric) SelectRepo() (string, error) {
-	// dir := r.runtime.Dialog.SelectDirectory()
-	dir := "/Users/lea/Projects/restoric/test2"
-	if !IsDirectoryARepository(dir) {
+	options := runtime.OpenDialogOptions{
+		DefaultDirectory:           "",
+		DefaultFilename:            "",
+		Title:                      "Please select a directory",
+		Filters:                    make([]runtime.FileFilter, 0),
+		ShowHiddenFiles:            true,
+		CanCreateDirectories:       false,
+		ResolvesAliases:            true,
+		TreatPackagesAsDirectories: true,
+	}
+	dir, err := runtime.OpenDirectoryDialog(*r.context, options)
+	// dir := "/Users/lea/Projects/restoric/test2"
+	if err != nil || !IsDirectoryARepository(dir) {
 		return "", fmt.Errorf("Invalid Repo Directory")
 	}
 
@@ -64,7 +82,7 @@ func (r *Restoric) OpenRepo(dir, password string) ([]*Snapshot, error) {
 	return snapshots, nil
 }
 
-func (r *Restoric) WailsInit(runtime *wails.Runtime) error {
-	r.runtime = runtime
-	return nil
+// Greet returns a greeting for the given name
+func (a *Restoric) Greet(name string) string {
+	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
