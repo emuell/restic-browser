@@ -16,12 +16,14 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
+    "@adobe/lit-mobx": "^2.0.0",
     "@vaadin/button": "^23.1.1",
     "@vaadin/horizontal-layout": "^23.1.1",
     "@vaadin/icons": "^23.1.1",
     "@vaadin/split-layout": "^23.1.1",
     "@vaadin/vertical-layout": "^23.1.1",
-    "lit": "^2.2.6"
+    "lit": "^2.2.6",
+    "mobx": "^6.6.1"
   },
   "devDependencies": {
     "vite": "^2.9.5",
