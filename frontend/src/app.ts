@@ -36,8 +36,19 @@ export class RestoricApp extends MobxLitElement {
       margin-left: 20px;
       margin-right: 20px;
     }
+    #header #repoPath {
+      margin-left: 10px;
+      color: var(--lumo-tint-50pct);
+      margin-top: 4px;
+      margin-right: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #header #repoPath.disabled {
+      color: var(--lumo-tint-10pct);
+    }
     #snapshots {
-      height: 200px;
+      height: auto;
     }
     #filelist {
       height: 100%;
@@ -96,12 +107,16 @@ export class RestoricApp extends MobxLitElement {
     }
     // app content
     else {
+      const selectedRepositoryText = appState.repoPath ? 
+        html`<span id="repoPath">${appState.repoPath}</span>` : 
+        html`<span id="repoPath" class="disabled">no repository selected</span>`;
       const header = html`
         <vaadin-horizontal-layout id="header">
           <h3>Restoric</h3>
           <vaadin-button theme="primary" @click=${this._selectRepository}>
             Select Repository
           </vaadin-button>
+          ${selectedRepositoryText}
         </vaadin-horizontal-layout>
       `;
       

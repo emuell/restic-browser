@@ -1,4 +1,4 @@
-// workaround for vaading & vite
+// workaround for vaadin with vite
 // see https://github.com/vaadin/vaadin-lumo-styles/issues/105
 const oldDefine = customElements.define;
 customElements.define = function(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions) {

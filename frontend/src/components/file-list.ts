@@ -9,12 +9,25 @@ import { customElement } from 'lit/decorators.js'
 export class RestoricFileList extends LitElement {
   
   static styles = css`
+    #header {
+      align-items: center; 
+      background: var(--lumo-shade-10pct);
+      padding: 8px;
+    }
+    #grid {
+      height: inherit;
+    }
   `;
  
-  render()
-  {
+  render() {
+    const header = html`
+      <vaadin-horizontal-layout id="header" style="">
+        <strong style="flex: 1;">Files</strong>
+      </vaadin-horizontal-layout>
+    `;
     return html`
-      Files
+      ${header}
+      <vaadin-horizontal-layout>TODO</vaadin-horizontal-layout>
     `
   }
 }
