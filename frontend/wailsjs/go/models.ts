@@ -1,21 +1,40 @@
 export namespace lib {
 	
-	export class VuetifyTreeNode {
+	export class File {
 	    name: string;
 	    type: string;
-	    id: string;
-	    children: VuetifyTreeNode[];
+	    path: string;
+	    uid?: number;
+	    gid?: number;
+	    size?: number;
+	    mode?: number;
+	    // Go type: time.Time
+	    mtime?: any;
+	    // Go type: time.Time
+	    atime?: any;
+	    // Go type: time.Time
+	    ctime?: any;
+	    struct_type?: string;
+	    children?: {[key: string]: File};
 	
 	    static createFrom(source: any = {}) {
-	        return new VuetifyTreeNode(source);
+	        return new File(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.type = source["type"];
-	        this.id = source["id"];
-	        this.children = this.convertValues(source["children"], VuetifyTreeNode);
+	        this.path = source["path"];
+	        this.uid = source["uid"];
+	        this.gid = source["gid"];
+	        this.size = source["size"];
+	        this.mode = source["mode"];
+	        this.mtime = this.convertValues(source["mtime"], null);
+	        this.atime = this.convertValues(source["atime"], null);
+	        this.ctime = this.convertValues(source["ctime"], null);
+	        this.struct_type = source["struct_type"];
+	        this.children = source["children"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -41,7 +60,6 @@ export namespace lib {
 	    short_id: string;
 	    // Go type: time.Time
 	    time: any;
-	    tree: string;
 	    paths: string[];
 	    hostname: string;
 	    username: string;
@@ -57,7 +75,6 @@ export namespace lib {
 	        this.id = source["id"];
 	        this.short_id = source["short_id"];
 	        this.time = this.convertValues(source["time"], null);
-	        this.tree = source["tree"];
 	        this.paths = source["paths"];
 	        this.hostname = source["hostname"];
 	        this.username = source["username"];

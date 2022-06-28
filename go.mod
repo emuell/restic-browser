@@ -3,7 +3,6 @@ module github.com/emuell/restoric
 go 1.17
 
 require (
-	github.com/disiqueira/gotree v1.0.0
 	github.com/leaanthony/sail v0.3.0
 	github.com/wailsapp/wails/v2 v2.0.0-beta.37
 )

@@ -13,12 +13,9 @@ import (
 
 // Repository holds all information about a repository
 type Repository struct {
-	path               string
-	restic             *Restic
-	password           string
-	snapshotFiles      map[string]*File
-	repositoryFileTree *Node
-	snapshots          map[string]*Snapshot
+	path     string
+	restic   *Restic
+	password string
 }
 
 // NewRepository creates a new Repository struct
@@ -66,7 +63,7 @@ func (r *Repository) Init(path string) error {
 
 func (r *Repository) GetSnapshots() ([]*Snapshot, error) {
 	stdout, stderr, code, err := r.run("snapshots", "--json")
-	if code != 0 {
+	if code != 0 || err != nil {
 		return nil, fmt.Errorf(stderr)
 	}
 	var snapshots []*Snapshot
@@ -91,21 +88,9 @@ func (r *Repository) normalizeNewlines(in string) string {
 	return string(d)
 }
 
-func (r *Repository) GetFilesForDirectory(dir string) (*DirInfo, error) {
-	if r.repositoryFileTree == nil {
-		return nil, fmt.Errorf("call GetFilesForSnapshot first")
-	}
+func (r *Repository) GetFiles(snapshot *Snapshot, path string) ([]*File, error) {
 
-	return r.repositoryFileTree.GetFilesForDirectory(dir), nil
-
-}
-
-func (r *Repository) GetFilesForSnapshot(snapshot *Snapshot) (*VuetifyTreeNode, error) {
-
-	var result *Node
-	r.snapshotFiles = make(map[string]*File)
-
-	stdout, stderr, code, _ := r.run("ls", snapshot.ID, "--json")
+	stdout, stderr, code, _ := r.run("ls", snapshot.ID, "--json", path)
 	if code != 0 {
 		return nil, fmt.Errorf(stderr)
 	}
@@ -126,13 +111,8 @@ func (r *Repository) GetFilesForSnapshot(snapshot *Snapshot) (*VuetifyTreeNode, 
 		if err != nil {
 			return nil, err
 		}
-
-		r.snapshotFiles[line] = &file
-
 		files = append(files, &file)
 	}
 
-	result = NewFileTree(files)
-	r.repositoryFileTree = result
-	return result.ToVuetifyTree(), nil
+	return files, nil
 }

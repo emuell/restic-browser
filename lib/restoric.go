@@ -38,31 +38,10 @@ func (r *Restoric) SelectRepo() (string, error) {
 	}
 	dir, err := runtime.OpenDirectoryDialog(*r.context, options)
 	if err != nil || !IsDirectoryARepository(dir) {
-		return "", fmt.Errorf("Directory doesn't look like a restic backup location")
+		return "", fmt.Errorf("directory doesn't look like a restic backup location")
 	}
 	return dir, nil
 }
-
-func (r *Restoric) GetFilesForSnapshot(snapshotID string) (*VuetifyTreeNode, error) {
-	snapshot := r.snapshots[snapshotID]
-	if snapshot == nil {
-		return nil, fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
-	}
-	return r.repo.GetFilesForSnapshot(snapshot)
-}
-
-// func (r *Restoric) GetFilesForPath(snapshotID string, path string) ([]*File, error) {
-// 	return []*File{NewDir("test", nil)}, nil
-// }
-
-// func (r *Restoric) SelectSnapshot(snapshotID string) ([]*File, error) {
-// 	snapshot := r.snapshots[snapshotID]
-// 	if snapshot == nil {
-// 		return nil, fmt.Errorf("snapshot id %s does not exist", snapshotID)
-// 	}
-
-// 	// return snapshot.GetFilesForPath("/")
-// }
 
 func (r *Restoric) OpenRepo(dir, password string) ([]*Snapshot, error) {
 	repo := NewRepository(dir, password, r.restic)
@@ -80,7 +59,10 @@ func (r *Restoric) OpenRepo(dir, password string) ([]*Snapshot, error) {
 	return snapshots, nil
 }
 
-// Greet returns a greeting for the given name
-func (a *Restoric) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+func (r *Restoric) GetFilesForPath(snapshotID string, path string) ([]*File, error) {
+	snapshot := r.snapshots[snapshotID]
+	if snapshot == nil {
+		return nil, fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
+	}
+	return r.repo.GetFiles(snapshot, path)
 }
