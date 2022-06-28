@@ -19,6 +19,7 @@
     "@adobe/lit-mobx": "^2.0.0",
     "@vaadin/button": "^23.1.1",
     "@vaadin/dialog": "^23.1.2",
+    "@vaadin/grid": "^23.1.2",
     "@vaadin/horizontal-layout": "^23.1.1",
     "@vaadin/icons": "^23.1.1",
     "@vaadin/password-field": "^23.1.2",

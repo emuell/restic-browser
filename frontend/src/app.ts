@@ -71,6 +71,7 @@ export class RestoricApp extends MobxLitElement {
         } 
         else {
           appState.repoError = "";
+          appState.snapShots = result;
         } 
       })
       .catch((err) => {
