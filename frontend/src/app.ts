@@ -1,10 +1,11 @@
-import { css, html, TemplateResult } from 'lit'
+import { css, html } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
 
 import './components/file-list';
 import './components/snapshot-list';
 import './components/password-dialog';
+import './components/error-message';
 
 import { OpenRepo, SelectRepo } from '../wailsjs/go/lib/Restoric'
 
@@ -13,8 +14,6 @@ import { appState } from './states/app-state';
 import '@vaadin/button';
 import '@vaadin/vertical-layout';
 import '@vaadin/horizontal-layout';
-import '@vaadin/icons';
-import '@vaadin/icon';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -24,10 +23,24 @@ import '@vaadin/icon';
 export class RestoricApp extends MobxLitElement {
   
   static styles = css`
-    h3 {
+    #layout {
+       align-items: stretch; 
+       width: 100vw; 
+       height: 100%;
+    }
+    #header {
+      align-items: center;
+    }
+    #header h3 {
       font-size: var(--lumo-font-size-l);
       margin-left: 20px;
       margin-right: 20px;
+    }
+    #snapshots {
+      height: 200px;
+    }
+    #filelist {
+      height: 100%;
     }
   `;
   
@@ -82,34 +95,35 @@ export class RestoricApp extends MobxLitElement {
     }
     // app content
     else {
-      let content: TemplateResult;
-
-      if (appState.repoError) {
-        content = html`<div>Failed to open repository: ${appState.repoError}</div>`
-      }
-      else if (! appState.repoPath) {
-        content = html`<div style="heigth=100%; text-align: center;">No repository selected</div>`
-      }
-      else {
-        content = html`
-          <!-- Snapshots -->
-          <restoric-snapshot-list style="height: 200px;">Snapshots</restoric-snapshot-list>
-          <!-- Contents -->
-          <restoric-file-list style="height: 100%;">Contents</restoric-file-list>
+      const header = html`
+        <vaadin-horizontal-layout id="header">
+          <h3>Restoric</h3>
+          <vaadin-button theme="primary" @click=${this._selectRepository}>
+            Select Repository
+          </vaadin-button>
+        </vaadin-horizontal-layout>
+      `;
+      
+      if (appState.repoError || ! appState.repoPath) {
+        const errorMessage = appState.repoError ? 
+          `Failed to open repository: ${appState.repoError}` : 
+          "No repository selected";
+        return html`
+          <vaadin-vertical-layout id="layout">
+            ${header}
+            <restoric-error-message message=${errorMessage}></restoric-error-message>
+          </vaadin-vertical-layout>
         `;
       }
-        
-      return html`
-        <vaadin-vertical-layout style="align-items: stretch; width: 100vw;">
-          <!-- Header -->
-          <vaadin-horizontal-layout style="align-items: center;">
-            <h3>Restoric</h3>
-            <vaadin-button theme="primary" @click=${this._selectRepository}>Select Repository</vaadin-button>
-          </vaadin-horizontal-layout>
-          <!-- Cntent -->
-          ${content}
-        </vaadin-vertical-layout>
-      `
+      else {
+        return html`
+          <vaadin-vertical-layout id="layout">
+            ${header}
+            <restoric-snapshot-list id="snapshots"></restoric-snapshot-list>
+            <restoric-file-list id="filelist"></restoric-file-list>
+          </vaadin-vertical-layout>
+        `;
+      }
     }
   }
 }
