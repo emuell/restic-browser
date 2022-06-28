@@ -2,7 +2,7 @@ import { html, LitElement, render } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { guard } from 'lit/directives/guard.js'
 
-import { appState } from '../appState';
+import { appState } from '../states/app-state';
 
 import '@vaadin/dialog';
 import '@vaadin/password-field';

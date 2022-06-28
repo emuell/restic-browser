@@ -8,7 +8,7 @@ import './components/password-dialog';
 
 import { OpenRepo, SelectRepo } from '../wailsjs/go/lib/Restoric'
 
-import { appState } from './appState';
+import { appState } from './states/app-state';
 
 import '@vaadin/button';
 import '@vaadin/vertical-layout';
