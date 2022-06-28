@@ -13,9 +13,9 @@ export class RestoricSnapshotList extends LitElement {
  
   render()
   {
-      return html`
-        Snapshots
-      `
+    return html`
+      Snapshots
+    `
   }
 }
 

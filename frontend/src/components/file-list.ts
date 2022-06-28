@@ -13,9 +13,9 @@ export class RestoricFileList extends LitElement {
  
   render()
   {
-      return html`
-        Files
-      `
+    return html`
+      Files
+    `
   }
 }
 
