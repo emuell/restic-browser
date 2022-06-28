@@ -29,19 +29,17 @@ func (r *Restoric) SelectRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",
 		DefaultFilename:            "",
-		Title:                      "Please select a directory",
-		Filters:                    make([]runtime.FileFilter, 0),
+		Title:                      "Please select a restic repository directory",
+		Filters:                    []runtime.FileFilter{},
 		ShowHiddenFiles:            true,
 		CanCreateDirectories:       false,
 		ResolvesAliases:            true,
 		TreatPackagesAsDirectories: true,
 	}
 	dir, err := runtime.OpenDirectoryDialog(*r.context, options)
-	// dir := "/Users/lea/Projects/restoric/test2"
 	if err != nil || !IsDirectoryARepository(dir) {
-		return "", fmt.Errorf("Invalid Repo Directory")
+		return "", fmt.Errorf("Directory doesn't look like a restic backup location")
 	}
-
 	return dir, nil
 }
 
