@@ -18,22 +18,6 @@ import '@vaadin/grid';
 @customElement('restoric-snapshot-list')
 export class RestoricSnapshotList extends MobxLitElement {
   
-  static styles = css`
-    :host {
-      display: flex;
-      flex-direction: column;
-    }
-    #header {
-      align-items: center; 
-      background: var(--lumo-shade-10pct);
-      padding: 8px;
-    }
-    #grid {
-      height: unset;
-      flex: 1;
-    }
-  `;
-  
   @state() 
   private _selectedItems: lib.Snapshot[] = [];
 
@@ -42,6 +26,9 @@ export class RestoricSnapshotList extends MobxLitElement {
 
   constructor() {
     super();
+
+    // bind this to renderers
+    this._timeRenderer = this._timeRenderer.bind(this);
 
     // mobx.reaction(
     //   () => appState.snapShots, 
@@ -66,10 +53,31 @@ export class RestoricSnapshotList extends MobxLitElement {
     render(html`${new Date(model.item.time).toLocaleString()}`, root);
   }
 
+  static styles = css`
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
+    #header {
+      align-items: center; 
+      background: var(--lumo-shade-10pct);
+      padding: 8px;
+    }
+    #header #title {
+      margin: 0px 10px;
+      padding: 8px 0px;
+   }
+   #grid {
+      height: unset;
+      flex: 1;
+      margin: 0px 12px;
+    }
+  `;
+  
   render() {
     const header = html`
       <vaadin-horizontal-layout id="header" style="">
-        <strong style="flex: 1;">Snapshots</strong>
+        <strong id="title">Snapshots</strong>
       </vaadin-horizontal-layout>
     `;
 
@@ -82,7 +90,7 @@ export class RestoricSnapshotList extends MobxLitElement {
         .selectedItems=${this._selectedItems}
         @active-item-changed=${(e: GridActiveItemChangedEvent<lib.Snapshot>) => {
           const item = e.detail.value;
-          appState.selectedSnapshotID = item ? item.id : "";
+          appState.setNewSnapshotId(item ? item.id : "");
           this._selectedItems = item ? [item] : [];
         }}
       >

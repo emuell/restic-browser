@@ -27,7 +27,8 @@
     "@vaadin/text-field": "^23.1.2",
     "@vaadin/vertical-layout": "^23.1.1",
     "lit": "^2.2.6",
-    "mobx": "^6.6.1"
+    "mobx": "^6.6.1",
+    "pretty-bytes": "^6.0.0"
   },
   "devDependencies": {
     "vite": "^2.9.5",
