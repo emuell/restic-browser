@@ -13,6 +13,12 @@ import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js';
 @customElement('restoric-error-message')
 export class RestoricErrorMessage extends LitElement {
   
+  @property()
+  type: "info" | "error" = "error";
+
+  @property()
+  message: string = "Unknown error";
+
   static styles = css`
     #layout {
       height: 100%; 
@@ -21,12 +27,6 @@ export class RestoricErrorMessage extends LitElement {
       margin-bottom: 25%;
     }
   `;
-
-  @property()
-  type: "info" | "error" = "error";
-
-  @property()
-  message: string = "Unknown error";
 
   render() {
     const iconColor = (this.type === "error") 

@@ -24,7 +24,37 @@ export class RestoricApp extends MobxLitElement {
   
   @state()
   private _showPasswordDialog: boolean = false;
+  
+  private _selectRepository() {
+    SelectRepo()
+      .then((directory) => {
+        if (directory instanceof Error) {
+          appState.setNewRepo("", directory.message);
+        } else {
+          appState.setNewRepo(directory)
+          this._showPasswordDialog = true;
+        }
+      })
+      .catch((err) => {
+        appState.setNewRepo("", err.message || String(err));
+      });
+  }
 
+  private _openRepository() {
+    OpenRepo(appState.repoPath, appState.repoPass)
+      .then((result) => {
+        if (result instanceof Error) {
+          appState.setNewSnapshots([], result.message);
+        } 
+        else {
+          appState.setNewSnapshots(result);
+        } 
+      })
+      .catch((err) => {
+        appState.setNewSnapshots([], err.message || String(err));
+      });
+  }
+  
   static styles = css`
     #layout {
        align-items: stretch; 
@@ -57,37 +87,7 @@ export class RestoricApp extends MobxLitElement {
       height: 100%;
     }
   `;
-  
-  private _selectRepository() {
-    SelectRepo()
-      .then((directory) => {
-        if (directory instanceof Error) {
-          appState.setNewRepo("", directory.message);
-        } else {
-          appState.setNewRepo(directory)
-          this._showPasswordDialog = true;
-        }
-      })
-      .catch((err) => {
-        appState.setNewRepo("", err.message || String(err));
-      });
-  }
 
-  private _openRepository() {
-    OpenRepo(appState.repoPath, appState.repoPass)
-      .then((result) => {
-        if (result instanceof Error) {
-          appState.setNewSnapshots([], result.message);
-        } 
-        else {
-          appState.setNewSnapshots(result);
-        } 
-      })
-      .catch((err) => {
-        appState.setNewSnapshots([], err.message || String(err));
-      });
-  }
-  
   render() {
     // password dialog
     if (this._showPasswordDialog) {

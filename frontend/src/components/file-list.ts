@@ -29,6 +29,7 @@ export class RestoricFileList extends MobxLitElement {
   
   @state()
   private _fetchError: string = "";
+
   @state()
   private _isFetching: boolean = false;
   
