@@ -22,6 +22,9 @@ import '@vaadin/horizontal-layout';
 @customElement('restoric-app')
 export class RestoricApp extends MobxLitElement {
   
+  @state()
+  private _showPasswordDialog: boolean = false;
+
   static styles = css`
     #layout {
        align-items: stretch; 
@@ -55,22 +58,18 @@ export class RestoricApp extends MobxLitElement {
     }
   `;
   
-  @state()
-  private _showPasswordDialog: boolean = false;
-
   private _selectRepository() {
     SelectRepo()
       .then((directory) => {
         if (directory instanceof Error) {
-          appState.repoError = directory.message || String(directory);
+          appState.setNewRepo("", directory.message);
         } else {
-          appState.repoPath = directory;
-          appState.repoError = "";
+          appState.setNewRepo(directory)
           this._showPasswordDialog = true;
         }
       })
       .catch((err) => {
-        appState.repoError = err.message || String(err);
+        appState.setNewRepo("", err.message || String(err));
       });
   }
 
@@ -78,15 +77,14 @@ export class RestoricApp extends MobxLitElement {
     OpenRepo(appState.repoPath, appState.repoPass)
       .then((result) => {
         if (result instanceof Error) {
-          appState.repoError = result.message || String(result);
+          appState.setNewSnapshots([], result.message);
         } 
         else {
-          appState.repoError = "";
-          appState.snapShots = result;
+          appState.setNewSnapshots(result);
         } 
       })
       .catch((err) => {
-        appState.repoError = err.message || String(err);
+        appState.setNewSnapshots([], err.message || String(err));
       });
   }
   
@@ -127,7 +125,8 @@ export class RestoricApp extends MobxLitElement {
         return html`
           <vaadin-vertical-layout id="layout">
             ${header}
-            <restoric-error-message message=${errorMessage}></restoric-error-message>
+            <restoric-error-message type=${appState.repoError ? "error" : "info"} 
+               message=${errorMessage}></restoric-error-message>
           </vaadin-vertical-layout>
         `;
       }
