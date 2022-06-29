@@ -48,7 +48,7 @@ export class RestoricApp extends MobxLitElement {
       color: var(--lumo-tint-10pct);
     }
     #snapshots {
-      height: auto;
+      height: 35vh;
     }
     #filelist {
       height: 100%;
