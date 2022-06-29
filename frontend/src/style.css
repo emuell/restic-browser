@@ -66,12 +66,18 @@
     --lumo-success-color-50pct: hsla(145, 92%, 51%, 0.5);
     --lumo-success-color-10pct: hsla(145, 92%, 51%, 0.1);
     --lumo-success-text-color: hsl(145, 85%, 46%);
+
+    /* Font */
+    --lumo-font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+    --lumo-font-size-m: 0.9rem
 }
 
 @font-face {
     font-family: "Nunito";
     font-style: normal;
-    font-weight: 400;
+    font-weight: 200;
     src: local(""), url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
