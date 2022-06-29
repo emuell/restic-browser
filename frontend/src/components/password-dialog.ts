@@ -28,7 +28,7 @@ export class RestoricPasswordDialog extends LitElement {
       <vaadin-vertical-layout style="align-items: stretch; width: 24rem; max-width: 100%;">
         <vaadin-password-field 
           autofocus
-          @change=${(event: InputEvent) => {
+          @change=${(event: CustomEvent) => {
             appState.repoPass = (event.target as HTMLInputElement).value; 
             this._handledClose = true;
             this.onClose();
