@@ -23,13 +23,19 @@ export class RestoricErrorMessage extends LitElement {
   `;
 
   @property()
+  type: "info" | "error" = "error";
+
+  @property()
   message: string = "Unknown error";
 
   render() {
+    const iconColor = (this.type === "error") 
+      ? "--lumo-error-text-color" 
+      : "--lumo-primary-text-color";
     const errorIcon = html`
       <vaadin-icon 
         icon="lumo:error" 
-        style="color: var(--lumo-error-text-color); width:64px; height:64px">
+        style="color: var(${iconColor}); width:64px; height:64px">
       </vaadin-icon>`;
     return html`
       <vaadin-horizontal-layout id="layout">
