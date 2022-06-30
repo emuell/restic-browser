@@ -1,32 +1,32 @@
 :root {
     /* Base (background) */
-    --lumo-base-color: hsl(210, 21%, 9%);
+    --lumo-base-color: hsl(210, 8%, 16%);
 
     /* Tint */
-    --lumo-tint-5pct: hsla(214, 65%, 85%, 0.06);
-    --lumo-tint-10pct: hsla(214, 60%, 80%, 0.14);
-    --lumo-tint-20pct: hsla(214, 64%, 82%, 0.23);
-    --lumo-tint-30pct: hsla(214, 69%, 84%, 0.32);
-    --lumo-tint-40pct: hsla(214, 73%, 86%, 0.41);
-    --lumo-tint-50pct: hsla(214, 78%, 88%, 0.5);
-    --lumo-tint-60pct: hsla(214, 82%, 90%, 0.58);
-    --lumo-tint-70pct: hsla(214, 87%, 92%, 0.69);
-    --lumo-tint-80pct: hsla(214, 91%, 94%, 0.8);
-    --lumo-tint-90pct: hsla(214, 96%, 96%, 0.9);
-    --lumo-tint: hsl(214, 100%, 98%);
+    --lumo-tint-5pct: hsla(210, 65%, 85%, 0.06);
+    --lumo-tint-10pct: hsla(210, 61%, 80%, 0.14);
+    --lumo-tint-20pct: hsla(210, 64%, 82%, 0.23);
+    --lumo-tint-30pct: hsla(210, 69%, 84%, 0.32);
+    --lumo-tint-40pct: hsla(210, 73%, 86%, 0.41);
+    --lumo-tint-50pct: hsla(210, 78%, 88%, 0.5);
+    --lumo-tint-60pct: hsla(210, 82%, 90%, 0.58);
+    --lumo-tint-70pct: hsla(210, 87%, 92%, 0.69);
+    --lumo-tint-80pct: hsla(210, 91%, 94%, 0.8);
+    --lumo-tint-90pct: hsla(210, 96%, 96%, 0.9);
+    --lumo-tint: hsl(210, 100%, 98%);
 
     /* Shade */
-    --lumo-shade-5pct: hsla(214, 0%, 0%, 0.07);
-    --lumo-shade-10pct: hsla(214, 4%, 2%, 0.15);
-    --lumo-shade-20pct: hsla(214, 8%, 4%, 0.23);
-    --lumo-shade-30pct: hsla(214, 12%, 6%, 0.32);
-    --lumo-shade-40pct: hsla(214, 16%, 8%, 0.41);
-    --lumo-shade-50pct: hsla(214, 20%, 10%, 0.5);
-    --lumo-shade-60pct: hsla(214, 24%, 12%, 0.6);
-    --lumo-shade-70pct: hsla(214, 28%, 13%, 0.7);
-    --lumo-shade-80pct: hsla(214, 32%, 13%, 0.8);
-    --lumo-shade-90pct: hsla(214, 33%, 13%, 0.9);
-    --lumo-shade: hsl(214, 33%, 13%);
+    --lumo-shade-5pct: hsla(210, 0%, 0%, 0.07);
+    --lumo-shade-10pct: hsla(210, 4%, 2%, 0.15);
+    --lumo-shade-20pct: hsla(210, 8%, 4%, 0.23);
+    --lumo-shade-30pct: hsla(210, 12%, 6%, 0.32);
+    --lumo-shade-40pct: hsla(210, 16%, 8%, 0.41);
+    --lumo-shade-50pct: hsla(210, 20%, 10%, 0.5);
+    --lumo-shade-60pct: hsla(210, 24%, 12%, 0.6);
+    --lumo-shade-70pct: hsla(210, 28%, 13%, 0.7);
+    --lumo-shade-80pct: hsla(210, 32%, 13%, 0.8);
+    --lumo-shade-90pct: hsla(210, 33%, 13%, 0.9);
+    --lumo-shade: hsl(210, 33%, 13%);
 
     /* Contrast */
     --lumo-contrast-5pct: var(--lumo-tint-5pct);
@@ -49,10 +49,10 @@
     --lumo-disabled-text-color: var(--lumo-contrast-30pct);
 
     /* Primary */
-    --lumo-primary-color: #193c31;
-    --lumo-primary-color-50pct: hsla(214, 90%, 70%, 0.69);
-    --lumo-primary-color-10pct: hsla(214, 90%, 55%, 0.13);
-    --lumo-primary-text-color: hsl(214, 83%, 84%);
+    --lumo-primary-color: hsl(161, 41%, 17%);
+    --lumo-primary-color-50pct: hsla(161, 90%, 70%, 0.69);
+    --lumo-primary-color-10pct: hsla(161, 90%, 55%, 0.13);
+    --lumo-primary-text-color: hsl(0, 0%, 83%);
     --lumo-primary-contrast-color: #fff;
 
     /* Error */
@@ -71,13 +71,25 @@
     --lumo-font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
         "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
         sans-serif;
-    --lumo-font-size-m: 0.9rem
+
+    --lumo-font-size-xxxl: 1.75rem;
+    --lumo-font-size-xxl: 1.375rem;
+    --lumo-font-size-xl: 1.125rem;
+    --lumo-font-size-l: 1rem;
+    --lumo-font-size-m: 0.875rem;
+    --lumo-font-size-s: 0.8125rem;
+    --lumo-font-size-xs: 0.75rem;
+    --lumo-font-size-xxs: 0.7rem;
+
+    --lumo-line-height-m: 1.375;
+    --lumo-line-height-s: 1.25;
+    --lumo-line-height-xs: 1.15;
 }
 
 @font-face {
     font-family: "Nunito";
     font-style: normal;
-    font-weight: 200;
+    font-weight: 300;
     src: local(""), url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
