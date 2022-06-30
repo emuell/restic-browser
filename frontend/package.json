@@ -22,6 +22,7 @@
     "@vaadin/grid": "^23.1.2",
     "@vaadin/horizontal-layout": "^23.1.1",
     "@vaadin/icons": "^23.1.1",
+    "@vaadin/notification": "^23.1.2",
     "@vaadin/password-field": "^23.1.2",
     "@vaadin/split-layout": "^23.1.1",
     "@vaadin/text-field": "^23.1.2",

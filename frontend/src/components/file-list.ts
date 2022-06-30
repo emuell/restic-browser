@@ -5,17 +5,19 @@ import prettyBytes from 'pretty-bytes';
 import * as mobx from 'mobx'
 
 import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { Notification } from '@vaadin/notification';
 
 import '../components/error-message';
 
 import { appState } from '../states/app-state';
 
 import { lib } from '../../wailsjs/go/models';
-import { GetFilesForPath } from '../../wailsjs/go/lib/Restoric'
+import { GetFilesForPath, DumpFile, DumpFileToTemp, OpenFileOrUrl } from '../../wailsjs/go/lib/Restoric'
 
 import '@vaadin/grid';
 import '@vaadin/text-field';
 import '@vaadin/button';
+import '@vaadin/notification';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -65,6 +67,46 @@ export class RestoricFileList extends MobxLitElement {
     this._rootPath = newPath;
   }
 
+  private _openFile(file: lib.File): void {
+    DumpFileToTemp(appState.selectedSnapshotID, file)
+      .then((path) => { 
+        if (path instanceof Error) {
+          throw path;
+        }
+        OpenFileOrUrl(path)
+          .catch(_err => {
+            // ignore
+          })
+      })
+      .catch((err) => { 
+        Notification.show(`Failed to restore file: ${err.message || err}`, {
+          position: 'middle',
+          theme: "error"
+        });
+      });
+  }
+
+  private _dumpFile(file: lib.File): void {
+    DumpFile(appState.selectedSnapshotID, file)
+      .then((path) => { 
+        if (path instanceof Error) {
+          throw path;
+        }
+        if (path) {
+          Notification.show(`Successfully restored to: '${path}'`, {
+            position: 'bottom-center',
+            theme: "info"
+          });
+        }
+      })
+      .catch((err) => { 
+        Notification.show(`Restore operation failed: ${err.message || err}`, {
+          position: 'middle',
+          theme: "error"
+        });
+      });
+  }
+
   private _parentRootPath(): string | undefined {
     let rootPath = this._rootPath.trim();
     if (rootPath && rootPath != "/") {
@@ -82,22 +124,20 @@ export class RestoricFileList extends MobxLitElement {
       GetFilesForPath(appState.selectedSnapshotID, this._rootPath || "/")
         .then((files) => {
           if (files instanceof Error) {
-            this._fetchError = files.message;
-            this._files = [];
-          } else {
-            // remove . entry
-            files = files.filter((f) => f.path !== this._rootPath);
-            // add .. entry
-            const parentRootPath = this._parentRootPath();
-            if (parentRootPath) {
-              files.push({name: "..", type: "dir", path: parentRootPath})
-            }
-            // assign and sort
-            this._files = files;
-            this._applyColumnSorting();
-            // reset error - if any
-            this._fetchError = "";
+            throw files;
+          } 
+          // remove . entry
+          files = files.filter((f) => f.path !== this._rootPath);
+          // add .. entry
+          const parentRootPath = this._parentRootPath();
+          if (parentRootPath) {
+            files.push({name: "..", type: "dir", path: parentRootPath})
           }
+          // assign and sort
+          this._files = files;
+          this._applyColumnSorting();
+          // reset error - if any
+          this._fetchError = "";
           this._isFetching = false;
         })
         .catch((error) => {
@@ -129,15 +169,37 @@ export class RestoricFileList extends MobxLitElement {
     _column: GridColumn<lib.File>, 
     model: GridItemModel<lib.File>
   ) {
+    const downloadButton = html`
+      <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;"
+          @click=${() => this._dumpFile(model.item)}>
+        <vaadin-icon icon="vaadin:download"></vaadin-icon>
+      </vaadin-button>
+    `;
     if (model.item.type === "dir") {
-      render(html`
+      const setRootpathButton = html`
         <vaadin-button theme="small primary icon" style="height: 1.5rem; margin: unset;" 
-            @click=${() => this._setRootPath(model.item.path)}>
+          @click=${() => this._setRootPath(model.item.path)}>
           <vaadin-icon icon="vaadin:level-right"></vaadin-icon>
         </vaadin-button>
-        `, root);
+      `;
+      if (model.item.name == "..") {
+        render(html`
+            ${setRootpathButton}
+          `, root);
+      } else {
+        render(html`
+            ${setRootpathButton}
+            ${downloadButton}
+          `, root);
+      }
     } else {
-      render(html``, root)
+      render(html`
+          <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;" 
+              @click=${() => this._openFile(model.item)}>
+            <vaadin-icon icon="lumo:eye"></vaadin-icon>
+          </vaadin-button>
+          ${downloadButton}
+        `, root)
     }     
   }
   
