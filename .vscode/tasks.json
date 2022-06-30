@@ -7,15 +7,14 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "command": "go",
+      "command": "wails",
       "args": [
         "build",
+        "-debug",
         "-tags",
         "production,desktop,debug",
-        "-gcflags",
-        "all=-N -l",
         "-o",
-        "build/bin/Restoric.exe"
+        "Restoric.exe"
       ]
     },
     {
@@ -24,15 +23,13 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "command": "go",
+      "command": "wails",
       "args": [
         "build",
         "-tags",
         "production,desktop",
-        "-gcflags",
-        "all=-N -l",
         "-o",
-        "build/bin/Restoric.exe"
+        "Restoric.exe"
       ]
     }
   ]
