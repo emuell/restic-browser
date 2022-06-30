@@ -7,7 +7,7 @@ import './components/snapshot-list';
 import './components/password-dialog';
 import './components/error-message';
 
-import { OpenRepo, SelectRepo } from '../wailsjs/go/lib/Restoric'
+import { OpenRepo, SelectRepo } from '../wailsjs/go/lib/ResticBrowserApp';
 
 import { appState } from './states/app-state';
 
@@ -19,8 +19,8 @@ import '@vaadin/horizontal-layout';
  
 // Main app layout.
 
-@customElement('restoric-app')
-export class RestoricApp extends MobxLitElement {
+@customElement('restic-browser-app')
+export class ResticBrowserApp extends MobxLitElement {
   
   @state()
   private _showPasswordDialog: boolean = false;
@@ -92,7 +92,7 @@ export class RestoricApp extends MobxLitElement {
     // password dialog
     if (this._showPasswordDialog) {
       return html`
-        <restoric-password-dialog 
+        <restic-browser-password-dialog 
           .onClose=${() => {
             this._showPasswordDialog = false;
             this._openRepository();
@@ -100,7 +100,7 @@ export class RestoricApp extends MobxLitElement {
           .onCancel=${() => {
             this._showPasswordDialog = false; 
             appState.repoPath = ""; 
-          }}></restoric-password-dialog>
+          }}></restic-browser-password-dialog>
       `;
     }
     // app content
@@ -110,7 +110,7 @@ export class RestoricApp extends MobxLitElement {
         html`<span id="repoPath" class="disabled">no repository selected</span>`;
       const header = html`
         <vaadin-horizontal-layout id="header">
-          <h3>Restoric</h3>
+          <h3>Restic-Browser</h3>
           <vaadin-button theme="primary" @click=${this._selectRepository}>
             Select Repository
           </vaadin-button>
@@ -125,8 +125,8 @@ export class RestoricApp extends MobxLitElement {
         return html`
           <vaadin-vertical-layout id="layout">
             ${header}
-            <restoric-error-message type=${appState.repoError ? "error" : "info"} 
-               message=${errorMessage}></restoric-error-message>
+            <restic-browser-error-message type=${appState.repoError ? "error" : "info"} 
+               message=${errorMessage}></restic-browser-error-message>
           </vaadin-vertical-layout>
         `;
       }
@@ -134,8 +134,8 @@ export class RestoricApp extends MobxLitElement {
         return html`
           <vaadin-vertical-layout id="layout">
             ${header}
-            <restoric-snapshot-list id="snapshots"></restoric-snapshot-list>
-            <restoric-file-list id="filelist"></restoric-file-list>
+            <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
+            <restic-browser-file-list id="filelist"></restic-browser-file-list>
           </vaadin-vertical-layout>
         `;
       }
@@ -147,6 +147,6 @@ export class RestoricApp extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restoric-app': RestoricApp
+    'restic-browser-app': ResticBrowserApp
   }
 }

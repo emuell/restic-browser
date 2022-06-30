@@ -12,7 +12,8 @@ import '../components/error-message';
 import { appState } from '../states/app-state';
 
 import { lib } from '../../wailsjs/go/models';
-import { GetFilesForPath, DumpFile, DumpFileToTemp, OpenFileOrUrl } from '../../wailsjs/go/lib/Restoric'
+import { GetFilesForPath, DumpFile, DumpFileToTemp, OpenFileOrUrl } 
+  from '../../wailsjs/go/lib/ResticBrowserApp';
 
 import '@vaadin/grid';
 import '@vaadin/text-field';
@@ -23,8 +24,8 @@ import '@vaadin/notification';
  
 // File list / table.
 
-@customElement('restoric-file-list')
-export class RestoricFileList extends MobxLitElement {
+@customElement('restic-browser-file-list')
+export class ResticBrowserFileList extends MobxLitElement {
   
   @state() 
   private _files: lib.File[] = [];
@@ -314,10 +315,10 @@ export class RestoricFileList extends MobxLitElement {
       }
       return html`
         ${header}
-        <restoric-error-message 
+        <restic-browser-error-message 
           type=${appState.selectedSnapshotID ? "error" : "info"}
           message=${errorMessage}>
-        </restoric-error-message>
+        </restic-browser-error-message>
       `;
     } 
     else {
@@ -352,8 +353,10 @@ export class RestoricFileList extends MobxLitElement {
   }
 }
 
+// -------------------------------------------------------------------------------------------------
+
 declare global {
   interface HTMLElementTagNameMap {
-    'restoric-file-list': RestoricFileList
+    'restic-browser-file-list': ResticBrowserFileList
   }
 }

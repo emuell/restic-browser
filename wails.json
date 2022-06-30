@@ -1,6 +1,6 @@
 {
-  "name": "restoric",
-  "outputfilename": "restoric",
+  "name": "restic-browser",
+  "outputfilename": "Restic-Browser",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",

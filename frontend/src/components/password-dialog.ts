@@ -11,8 +11,8 @@ import '@vaadin/password-field';
  
 // Modal dialog to set appState.repoPassword 
 
-@customElement('restoric-password-dialog')
-export class RestoricPasswordDialog extends LitElement {
+@customElement('restic-browser-password-dialog')
+export class ResticBrowserPasswordDialog extends LitElement {
   
   @property()
   onClose!: () => void;
@@ -77,6 +77,6 @@ export class RestoricPasswordDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restoric-password-dialog': RestoricPasswordDialog
+    'restic-browser-password-dialog': ResticBrowserPasswordDialog
   }
 }

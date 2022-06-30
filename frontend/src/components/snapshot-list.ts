@@ -15,8 +15,8 @@ import '@vaadin/grid';
  
 // Snapshot list / table.
 
-@customElement('restoric-snapshot-list')
-export class RestoricSnapshotList extends MobxLitElement {
+@customElement('restic-browser-snapshot-list')
+export class ResticBrowserSnapshotList extends MobxLitElement {
   
   @state() 
   private _selectedItems: lib.Snapshot[] = [];
@@ -106,8 +106,10 @@ export class RestoricSnapshotList extends MobxLitElement {
   }
 }
 
+// -------------------------------------------------------------------------------------------------
+
 declare global {
   interface HTMLElementTagNameMap {
-    'restoric-snapshot-list': RestoricSnapshotList
+    'restic-browser-snapshot-list': ResticBrowserSnapshotList
   }
 }

@@ -10,8 +10,8 @@ import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js';
  
 // Shows a message along with an error icon
 
-@customElement('restoric-error-message')
-export class RestoricErrorMessage extends LitElement {
+@customElement('restic-browser-error-message')
+export class ResticBrowserErrorMessage extends LitElement {
   
   @property()
   type: "info" | "error" = "error";
@@ -45,8 +45,10 @@ export class RestoricErrorMessage extends LitElement {
   }
 }
 
+// -------------------------------------------------------------------------------------------------
+
 declare global {
   interface HTMLElementTagNameMap {
-    'restoric-error-message': RestoricErrorMessage
+    'restic-browser-error-message': ResticBrowserErrorMessage
   }
 }

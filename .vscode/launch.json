@@ -2,11 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Restoric (GO)",
+      "name": "Debug Restic-Browser (GO)",
       "type": "go",
       "request": "launch",
       "mode": "exec",
-      "program": "${workspaceFolder}/build/bin/Restoric.exe",
+      "program": "${workspaceFolder}/build/bin/Restic-Browser.exe",
       "preLaunchTask": "build debug",
       "cwd": "${workspaceFolder}",
       "env": {}

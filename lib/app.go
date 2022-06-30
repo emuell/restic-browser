@@ -9,30 +9,30 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-type Restoric struct {
+type ResticBrowserApp struct {
 	restic    *Restic
 	context   *context.Context
 	repo      *Repository
 	snapshots map[string]*Snapshot
 }
 
-func NewRestoric(restic *Restic) *Restoric {
-	return &Restoric{
+func NewResticBrowser(restic *Restic) *ResticBrowserApp {
+	return &ResticBrowserApp{
 		restic:    restic,
 		snapshots: make(map[string]*Snapshot),
 	}
 }
 
-func (r *Restoric) Startup(ctx context.Context) {
+func (r *ResticBrowserApp) Startup(ctx context.Context) {
 	r.context = &ctx
 }
 
-func (r *Restoric) OpenFileOrUrl(path string) error {
+func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	runtime.BrowserOpenURL(*r.context, path)
 	return nil
 }
 
-func (r *Restoric) SelectRepo() (string, error) {
+func (r *ResticBrowserApp) SelectRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",
 		DefaultFilename:            "",
@@ -50,7 +50,7 @@ func (r *Restoric) SelectRepo() (string, error) {
 	return dir, nil
 }
 
-func (r *Restoric) OpenRepo(dir, password string) ([]*Snapshot, error) {
+func (r *ResticBrowserApp) OpenRepo(dir, password string) ([]*Snapshot, error) {
 	repo := NewRepository(dir, password, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *Restoric) OpenRepo(dir, password string) ([]*Snapshot, error) {
 	return snapshots, nil
 }
 
-func (r *Restoric) GetFilesForPath(snapshotID, path string) ([]*File, error) {
+func (r *ResticBrowserApp) GetFilesForPath(snapshotID, path string) ([]*File, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return nil, fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -74,7 +74,7 @@ func (r *Restoric) GetFilesForPath(snapshotID, path string) ([]*File, error) {
 	return r.repo.GetFiles(snapshot, path)
 }
 
-func (r *Restoric) RestoreFile(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -103,7 +103,7 @@ func (r *Restoric) RestoreFile(snapshotID string, file *File) (string, error) {
 	return targetPath, nil
 }
 
-func (r *Restoric) DumpFile(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) DumpFile(snapshotID string, file *File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -133,12 +133,12 @@ func (r *Restoric) DumpFile(snapshotID string, file *File) (string, error) {
 	return targetFilePath, nil
 }
 
-func (r *Restoric) DumpFileToTemp(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) DumpFileToTemp(snapshotID string, file *File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
 	}
-	targetPath, err := ioutil.TempDir(os.TempDir(), "restoric")
+	targetPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
 	if err != nil {
 		return "", err
 	}

@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/emuell/restoric/lib"
+	"github.com/emuell/restic-browser/lib"
 	"github.com/leaanthony/sail/program"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -35,11 +35,11 @@ func main() {
 	}
 
 	// Create an instance of the app structure
-	app := lib.NewRestoric(restic)
+	app := lib.NewResticBrowser(restic)
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title:     "restoric",
+		Title:     "Restic Browser",
 		Width:     1024,
 		Height:    768,
 		Assets:    assets,

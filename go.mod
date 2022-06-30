@@ -1,4 +1,4 @@
-module github.com/emuell/restoric
+module github.com/emuell/restic-browser
 
 go 1.17
 

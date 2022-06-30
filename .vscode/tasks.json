@@ -12,9 +12,7 @@
         "build",
         "-debug",
         "-tags",
-        "production,desktop,debug",
-        "-o",
-        "Restoric.exe"
+        "production,desktop,debug"
       ]
     },
     {
@@ -27,9 +25,7 @@
       "args": [
         "build",
         "-tags",
-        "production,desktop",
-        "-o",
-        "Restoric.exe"
+        "production,desktop"
       ]
     }
   ]
