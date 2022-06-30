@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/leaanthony/sail/fs"
@@ -45,9 +46,9 @@ func IsDirectoryARepository(basedir string) bool {
 
 func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
 	os.Setenv("RESTIC_PASSWORD", r.password)
+	defer os.Setenv("RESTIC_PASSWORD", "")
 	command = append(command, "--repo", r.path)
 	stdout, stderr, code, err = r.restic.Run(command)
-	os.Setenv("RESTIC_PASSWORD", "")
 	return
 }
 
@@ -57,7 +58,6 @@ func (r *Repository) Init(path string) error {
 	if stderr != "" {
 		return fmt.Errorf(stderr)
 	}
-
 	return nil
 }
 
@@ -115,4 +115,42 @@ func (r *Repository) GetFiles(snapshot *Snapshot, path string) ([]*File, error) 
 	}
 
 	return files, nil
+}
+
+func (r *Repository) RestoreFile(snapshot *Snapshot, file *File, targetPath string) error {
+
+	_, stderr, code, _ := r.run("restore", snapshot.ID, "--target", targetPath, "--include", file.Path)
+	if code != 0 {
+		return fmt.Errorf(stderr)
+	}
+	return nil
+}
+
+func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string) (string, error) {
+
+	// TODO: should pipe stdOut to a stream instead:
+	// https://stackoverflow.com/questions/18986943/in-golang-how-can-i-write-the-stdout-of-an-exec-cmd-to-a-file
+
+	// open the target file for writing
+	targetFile := filepath.Join(targetPath, file.Name)
+	if file.Type == "dir" {
+		targetFile = targetFile + ".zip"
+	}
+	if fs.FileExists(targetFile) {
+		return "", fmt.Errorf("Target file already exists")
+	}
+	stdout, stderr, code, _ := r.run("dump", "-a", "zip", snapshot.ID, file.Path)
+	if code != 0 {
+		return "", fmt.Errorf(stderr)
+	}
+	outfile, err := os.Create(targetFile)
+	if err != nil {
+		return "", err
+	}
+	defer outfile.Close()
+	_, err = outfile.Write([]byte(stdout))
+	if err != nil {
+		return "", err
+	}
+	return targetFile, nil
 }
