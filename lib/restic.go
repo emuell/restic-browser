@@ -31,7 +31,17 @@ func (r *Restic) NewRepo(path string, password string) (*Repository, error) {
 }
 
 // NewRestic creates a new Restic struct
-func NewRestic(restic *program.Program) (*Restic, error) {
+func NewRestic() (*Restic, error) {
+
+	// Find restic executable
+	var programName = "restic"
+	if runtime.GOOS == "windows" {
+		programName += ".exe"
+	}
+	restic := program.Find(programName, "Restic")
+	if restic == nil {
+		return nil, fmt.Errorf("unable to find '%s'", programName)
+	}
 
 	// Get the version
 	versionstring, _, code, _ := restic.Run("version")
@@ -39,7 +49,7 @@ func NewRestic(restic *program.Program) (*Restic, error) {
 		return nil, fmt.Errorf("failed to fetch restic version from %s", restic.Path)
 	}
 
-	// Find restic version
+	// Get restic version
 	version := "unknown"
 	splitVersion := strings.Split(versionstring, " ")
 	if len(splitVersion) > 2 {

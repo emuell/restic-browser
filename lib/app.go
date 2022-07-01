@@ -10,21 +10,41 @@ import (
 )
 
 type ResticBrowserApp struct {
-	restic    *Restic
-	context   *context.Context
-	repo      *Repository
-	snapshots map[string]*Snapshot
+	context     *context.Context
+	restic      *Restic
+	resticError error
+	repo        *Repository
+	snapshots   map[string]*Snapshot
 }
 
-func NewResticBrowser(restic *Restic) *ResticBrowserApp {
+func NewResticBrowser() *ResticBrowserApp {
+	restic, err := NewRestic()
+	if err != nil {
+		// continue without a valid restic instance
+		fmt.Print(err.Error() + "\n")
+	}
 	return &ResticBrowserApp{
-		restic:    restic,
-		snapshots: make(map[string]*Snapshot),
+		restic:      restic,
+		resticError: err,
+		snapshots:   make(map[string]*Snapshot),
 	}
 }
 
 func (r *ResticBrowserApp) Startup(ctx context.Context) {
 	r.context = &ctx
+	// warn about missing restic program: this is the first time we can show a dialog
+	if r.restic == nil {
+		message := fmt.Sprintf("Failed to find a compatible restic program: %s\n\n", r.resticError.Error()) +
+			"Please make sure restic is installed and is in your $PATH."
+		options := runtime.MessageDialogOptions{
+			Type:    "warning",
+			Title:   "Restic Binary Missing",
+			Message: message,
+			Buttons: []string{"Okay"},
+			Icon:    nil,
+		}
+		runtime.MessageDialog(*r.context, options)
+	}
 }
 
 func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
@@ -51,6 +71,9 @@ func (r *ResticBrowserApp) SelectRepo() (string, error) {
 }
 
 func (r *ResticBrowserApp) OpenRepo(dir, password string) ([]*Snapshot, error) {
+	if r.restic == nil {
+		return nil, fmt.Errorf("failed to find restic program")
+	}
 	repo := NewRepository(dir, password, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
