@@ -44,7 +44,7 @@ jobs:
         node-version: 16.14.x
 
     - name: Setup Webkit (Linux)
-      uses: sudo apt update && sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      run: sudo apt update && sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
       if: ${{ matrix.config.name == 'Ubuntu' }}
 
     - name: Setup Wails
@@ -54,7 +54,6 @@ jobs:
       uses: actions/checkout@v3
     
     - name: Build
-      working-directory: ./
       run: wails build -tags ${{ matrix.config.build_tags }}
 
     - name: Archive
