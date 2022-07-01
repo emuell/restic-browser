@@ -63,11 +63,12 @@ jobs:
       uses: thedoctor0/zip-release@main
       with:
         type: tar
-        directory: build/bin
+        directory: build
+        path: bin
         filename: ${{ matrix.config.artifact }}
 
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        path: build/bin/${{ matrix.config.artifact }}
+        path: build/${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
