@@ -17,19 +17,19 @@ jobs:
         config:
         - {
             name: "Windows", 
-            artifact: "Windows.zip",
+            artifact: "Windows.tar.gz",
             os: windows-2022,
             build_tags: "production,desktop",
           }
         - {
             name: "Ubuntu", 
-            artifact: "Linux.zip",
+            artifact: "Linux.tar.gz",
             os: ubuntu-22.04,
             build_tags: "production,desktop",
           }
         - {
             name: "macOS", 
-            artifact: "macOS.zip",
+            artifact: "macOS.tar.gz",
             os: macos-11,
             build_tags: "production,desktop",
           }
@@ -62,13 +62,12 @@ jobs:
     - name: Archive
       uses: thedoctor0/zip-release@main
       with:
-        type: zip
-        directory: build
-        path: bin
+        type: tar.gz
+        directory: build/bin
         filename: ${{ matrix.config.artifact }}
 
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        path: build/${{ matrix.config.artifact }}
+        path: build/bin/${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
