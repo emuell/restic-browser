@@ -10,7 +10,7 @@
       "cwd": "${workspaceFolder}",
       "env": { },
       "linux": {
-        "program": "${workspaceFolder}/build/bin/restic-browser",
+        "program": "${workspaceFolder}/build/bin/Restic-Browser",
       },
       "osx": {
         "program": "${workspaceFolder}/build/bin/restic-browser.app/Contents/MacOS/restic-browser",
