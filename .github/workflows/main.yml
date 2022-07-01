@@ -1,1 +1,74 @@
+name: Build Matrix
 
+on:
+  pull_request:
+    branches:
+    - master
+  # allows to run the workflow manually from the actions tab
+  workflow_dispatch:
+      
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows", 
+            artifact: "Windows.tar.gz",
+            os: windows-2022,
+            build_tags: "production,desktop",
+          }
+        - {
+            name: "Ubuntu", 
+            artifact: "Linux.tar.gz",
+            os: ubuntu-22.04,
+            build_tags: "production,desktop",
+          }
+        - {
+            name: "macOS", 
+            artifact: "macOS.tar.gz",
+            os: macos-11,
+            build_tags: "production,desktop",
+          }
+
+    steps:
+
+    - name: Setup Go 
+      uses: actions/setup-go@v3
+      with:
+        go-version: '>=1.17.0'
+    
+    - name: Setup NPM
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16.14.x
+
+    - name: Setup Webkit (Linux)
+      run: sudo apt update && sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      if: ${{ matrix.config.name == 'Ubuntu' }}
+
+    - name: Setup Wails
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Build
+      run: wails build -tags ${{ matrix.config.build_tags }}
+
+    - name: Archive
+      uses: thedoctor0/zip-release@main
+      with:
+        type: tar
+        directory: build
+        path: bin
+        filename: ${{ matrix.config.artifact }}
+
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        path: build/${{ matrix.config.artifact }}
+        name: ${{ matrix.config.artifact }}
