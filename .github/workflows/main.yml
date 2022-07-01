@@ -43,9 +43,12 @@ jobs:
       with:
         node-version: 16.14.x
 
+    - name: Setup Webkit (Linux)
+      uses: sudo apt update && sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      if: ${{ matrix.config.name == 'Ubuntu' }}
+
     - name: Setup Wails
-      run: 
-        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
     - name: Checkout
       uses: actions/checkout@v3
