@@ -17,11 +17,13 @@ func main() {
 
 	// Create wails application with options and bind the app to the frontend
 	err := wails.Run(&options.App{
-		Title:     "Restic Browser",
-		Width:     1024,
-		Height:    768,
-		Assets:    assets,
-		OnStartup: app.Startup,
+		Title:            "Restic Browser",
+		Width:            1024,
+		Height:           768,
+		WindowStartState: options.Normal,
+		Assets:           assets,
+		BackgroundColour: &options.RGBA{R: 38, G: 41, B: 44, A: 255},
+		OnStartup:        app.Startup,
 		Bind: []interface{}{
 			app,
 		},
