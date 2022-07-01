@@ -6,10 +6,18 @@
       "type": "go",
       "request": "launch",
       "mode": "exec",
-      "program": "${workspaceFolder}/build/bin/Restic-Browser.exe",
       "preLaunchTask": "build debug",
       "cwd": "${workspaceFolder}",
-      "env": {}
-    }
+      "env": { },
+      "linux": {
+        "program": "${workspaceFolder}/build/bin/restic-browser",
+      },
+      "osx": {
+        "program": "${workspaceFolder}/build/bin/restic-browser.app/Contents/MacOS/restic-browser",
+      },
+      "windows": {
+        "program": "${workspaceFolder}/build/bin/Restic-Browser.exe",
+      }
+    },
   ]
 }
