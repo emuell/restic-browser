@@ -62,7 +62,7 @@ jobs:
     - name: Archive
       uses: thedoctor0/zip-release@main
       with:
-        type: tar.gz
+        type: tar
         directory: build/bin
         filename: ${{ matrix.config.artifact }}
 
