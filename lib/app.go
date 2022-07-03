@@ -52,7 +52,7 @@ func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	return nil
 }
 
-func (r *ResticBrowserApp) SelectRepo() (string, error) {
+func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",
 		DefaultFilename:            "",
@@ -70,11 +70,11 @@ func (r *ResticBrowserApp) SelectRepo() (string, error) {
 	return dir, nil
 }
 
-func (r *ResticBrowserApp) OpenRepo(dir, password string) ([]*Snapshot, error) {
+func (r *ResticBrowserApp) OpenRepo(location Location, password string) ([]*Snapshot, error) {
 	if r.restic == nil {
 		return nil, fmt.Errorf("failed to find restic program")
 	}
-	repo := NewRepository(dir, password, r.restic)
+	repo := NewRepository(location, password, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		return nil, err

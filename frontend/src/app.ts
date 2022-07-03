@@ -7,7 +7,8 @@ import './components/snapshot-list';
 import './components/password-dialog';
 import './components/error-message';
 
-import { OpenRepo, SelectRepo } from '../wailsjs/go/lib/ResticBrowserApp';
+import { OpenRepo, SelectLocalRepo } from '../wailsjs/go/lib/ResticBrowserApp';
+import { lib } from '../wailsjs/go/models';
 
 import { appState } from './states/app-state';
 
@@ -26,7 +27,7 @@ export class ResticBrowserApp extends MobxLitElement {
   private _showPasswordDialog: boolean = false;
   
   private _selectRepository() {
-    SelectRepo()
+    SelectLocalRepo()
       .then((directory) => {
         if (directory instanceof Error) {
           appState.setNewRepo("", directory.message);
@@ -41,7 +42,13 @@ export class ResticBrowserApp extends MobxLitElement {
   }
 
   private _openRepository() {
-    OpenRepo(appState.repoPath, appState.repoPass)
+    const location = lib.Location.createFrom({
+      type: "local", 
+      prefix: "", 
+      path: appState.repoPath, 
+      secrets: []}
+    );
+    OpenRepo(location, appState.repoPass)
       .then((result) => {
         if (result instanceof Error) {
           appState.setNewSnapshots([], result.message);

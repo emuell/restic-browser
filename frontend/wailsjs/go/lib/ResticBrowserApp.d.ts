@@ -10,8 +10,8 @@ export function GetFilesForPath(arg1:string,arg2:string):Promise<Array<lib.File>
 
 export function OpenFileOrUrl(arg1:string):Promise<Error>;
 
-export function OpenRepo(arg1:string,arg2:string):Promise<Array<lib.Snapshot>|Error>;
+export function OpenRepo(arg1:lib.Location,arg2:string):Promise<Array<lib.Snapshot>|Error>;
 
 export function RestoreFile(arg1:string,arg2:lib.File):Promise<string|Error>;
 
-export function SelectRepo():Promise<string|Error>;
+export function SelectLocalRepo():Promise<string|Error>;

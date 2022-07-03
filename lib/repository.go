@@ -14,14 +14,14 @@ import (
 
 // Repository holds all information about a repository
 type Repository struct {
-	path     string
+	location Location
 	restic   *Restic
 	password string
 }
 
 // NewRepository creates a new Repository struct
-func NewRepository(path string, password string, restic *Restic) *Repository {
-	return &Repository{path: path, password: password, restic: restic}
+func NewRepository(location Location, password string, restic *Restic) *Repository {
+	return &Repository{location: location, password: password, restic: restic}
 }
 
 // IsDirectoryARepository returns true if the given directory contains everything a
@@ -45,20 +45,15 @@ func IsDirectoryARepository(basedir string) bool {
 }
 
 func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
+	r.location.SetEnv()
 	os.Setenv("RESTIC_PASSWORD", r.password)
-	defer os.Setenv("RESTIC_PASSWORD", "")
-	command = append(command, "--repo", r.path)
+	defer func() {
+		os.Setenv("RESTIC_PASSWORD", "")
+		r.location.UnsetEnv()
+	}()
+	command = append(command, "--repo", r.location.Path)
 	stdout, stderr, code, err = r.restic.Run(command)
 	return
-}
-
-// Init initialises the repository
-func (r *Repository) Init(path string) error {
-	_, stderr, _, _ := r.run("init")
-	if stderr != "" {
-		return fmt.Errorf(stderr)
-	}
-	return nil
 }
 
 func (r *Repository) GetSnapshots() ([]*Snapshot, error) {

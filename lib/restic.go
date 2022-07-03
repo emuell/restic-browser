@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -22,12 +21,8 @@ func (r *Restic) Run(command []string) (stdout, stderr string, code int, err err
 }
 
 // NewRepo creates a new repo instance
-func (r *Restic) NewRepo(path string, password string) (*Repository, error) {
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	return NewRepository(path, password, r), nil
+func (r *Restic) NewRepo(location Location, password string) (*Repository, error) {
+	return NewRepository(location, password, r), nil
 }
 
 // NewRestic creates a new Restic struct
