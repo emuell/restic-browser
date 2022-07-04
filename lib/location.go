@@ -4,15 +4,6 @@ import (
 	"os"
 )
 
-type LocationType string
-
-const (
-	LocalPath LocationType = "local"
-	Amazon    LocationType = "amazon"
-	Backblaze LocationType = "backblaze"
-	MSAzure   LocationType = "msazure"
-)
-
 type EnvValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -20,10 +11,9 @@ type EnvValue struct {
 
 // Defines a repository location for restic
 type Location struct {
-	Type         LocationType `json:"type"`
-	Prefix       string       `json:"prefix"`
-	Path         string       `json:"path"`
-	Credientials []EnvValue   `json:"credentials"`
+	Prefix       string     `json:"prefix"`      // e.g. "b2"
+	Path         string     `json:"path"`        // local path or url or bucket name
+	Credientials []EnvValue `json:"credentials"` // optional env values
 }
 
 func (l *Location) SetEnv() error {

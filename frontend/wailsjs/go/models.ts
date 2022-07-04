@@ -45,7 +45,6 @@ export namespace lib {
 	    }
 	}
 	export class Location {
-	    type: string;
 	    prefix: string;
 	    path: string;
 	    credentials: EnvValue[];
@@ -56,7 +55,6 @@ export namespace lib {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
 	        this.prefix = source["prefix"];
 	        this.path = source["path"];
 	        this.credentials = this.convertValues(source["credentials"], EnvValue);

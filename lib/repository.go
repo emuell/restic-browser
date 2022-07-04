@@ -47,11 +47,13 @@ func IsDirectoryARepository(basedir string) bool {
 func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
 	r.location.SetEnv()
 	os.Setenv("RESTIC_PASSWORD", r.password)
-	defer func() {
-		os.Setenv("RESTIC_PASSWORD", "")
-		r.location.UnsetEnv()
-	}()
-	command = append(command, "--repo", r.location.Path)
+	defer os.Setenv("RESTIC_PASSWORD", "")
+	defer r.location.UnsetEnv()
+	bucketOrPath := r.location.Path
+	if r.location.Prefix != "" {
+		bucketOrPath = r.location.Prefix + ":" + bucketOrPath
+	}
+	command = append(command, "--repo", bucketOrPath)
 	stdout, stderr, code, err = r.restic.Run(command)
 	return
 }
@@ -132,7 +134,7 @@ func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string)
 		targetFile = targetFile + ".zip"
 	}
 	if fs.FileExists(targetFile) {
-		return "", fmt.Errorf("Target file already exists")
+		return "", fmt.Errorf("target file already exists")
 	}
 	stdout, stderr, code, _ := r.run("dump", "-a", "zip", snapshot.ID, file.Path)
 	if code != 0 {
