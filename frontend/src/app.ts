@@ -4,10 +4,10 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 
 import './components/file-list';
 import './components/snapshot-list';
-import './components/password-dialog';
+import './components/location-dialog';
 import './components/error-message';
 
-import { OpenRepo, SelectLocalRepo } from '../wailsjs/go/lib/ResticBrowserApp';
+import { OpenRepo } from '../wailsjs/go/lib/ResticBrowserApp';
 import { lib } from '../wailsjs/go/models';
 
 import { appState } from './states/app-state';
@@ -24,38 +24,15 @@ import '@vaadin/horizontal-layout';
 export class ResticBrowserApp extends MobxLitElement {
   
   @state()
-  private _showPasswordDialog: boolean = false;
-  
-  private _selectRepository() {
-    SelectLocalRepo()
-      .then((directory) => {
-        if (directory instanceof Error) {
-          appState.setNewRepo("", directory.message);
-        } else {
-          appState.setNewRepo(directory)
-          this._showPasswordDialog = true;
-        }
-      })
-      .catch((err) => {
-        appState.setNewRepo("", err.message || String(err));
-      });
-  }
+  private _showLocationDialog: boolean = false;
 
   private _openRepository() {
-    const location = lib.Location.createFrom({
-      type: "local", 
-      prefix: "", 
-      path: appState.repoPath, 
-      secrets: []}
-    );
-    OpenRepo(location, appState.repoPass)
+    OpenRepo(lib.Location.createFrom(appState.repoLocation), appState.repoPass)
       .then((result) => {
         if (result instanceof Error) {
-          appState.setNewSnapshots([], result.message);
+          throw result;
         } 
-        else {
-          appState.setNewSnapshots(result);
-        } 
+        appState.setNewSnapshots(result);
       })
       .catch((err) => {
         appState.setNewSnapshots([], err.message || String(err));
@@ -96,36 +73,39 @@ export class ResticBrowserApp extends MobxLitElement {
   `;
 
   render() {
-    // password dialog
-    if (this._showPasswordDialog) {
+    // repository location
+    if (this._showLocationDialog) {
       return html`
-        <restic-browser-password-dialog 
+        <restic-browser-location-dialog 
           .onClose=${() => {
-            this._showPasswordDialog = false;
+            this._showLocationDialog = false;
             this._openRepository();
           }}
           .onCancel=${() => {
-            this._showPasswordDialog = false; 
-            appState.repoPath = ""; 
-          }}></restic-browser-password-dialog>
+            this._showLocationDialog = false; 
+            appState.resetLocation(); 
+          }}></restic-browser-location-dialog>
       `;
     }
-    // app content
+    // repository content
     else {
-      const selectedRepositoryText = appState.repoPath ? 
-        html`<span id="repoPath">${appState.repoPath}</span>` : 
-        html`<span id="repoPath" class="disabled">no repository selected</span>`;
+      const location = appState.repoLocation;
+      const selectedRepositoryText = location.path ? 
+        html`<div id="repoPath">
+          ${(location.prefix ? `${location.prefix}: ` : "") + location.path}</div>` : 
+        html`<div id="repoPath" class="disabled">
+          no repository selected</div>`;
       const header = html`
         <vaadin-horizontal-layout id="header">
           <h3>Restic-Browser</h3>
-          <vaadin-button theme="primary" @click=${this._selectRepository}>
-            Select Repository
+          <vaadin-button theme="primary" @click=${() => this._showLocationDialog = true}>
+            Open Repository
           </vaadin-button>
           ${selectedRepositoryText}
         </vaadin-horizontal-layout>
       `;
       
-      if (appState.repoError || ! appState.repoPath) {
+      if (appState.repoError || ! location.path) {
         const errorMessage = appState.repoError ? 
           `Failed to open repository: ${appState.repoError}` : 
           "No repository selected";
