@@ -7,8 +7,8 @@ Built with [Wails2](https://wails.io), based on leaanthony's [Restoric](https://
 
 ## Features
 
-* *Displays* contents (snapshots, files) of local restic repositories (browsing remote repositories is WIP).
-* *Restores* selected files or folders (as zip archives) to a desired location 
+* *Displays* contents (snapshots, files) of local and remote restic repositories.
+* *Restores* selected files or folders (as zip archives) to a desired location.
 * *Previews* selected files by moving them to the temp and then opening them with your OSs associated default program.
 
 This is not a restic backup tool GUI - it only allows you to *browse* existing repositories!  
