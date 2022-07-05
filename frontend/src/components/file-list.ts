@@ -51,7 +51,8 @@ export class ResticBrowserFileList extends MobxLitElement {
 
     // fetch file list on repo path, snapshot or root dir changes - debounced
     mobx.reaction(
-      () => appState.repoPath + ":" + appState.selectedSnapshotID + ":" + this._rootPath,
+      () => appState.repoLocation.type + ":" + appState.repoLocation.path + ":" + 
+              appState.selectedSnapshotID + ":" + this._rootPath,
       () => this._fetchFiles(),
       { fireImmediately: true })
 

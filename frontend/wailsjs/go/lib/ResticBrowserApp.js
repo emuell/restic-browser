@@ -26,6 +26,6 @@ export function RestoreFile(arg1, arg2) {
   return window['go']['lib']['ResticBrowserApp']['RestoreFile'](arg1, arg2);
 }
 
-export function SelectRepo() {
-  return window['go']['lib']['ResticBrowserApp']['SelectRepo']();
+export function SelectLocalRepo() {
+  return window['go']['lib']['ResticBrowserApp']['SelectLocalRepo']();
 }

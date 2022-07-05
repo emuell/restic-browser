@@ -40,11 +40,6 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     // );
   }
 
-  firstUpdated() {
-    this._selectedItems = appState.snapShots.length ? 
-      [appState.snapShots[0]] : [];
-  }
- 
   private _timeRenderer(
     root: HTMLElement, 
     _column: GridColumn<lib.Snapshot>, 
