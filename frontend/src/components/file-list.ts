@@ -7,7 +7,8 @@ import * as mobx from 'mobx'
 import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 import { Notification } from '@vaadin/notification';
 
-import '../components/error-message';
+import './error-message';
+import './spinner';
 
 import { appState } from '../states/app-state';
 
@@ -33,9 +34,6 @@ export class ResticBrowserFileList extends MobxLitElement {
   @state()
   private _fetchError: string = "";
 
-  @state()
-  private _isFetching: boolean = false;
-  
   @state() 
   private _selectedFiles: lib.File[] = [];
   
@@ -122,7 +120,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _fetchFiles() {
     if (appState.selectedSnapshotID) {
-      this._isFetching = true;
+      ++appState.isLoadingFiles;
       GetFilesForPath(appState.selectedSnapshotID, this._rootPath || "/")
         .then((files) => {
           if (files instanceof Error) {
@@ -140,12 +138,12 @@ export class ResticBrowserFileList extends MobxLitElement {
           this._applyColumnSorting();
           // reset error - if any
           this._fetchError = "";
-          this._isFetching = false;
+          --appState.isLoadingFiles;
         })
         .catch((error) => {
           this._fetchError = error.message || String(error);
           this._files = [];
-          this._isFetching = false;
+          --appState.isLoadingFiles;
         })
     }
     else {
@@ -270,13 +268,18 @@ export class ResticBrowserFileList extends MobxLitElement {
       margin: 0px 10px;
       padding: 8px 0px;
      }
-     #header #rootPath {
+    #header #rootPath {
       flex: 1;
       padding: unset;
       padding-left: 4px;
       padding-right: 8px;
-     }
-     #grid {
+    }
+    #loading {
+      height: 100%; 
+      align-items: center;
+      justify-content: center;
+    }
+    #grid {
       height: unset;
       flex: 1;
       margin: 0px 12px;
@@ -291,13 +294,16 @@ export class ResticBrowserFileList extends MobxLitElement {
             @click=${() => this._setRootPath(this._parentRootPath() || "/")}
             .disabled=${! this._parentRootPath()}
             .hidden=${! appState.selectedSnapshotID}>
-          <vaadin-icon icon="vaadin:level-up"></vaadin-icon>
+          ${appState.isLoadingFiles 
+              ? html`<restic-browser-spinner size="16px" style="margin: 0 2px;"></restic-browser-spinner>` 
+              : html`<vaadin-icon icon="vaadin:level-up"></vaadin-icon>`}
         </vaadin-button>
         <vaadin-text-field 
           id="rootPath"
           theme="small"
           placeholder="/"
-          value=${this._rootPath} 
+          value=${this._rootPath}
+          .disabled=${appState.isLoadingFiles > 0} 
           .hidden=${! appState.selectedSnapshotID}
           @change=${(event: CustomEvent) => {
             this._setRootPath((event.target as HTMLInputElement).value); 
@@ -309,7 +315,7 @@ export class ResticBrowserFileList extends MobxLitElement {
       </vaadin-horizontal-layout>
     `;
 
-    if (this._fetchError && ! this._isFetching) {
+    if (this._fetchError && appState.isLoadingFiles === 0) {
       let errorMessage = this._fetchError;
       if (appState.selectedSnapshotID) {
        errorMessage = "Failed to fetch files: " + errorMessage;
@@ -321,36 +327,35 @@ export class ResticBrowserFileList extends MobxLitElement {
           message=${errorMessage}>
         </restic-browser-error-message>
       `;
-    } 
-    else {
-      return html`
-        ${header}
-        <vaadin-grid
-          id="grid"
-          theme="compact no-border small" 
-          .items=${this._files}
-          .selectedItems=${this._selectedFiles}
-          @active-item-changed=${(e: GridActiveItemChangedEvent<lib.File>) => {
-            const item = e.detail.value;
-            this._selectedFiles = item ? [item] : [];
-          }}
-        >
-          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" 
-            .renderer=${this._pathRenderer}></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${1} path="name"></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="size"
-            .renderer=${this._sizeRenderer}></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="mode"
-            .renderer=${this._modeRenderer}></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="mtime" 
-            .renderer=${this._mTimeRenderer}></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="atime" 
-            .renderer=${this._aTimeRenderer}></vaadin-grid-column>
-          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="ctime" 
-            .renderer=${this._cTimeRenderer}></vaadin-grid-column>
-        </vaadin-grid>         
-      `;
     }
+    
+    return html`
+      ${header}
+      <vaadin-grid
+        id="grid"
+        theme="compact no-border small" 
+        .items=${this._files}
+        .selectedItems=${this._selectedFiles}
+        @active-item-changed=${(e: GridActiveItemChangedEvent<lib.File>) => {
+          const item = e.detail.value;
+          this._selectedFiles = item ? [item] : [];
+        }}
+      >
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" 
+          .renderer=${this._pathRenderer}></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${1} path="name"></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="size"
+          .renderer=${this._sizeRenderer}></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="mode"
+          .renderer=${this._modeRenderer}></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="mtime" 
+          .renderer=${this._mTimeRenderer}></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="atime" 
+          .renderer=${this._aTimeRenderer}></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="ctime" 
+          .renderer=${this._cTimeRenderer}></vaadin-grid-column>
+      </vaadin-grid>
+    `;
   }
 }
 

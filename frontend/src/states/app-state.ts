@@ -49,6 +49,13 @@ export class AppState {
   
   @mobx.observable
   snapShots: lib.Snapshot[] = [];
+  
+  // loading status 
+  @mobx.observable
+  isLoadingSnapshots: number = 0;
+
+  @mobx.observable
+  isLoadingFiles: number = 0;
 
   @mobx.action
   resetLocation() {
