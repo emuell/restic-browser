@@ -1,6 +1,7 @@
 import { css, html } from 'lit'
 import { customElement, state } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
+import * as mobx from 'mobx';
 
 import './components/file-list';
 import './components/snapshot-list';
@@ -26,16 +27,50 @@ export class ResticBrowserApp extends MobxLitElement {
   @state()
   private _showLocationDialog: boolean = false;
 
+  @state()
+  private _statusMessage: string = "";
+
+  constructor() {
+    super();
+
+    let messageTimeoutId: number | undefined = undefined;
+    mobx.autorun(() => {
+      let newMessage = "";
+      if (appState.isLoadingSnapshots > 0) {
+        newMessage = "Fetching snapshots...";
+      } 
+      else if (appState.isLoadingFiles > 0) {
+        newMessage = "Fetching files...";
+      }
+      if (newMessage !== "") {
+        if (messageTimeoutId !== undefined) {
+          clearTimeout(messageTimeoutId);
+          messageTimeoutId = undefined;
+        }
+        this._statusMessage = newMessage;
+      } 
+      else {
+        messageTimeoutId = setTimeout(() => {
+          this._statusMessage = "";
+          messageTimeoutId = undefined;
+        }, 1000);
+      }
+    });
+  }
+
   private _openRepository() {
+    ++appState.isLoadingSnapshots; 
     OpenRepo(lib.Location.createFrom(appState.repoLocation), appState.repoPass)
       .then((result) => {
         if (result instanceof Error) {
           throw result;
         } 
         appState.setNewSnapshots(result);
+        --appState.isLoadingSnapshots; 
       })
       .catch((err) => {
         appState.setNewSnapshots([], err.message || String(err));
+        --appState.isLoadingSnapshots; 
       });
   }
   
@@ -70,10 +105,17 @@ export class ResticBrowserApp extends MobxLitElement {
     #filelist {
       height: 100%;
     }
+    #footer {
+      background: var(--lumo-shade-10pct);
+      height: 44px;
+      padding: 0 8px;
+      align-items: center;
+    }
   `;
 
   render() {
-    // repository location
+
+    // repository location dialog
     if (this._showLocationDialog) {
       return html`
         <restic-browser-location-dialog 
@@ -87,9 +129,11 @@ export class ResticBrowserApp extends MobxLitElement {
           }}></restic-browser-location-dialog>
       `;
     }
+    
     // repository content
     else {
       const location = appState.repoLocation;
+      
       const selectedRepositoryText = location.path ? 
         html`<div id="repoPath">
           ${(location.prefix ? `${location.prefix}: ` : "") + location.path}</div>` : 
@@ -105,6 +149,11 @@ export class ResticBrowserApp extends MobxLitElement {
         </vaadin-horizontal-layout>
       `;
       
+      const footer = html`
+        <vaadin-horizontal-layout id="footer">
+          ${this._statusMessage}
+        </vaadin-horizontal-layout>`;
+
       if (appState.repoError || ! location.path) {
         const errorMessage = appState.repoError ? 
           `Failed to open repository: ${appState.repoError}` : 
@@ -112,8 +161,10 @@ export class ResticBrowserApp extends MobxLitElement {
         return html`
           <vaadin-vertical-layout id="layout">
             ${header}
-            <restic-browser-error-message type=${appState.repoError ? "error" : "info"} 
-               message=${errorMessage}></restic-browser-error-message>
+            <restic-browser-error-message 
+               type=${appState.repoError ? "error" : "info"} 
+               message=${errorMessage}>
+            </restic-browser-error-message>
           </vaadin-vertical-layout>
         `;
       }
@@ -123,6 +174,7 @@ export class ResticBrowserApp extends MobxLitElement {
             ${header}
             <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
             <restic-browser-file-list id="filelist"></restic-browser-file-list>
+            ${footer} 
           </vaadin-vertical-layout>
         `;
       }
