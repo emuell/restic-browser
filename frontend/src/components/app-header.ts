@@ -41,11 +41,11 @@ export class ResticBrowserAppHeader extends MobxLitElement {
 
   render() {
     let repositoryName = appState.repoLocation.path;
-    if (appState.repoLocation.prefix) {
+    if (repositoryName && appState.repoLocation.prefix) {
       repositoryName = appState.repoLocation.prefix + ": " + repositoryName;
     }
     if (! repositoryName) {
-      repositoryName = "No repository selected"
+      repositoryName = "No repository selected";
     }
     
     return html`

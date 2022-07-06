@@ -59,9 +59,8 @@ export class ResticBrowserApp extends MobxLitElement {
         </restic-browser-location-dialog>
       `;
     }
-    // repsotory error
-    const location = appState.repoLocation;
-    if (appState.repoError || ! location.path) {
+    // repository error
+    if (appState.repoError || ! appState.repoLocation.path) {
       const errorMessage = appState.repoError ? 
         `Failed to open repository: ${appState.repoError}` : 
         "No repository selected";
@@ -77,7 +76,7 @@ export class ResticBrowserApp extends MobxLitElement {
         </vaadin-vertical-layout>
       `;
     }
-    // full repsitory layout
+    // repsitory browser layout
     return html`
       <vaadin-vertical-layout id="layout">
         <restic-browser-app-header id="header" 
