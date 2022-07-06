@@ -65,13 +65,16 @@ func (r *Repository) GetSnapshots() ([]*Snapshot, error) {
 	}
 	var snapshots []*Snapshot
 	if stdout == "null" {
-		return snapshots, nil
+		return nil, fmt.Errorf("no snapshots found")
 	}
 	err = json.Unmarshal([]byte(stdout), &snapshots)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse snapshot info: %s", err.Error())
 	}
 
+	if len(snapshots) == 0 {
+		return nil, fmt.Errorf("no snapshots found")
+	}
 	return snapshots, nil
 }
 
@@ -91,26 +94,28 @@ func (r *Repository) GetFiles(snapshot *Snapshot, path string) ([]*File, error) 
 	if code != 0 {
 		return nil, fmt.Errorf(stderr)
 	}
-
-	var files []*File
 	if stdout == "null" {
-		return nil, nil
+		return nil, fmt.Errorf("no files in path: '%s'", path)
 	}
 
+	var files []*File
 	lines := strings.Split(r.normalizeNewlines(stdout), "\n")
 	for index, line := range lines {
-		// Skip first/blank/malformed lines
 		if len(line) == 0 || line[0] != '{' || index == 0 {
+			// Skip first/blank/malformed lines
 			continue
 		}
 		var file File
 		err := json.Unmarshal([]byte(line), &file)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse file info: %s", err.Error())
 		}
 		files = append(files, &file)
 	}
 
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no files in path: '%s'", path)
+	}
 	return files, nil
 }
 
