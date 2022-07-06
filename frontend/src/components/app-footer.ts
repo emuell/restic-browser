@@ -23,7 +23,18 @@ export class ResticBrowserAppFooter extends MobxLitElement {
     let messageTimeoutId: number | undefined = undefined;
     mobx.autorun(() => {
       let newMessage = "";
-      if (appState.isLoadingSnapshots > 0) {
+      if (appState.pendingFileDumps.length) {
+        const last = appState.pendingFileDumps[appState.pendingFileDumps.length - 1];
+        newMessage = `Restoring '${last.file.name}'`;
+        if (appState.pendingFileDumps.length > 2) {
+          newMessage += ` and ${appState.pendingFileDumps.length - 1} other entries`;
+        }
+        else if (appState.pendingFileDumps.length > 1) {
+          newMessage += ` and one other entry`;
+        }
+        newMessage += ". Please wait...";
+      }
+      else if (appState.isLoadingSnapshots > 0) {
         newMessage = "Fetching snapshots...";
       } 
       else if (appState.isLoadingFiles > 0) {
@@ -51,6 +62,7 @@ export class ResticBrowserAppFooter extends MobxLitElement {
       height: 100%;
       padding: 0 8px;
       align-items: center;
+      font-size: smaller;
     }
   `;
 

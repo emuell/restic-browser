@@ -64,6 +64,10 @@ export class AppState {
   @mobx.observable
   isLoadingFiles: number = 0;
 
+  // pending open or dump operations
+  @mobx.observable
+  pendingFileDumps: { file: lib.File, mode: "open" | "restore" }[] = [];
+
   // initialize app state
   constructor() {
     mobx.makeObservable(this);
@@ -161,27 +165,47 @@ export class AppState {
   // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
   async openFile(file: lib.File): Promise<void> {
+    this.pendingFileDumps.push({file, mode: "open"});
+    const removePendingDump = mobx.action(() => {
+      this.pendingFileDumps = this.pendingFileDumps
+        .filter(i => !(i.file.path === file.path && i.mode === "open"));
+    });
     return DumpFileToTemp(this.selectedSnapshotID, file)
       .then((path) => { 
         if (path instanceof Error) {
           throw path;
         }
+        removePendingDump();
         OpenFileOrUrl(path)
           .catch(_err => {
             // ignore
           })
+      })
+      .catch((err) => {
+        removePendingDump();
+        throw err;
       });
   }
 
   // dump specified snapshot file to a custom target directory
   @mobx.action
   dumpFile(file: lib.File): Promise<string> {
+    this.pendingFileDumps.push({file, mode: "restore"});
+    const removePendingDump = mobx.action(() => {
+      this.pendingFileDumps = this.pendingFileDumps
+        .filter(i => !(i.file.path === file.path && i.mode === "restore"));
+    });
     return DumpFile(this.selectedSnapshotID, file)
       .then((path) => { 
         if (path instanceof Error) {
           throw path;
         }
+        removePendingDump();
         return path;
+      })
+      .catch((err) => {
+        removePendingDump();
+        throw err;
       });
   }
 

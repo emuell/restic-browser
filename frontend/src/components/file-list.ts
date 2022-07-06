@@ -79,14 +79,14 @@ export class ResticBrowserFileList extends MobxLitElement {
     appState.dumpFile(file)
       .then((path) => { 
         if (path) {
-          Notification.show(`Successfully restored to: '${path}'`, {
+          Notification.show(`Successfully restored '${file.name} 'to: '${path}'`, {
             position: 'bottom-center',
             theme: "info"
           });
         }
       })
       .catch((err) => { 
-        Notification.show(`Restore operation failed: ${err.message || err}`, {
+        Notification.show(`Restore operation of '${file.name}' failed: ${err.message || err}`, {
           position: 'middle',
           theme: "error"
         });
