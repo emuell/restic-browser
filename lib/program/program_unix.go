@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
-	"syscall"
 )
 
 // Default Run impl

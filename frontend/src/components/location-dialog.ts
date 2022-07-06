@@ -4,7 +4,9 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
 import { appState, repositoryPrefixes, RepositoryType } from '../states/app-state';
-import { SelectLocalRepo } from '../../wailsjs/go/lib/ResticBrowserApp';
+
+import { SelectItem } from '@vaadin/select';
+import { Notification } from '@vaadin/notification';
 
 import '@vaadin/dialog';
 import '@vaadin/password-field';
@@ -12,7 +14,7 @@ import '@vaadin/item';
 import '@vaadin/list-box';
 import '@vaadin/button';
 import '@vaadin/select';
-import { SelectItem } from '@vaadin/select';
+import '@vaadin/notification';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -40,15 +42,12 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   ];
 
   private _browseLocalRepositoryPath() {
-    SelectLocalRepo()
-      .then(mobx.action((directory) => {
-        if (directory instanceof Error) {
-          throw directory; 
-        }
-        appState.repoLocation.path = directory;
-      }))
-      .catch((_err) => {
-        // nothing to do
+    appState.browseLocalRepositoryPath()
+      .catch((err) => {
+        Notification.show(`Invalid selection: '${err.message || err}'`, {
+          position: 'bottom-center',
+          theme: "error"
+        }); 
       });
   }
 

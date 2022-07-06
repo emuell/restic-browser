@@ -64,6 +64,9 @@ func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 		TreatPackagesAsDirectories: true,
 	}
 	dir, err := runtime.OpenDirectoryDialog(*r.context, options)
+	if err == nil && dir == "" {
+		return "", nil
+	}
 	if err != nil || !IsDirectoryARepository(dir) {
 		return "", fmt.Errorf("directory doesn't look like a restic backup location")
 	}

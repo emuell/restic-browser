@@ -8,6 +8,8 @@ import { lib } from '../../wailsjs/go/models';
 
 import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 
+import './spinner';
+
 import '@vaadin/horizontal-layout';
 import '@vaadin/grid';
 
@@ -29,15 +31,6 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
     // bind this to renderers
     this._timeRenderer = this._timeRenderer.bind(this);
-
-    // mobx.reaction(
-    //   () => appState.snapShots, 
-    //   () => {
-    //     if (this._grid) {
-    //       this._grid.recalculateColumnWidths();
-    //     }
-    //   }
-    // );
   }
 
   private _timeRenderer(
@@ -61,8 +54,13 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     #header #title {
       margin: 0px 10px;
       padding: 8px 0px;
-   }
-   #grid {
+    }
+    #loading {
+      height: 100%; 
+      align-items: center;
+      justify-content: center;
+    }
+    #grid {
       height: unset;
       flex: 1;
       margin: 0px 12px;
@@ -75,6 +73,15 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         <strong id="title">Snapshots</strong>
       </vaadin-horizontal-layout>
     `;
+
+    if (appState.isLoadingSnapshots > 0) {
+      return html`
+        ${header}
+        <vaadin-horizontal-layout id="loading">
+          <restic-browser-spinner size="24px"></restic-browser-spinner>
+        </vaadin-horizontal-layout>
+      `;
+    }
 
     return html`
       ${header}

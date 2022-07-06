@@ -1,5 +1,8 @@
 import * as mobx from 'mobx';
 
+import { DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, SelectLocalRepo } 
+  from '../../wailsjs/go/lib/ResticBrowserApp';
+
 import { lib } from '../../wailsjs/go/models';
 
 // -------------------------------------------------------------------------------------------------
@@ -26,6 +29,10 @@ export const repositoryCredentials = new Map<RepositoryType, string[]>([
 
 // -------------------------------------------------------------------------------------------------
 
+/*!
+ * Global application state and controller
+!*/
+
 export class AppState {
 
   // repository setup
@@ -49,26 +56,83 @@ export class AppState {
   
   @mobx.observable
   snapShots: lib.Snapshot[] = [];
+  
+  // loading status 
+  @mobx.observable
+  isLoadingSnapshots: number = 0;
 
+  @mobx.observable
+  isLoadingFiles: number = 0;
+
+  // pending open or dump operations
+  @mobx.observable
+  pendingFileDumps: { file: lib.File, mode: "open" | "restore" }[] = [];
+
+  // initialize app state
+  constructor() {
+    mobx.makeObservable(this);
+
+    // auto-update credentials and prefix on location type changes
+    mobx.reaction(
+      () => this.repoLocation.type, 
+      () => {
+        this._setLocationPrefixFromType(); 
+        this._setLocationCredentialsFromType();
+      }
+    );
+  }
+
+  // reset location, error and snapshots
   @mobx.action
-  resetLocation() {
+  resetLocation(): void {
     this.repoLocation.path = "";
     this.repoError = "";
     this.snapShots = [];
     this.selectedSnapshotID = "";
   }
- 
+
+  // open a directory dialog to select a new local repository
+  // throws, when the selected path does not look like a restic repository
   @mobx.action
-  setNewSnapshots(snapShots: lib.Snapshot[], error: string = "") {
-    this.repoError = error;
-    this.snapShots = snapShots; 
-    if (this.snapShots.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
-      this.selectedSnapshotID = "";
-    }
+  browseLocalRepositoryPath(): Promise<void> {
+    return SelectLocalRepo()
+      .then(mobx.action((directory) => {
+        if (directory instanceof Error) {
+          throw directory; 
+        }
+        if (directory) {
+          appState.repoLocation.path = directory;
+        }
+      }))
   }
 
+  // open a new repository and populate snapshots
   @mobx.action
-  setNewSnapshotId(id: string) {
+  openRepository(): void {
+    ++this.isLoadingSnapshots; 
+    OpenRepo(lib.Location.createFrom(this.repoLocation), this.repoPass)
+      .then(mobx.action((result) => {
+        if (result instanceof Error) {
+          throw result;
+        } 
+        this.repoError = "";
+        this.snapShots = result;
+        if (result.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
+          this.selectedSnapshotID = "";
+        }
+        --this.isLoadingSnapshots; 
+      }))
+      .catch(mobx.action((err) => {
+        this.repoError = err.message || String(err);
+        this.snapShots = [];
+        this.selectedSnapshotID = "";
+        --this.isLoadingSnapshots; 
+      }));
+  }
+  
+  // select a new snapshot
+  @mobx.action
+  setNewSnapshotId(id: string): void {
     if (id && this.snapShots.findIndex((s) => s.id === id) !== -1) {
       this.selectedSnapshotID = id;
     } 
@@ -77,26 +141,94 @@ export class AppState {
     }
   }
 
-  constructor() {
-    mobx.makeObservable(this);
-
-    // create new credentials and prefix on type changes
-    mobx.reaction(
-      () => this.repoLocation.type, 
-      () => {
-        this._setPrefixFromType(); 
-        this._initializeCredentials();
+  // fetch files at \param rootPath in the selected snapshot
+  @mobx.action
+  fetchFiles(rootPath: string): Promise<lib.File[]> {
+    if (! this.selectedSnapshotID) {
+      return Promise.reject(new Error("No snapshot selected"));
+    }
+    ++this.isLoadingFiles;
+    return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
+      .then((files) => {
+        if (files instanceof Error) {
+          throw files;
+        }
+        --this.isLoadingFiles;
+        return files;
+      })
+      .catch((error) => {
+        --this.isLoadingFiles;
+        throw error;
       })
   }
-  
+
+  // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
-  private _setPrefixFromType() {
+  async openFile(file: lib.File): Promise<void> {
+    
+    this.pendingFileDumps.push({file, mode: "open"});
+    
+    const removePendingFile = mobx.action(() => {
+      const index = this.pendingFileDumps.findIndex(
+        item => item.file.path === file.path && item.mode === "open");
+      if (index !== -1) {
+        this.pendingFileDumps.splice(index, 1);
+      }
+    });
+
+    return DumpFileToTemp(this.selectedSnapshotID, file)
+      .then((path) => { 
+        if (path instanceof Error) {
+          throw path;
+        }
+        removePendingFile();
+        OpenFileOrUrl(path)
+          .catch(_err => {
+            // ignore
+          })
+      })
+      .catch((err) => {
+        removePendingFile();
+        throw err;
+      });
+  }
+
+  // dump specified snapshot file to a custom target directory
+  @mobx.action
+  dumpFile(file: lib.File): Promise<string> {
+    
+    this.pendingFileDumps.push({file, mode: "restore"});
+    
+    const removePendingFile = mobx.action(() => {
+      const index = this.pendingFileDumps.findIndex(
+        item => item.file.path === file.path && item.mode === "restore");
+      if (index !== -1) {
+        this.pendingFileDumps.splice(index, 1);
+      }
+    });
+    
+    return DumpFile(this.selectedSnapshotID, file)
+      .then((path) => { 
+        if (path instanceof Error) {
+          throw path;
+        }
+        removePendingFile();
+        return path;
+      })
+      .catch((err) => {
+        removePendingFile();
+        throw err;
+      });
+  }
+
+  @mobx.action
+  private _setLocationPrefixFromType(): void {
     this.repoLocation.prefix = repositoryPrefixes.get(this.repoLocation.type)!;
   }
 
   @mobx.action
-  private _initializeCredentials() {
-    const location = appState.repoLocation;
+  private _setLocationCredentialsFromType(): void {
+    const location = this.repoLocation;
     const reqiredCredentials = repositoryCredentials.get(location.type)!;
     if (location.credentials.map(v => v.name).toString() !== reqiredCredentials.toString()) {
       location.credentials = reqiredCredentials.map((v) => {
