@@ -165,24 +165,30 @@ export class AppState {
   // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
   async openFile(file: lib.File): Promise<void> {
+    
     this.pendingFileDumps.push({file, mode: "open"});
-    const removePendingDump = mobx.action(() => {
-      this.pendingFileDumps = this.pendingFileDumps
-        .filter(i => !(i.file.path === file.path && i.mode === "open"));
+    
+    const removePendingFile = mobx.action(() => {
+      const index = this.pendingFileDumps.findIndex(
+        item => item.file.path === file.path && item.mode === "open");
+      if (index !== -1) {
+        this.pendingFileDumps.splice(index, 1);
+      }
     });
+
     return DumpFileToTemp(this.selectedSnapshotID, file)
       .then((path) => { 
         if (path instanceof Error) {
           throw path;
         }
-        removePendingDump();
+        removePendingFile();
         OpenFileOrUrl(path)
           .catch(_err => {
             // ignore
           })
       })
       .catch((err) => {
-        removePendingDump();
+        removePendingFile();
         throw err;
       });
   }
@@ -190,21 +196,27 @@ export class AppState {
   // dump specified snapshot file to a custom target directory
   @mobx.action
   dumpFile(file: lib.File): Promise<string> {
+    
     this.pendingFileDumps.push({file, mode: "restore"});
-    const removePendingDump = mobx.action(() => {
-      this.pendingFileDumps = this.pendingFileDumps
-        .filter(i => !(i.file.path === file.path && i.mode === "restore"));
+    
+    const removePendingFile = mobx.action(() => {
+      const index = this.pendingFileDumps.findIndex(
+        item => item.file.path === file.path && item.mode === "restore");
+      if (index !== -1) {
+        this.pendingFileDumps.splice(index, 1);
+      }
     });
+    
     return DumpFile(this.selectedSnapshotID, file)
       .then((path) => { 
         if (path instanceof Error) {
           throw path;
         }
-        removePendingDump();
+        removePendingFile();
         return path;
       })
       .catch((err) => {
-        removePendingDump();
+        removePendingFile();
         throw err;
       });
   }
