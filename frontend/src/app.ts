@@ -8,9 +8,6 @@ import './components/snapshot-list';
 import './components/location-dialog';
 import './components/error-message';
 
-import { OpenRepo } from '../wailsjs/go/lib/ResticBrowserApp';
-import { lib } from '../wailsjs/go/models';
-
 import { appState } from './states/app-state';
 
 import '@vaadin/button';
@@ -58,22 +55,6 @@ export class ResticBrowserApp extends MobxLitElement {
     });
   }
 
-  private _openRepository() {
-    ++appState.isLoadingSnapshots; 
-    OpenRepo(lib.Location.createFrom(appState.repoLocation), appState.repoPass)
-      .then((result) => {
-        if (result instanceof Error) {
-          throw result;
-        } 
-        appState.setNewSnapshots(result);
-        --appState.isLoadingSnapshots; 
-      })
-      .catch((err) => {
-        appState.setNewSnapshots([], err.message || String(err));
-        --appState.isLoadingSnapshots; 
-      });
-  }
-  
   static styles = css`
     #layout {
        align-items: stretch; 
@@ -121,12 +102,13 @@ export class ResticBrowserApp extends MobxLitElement {
         <restic-browser-location-dialog 
           .onClose=${() => {
             this._showLocationDialog = false;
-            this._openRepository();
+            appState.openRepository();
           }}
           .onCancel=${() => {
             this._showLocationDialog = false; 
             appState.resetLocation(); 
-          }}></restic-browser-location-dialog>
+          }}>
+        </restic-browser-location-dialog>
       `;
     }
     

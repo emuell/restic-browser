@@ -7,14 +7,12 @@ import * as mobx from 'mobx'
 import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 import { Notification } from '@vaadin/notification';
 
-import './error-message';
-import './spinner';
+import { lib } from '../../wailsjs/go/models';
 
 import { appState } from '../states/app-state';
 
-import { lib } from '../../wailsjs/go/models';
-import { GetFilesForPath, DumpFile, DumpFileToTemp, OpenFileOrUrl } 
-  from '../../wailsjs/go/lib/ResticBrowserApp';
+import './error-message';
+import './spinner';
 
 import '@vaadin/grid';
 import '@vaadin/text-field';
@@ -68,16 +66,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   }
 
   private _openFile(file: lib.File): void {
-    DumpFileToTemp(appState.selectedSnapshotID, file)
-      .then((path) => { 
-        if (path instanceof Error) {
-          throw path;
-        }
-        OpenFileOrUrl(path)
-          .catch(_err => {
-            // ignore
-          })
-      })
+    appState.openFile(file)
       .catch((err) => { 
         Notification.show(`Failed to restore file: ${err.message || err}`, {
           position: 'middle',
@@ -87,11 +76,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   }
 
   private _dumpFile(file: lib.File): void {
-    DumpFile(appState.selectedSnapshotID, file)
+    appState.dumpFile(file)
       .then((path) => { 
-        if (path instanceof Error) {
-          throw path;
-        }
         if (path) {
           Notification.show(`Successfully restored to: '${path}'`, {
             position: 'bottom-center',
@@ -119,37 +105,30 @@ export class ResticBrowserFileList extends MobxLitElement {
   }
   
   private _fetchFiles() {
-    if (appState.selectedSnapshotID) {
-      ++appState.isLoadingFiles;
-      GetFilesForPath(appState.selectedSnapshotID, this._rootPath || "/")
-        .then((files) => {
-          if (files instanceof Error) {
-            throw files;
-          } 
-          // remove . entry
-          files = files.filter((f) => f.path !== this._rootPath);
-          // add .. entry
-          const parentRootPath = this._parentRootPath();
-          if (parentRootPath) {
-            files.push({name: "..", type: "dir", path: parentRootPath})
-          }
-          // assign and sort
-          this._files = files;
-          this._applyColumnSorting();
-          // reset error - if any
-          this._fetchError = "";
-          --appState.isLoadingFiles;
-        })
-        .catch((error) => {
-          this._fetchError = error.message || String(error);
-          this._files = [];
-          --appState.isLoadingFiles;
-        })
-    }
-    else {
+    if (! appState.selectedSnapshotID) {
       this._fetchError = "No snapshot selected";
       this._files = [];
+      return;
     }
+    appState.fetchFiles(this._rootPath)
+      .then((files) => {
+        // remove . entry
+        files = files.filter((f) => f.path !== this._rootPath);
+        // add .. entry
+        const parentRootPath = this._parentRootPath();
+        if (parentRootPath) {
+          files.push({name: "..", type: "dir", path: parentRootPath})
+        }
+        // assign and sort
+        this._files = files;
+        this._applyColumnSorting();
+        // reset error - if any
+        this._fetchError = "";
+      })
+      .catch((error) => {
+        this._fetchError = error.message || String(error);
+        this._files = [];
+      })
   }
 
   private _applyColumnSorting() {
