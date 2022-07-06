@@ -44,20 +44,6 @@ func IsDirectoryARepository(basedir string) bool {
 	return true
 }
 
-func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
-	r.location.SetEnv()
-	os.Setenv("RESTIC_PASSWORD", r.password)
-	defer os.Setenv("RESTIC_PASSWORD", "")
-	defer r.location.UnsetEnv()
-	bucketOrPath := r.location.Path
-	if r.location.Prefix != "" {
-		bucketOrPath = r.location.Prefix + ":" + bucketOrPath
-	}
-	command = append(command, "--repo", bucketOrPath)
-	stdout, stderr, code, err = r.restic.Run(command)
-	return
-}
-
 func (r *Repository) GetSnapshots() ([]*Snapshot, error) {
 	stdout, stderr, code, err := r.run("snapshots", "--json")
 	if code != 0 || err != nil {
@@ -76,16 +62,6 @@ func (r *Repository) GetSnapshots() ([]*Snapshot, error) {
 		return nil, fmt.Errorf("no snapshots found")
 	}
 	return snapshots, nil
-}
-
-// Credit: https://www.programming-books.io/essential/go/normalize-newlines-1d3abcf6f17c4186bb9617fa14074e48#9cdc1dd890594c15b58894a737968c8d
-func (r *Repository) normalizeNewlines(in string) string {
-	d := []byte(in)
-	// replace CR LF \r\n (windows) with LF \n (unix)
-	d = bytes.Replace(d, []byte{13, 10}, []byte{10}, -1)
-	// replace CF \r (mac) with LF \n (unix)
-	d = bytes.Replace(d, []byte{13}, []byte{10}, -1)
-	return string(d)
 }
 
 func (r *Repository) GetFiles(snapshot *Snapshot, path string) ([]*File, error) {
@@ -130,29 +106,53 @@ func (r *Repository) RestoreFile(snapshot *Snapshot, file *File, targetPath stri
 
 func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string) (string, error) {
 
-	// TODO: should pipe stdOut to a stream instead:
-	// https://stackoverflow.com/questions/18986943/in-golang-how-can-i-write-the-stdout-of-an-exec-cmd-to-a-file
-
 	// open the target file for writing
-	targetFile := filepath.Join(targetPath, file.Name)
+	targetFileName := filepath.Join(targetPath, file.Name)
 	if file.Type == "dir" {
-		targetFile = targetFile + ".zip"
+		targetFileName = targetFileName + ".zip"
 	}
-	if fs.FileExists(targetFile) {
-		return "", fmt.Errorf("target file already exists")
+	if fs.FileExists(targetFileName) {
+		return "", fmt.Errorf("target file '%s' already exists", targetFileName)
 	}
-	stdout, stderr, code, _ := r.run("dump", "-a", "zip", snapshot.ID, file.Path)
+	// open target file
+	targetFile, err := os.Create(targetFileName)
+	if err != nil {
+		return "", err
+	}
+	defer targetFile.Close()
+	// run restic cmd
+	stderr, code, _ := r.runRedirected(targetFile, "dump", "-a", "zip", snapshot.ID, file.Path)
 	if code != 0 {
 		return "", fmt.Errorf(stderr)
 	}
-	outfile, err := os.Create(targetFile)
-	if err != nil {
-		return "", err
-	}
-	defer outfile.Close()
-	_, err = outfile.Write([]byte(stdout))
-	if err != nil {
-		return "", err
-	}
-	return targetFile, nil
+	return targetFileName, nil
+}
+
+func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
+	r.location.SetEnv()
+	os.Setenv("RESTIC_PASSWORD", r.password)
+	defer r.location.UnsetEnv()
+	defer os.Setenv("RESTIC_PASSWORD", "")
+	command = append(command, "--repo", r.location.PathOrBucketName())
+	stdout, stderr, code, err = r.restic.Run(command)
+	return
+}
+
+func (r *Repository) runRedirected(stdout *os.File, command ...string) (stderr string, code int, err error) {
+	r.location.SetEnv()
+	os.Setenv("RESTIC_PASSWORD", r.password)
+	defer r.location.UnsetEnv()
+	defer os.Setenv("RESTIC_PASSWORD", "")
+	command = append(command, "--repo", r.location.PathOrBucketName())
+	stderr, code, err = r.restic.RunRedirected(stdout, command)
+	return
+}
+
+func (r *Repository) normalizeNewlines(str string) string {
+	strBytes := []byte(str)
+	// replace CR LF \r\n (windows) with LF \n (unix)
+	strBytes = bytes.Replace(strBytes, []byte{13, 10}, []byte{10}, -1)
+	// replace CF \r (mac) with LF \n (unix)
+	strBytes = bytes.Replace(strBytes, []byte{13}, []byte{10}, -1)
+	return string(strBytes)
 }
