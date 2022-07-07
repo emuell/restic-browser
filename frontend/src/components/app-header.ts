@@ -23,14 +23,14 @@ export class ResticBrowserAppHeader extends MobxLitElement {
     }
     #header h3 {
       font-size: var(--lumo-font-size-l);
-      margin-left: 20px;
-      margin-right: 20px;
+      margin-left: 12px;
+      margin-right: 12px;
     }
     #header #repoPath {
-      margin-left: 10px;
+      margin-left: 12px;
       color: var(--lumo-tint-50pct);
       margin-top: 4px;
-      margin-right: 20px;
+      margin-right: 12px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }

@@ -196,14 +196,14 @@ export class ResticBrowserFileList extends MobxLitElement {
     model: GridItemModel<lib.File>
   ) {
     const downloadButton = html`
-      <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;"
+      <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset; padding: 0;"
           @click=${() => this._dumpFile(model.item)}>
         <vaadin-icon icon="vaadin:download"></vaadin-icon>
       </vaadin-button>
     `;
     if (model.item.type === "dir") {
       const setRootpathButton = html`
-        <vaadin-button theme="small primary icon" style="height: 1.5rem; margin: unset;" 
+        <vaadin-button theme="small primary icon" style="height: 1.5rem; margin: unset; padding: 0;" 
           @click=${() => this._setRootPath(model.item.path)}>
           <vaadin-icon icon="vaadin:level-right"></vaadin-icon>
         </vaadin-button>
@@ -220,7 +220,7 @@ export class ResticBrowserFileList extends MobxLitElement {
       }
     } else {
       render(html`
-          <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;" 
+          <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;padding: 0;" 
               @click=${() => this._openFile(model.item)}>
             <vaadin-icon icon="lumo:eye"></vaadin-icon>
           </vaadin-button>
@@ -307,18 +307,18 @@ export class ResticBrowserFileList extends MobxLitElement {
     #header {
       align-items: center; 
       background: var(--lumo-shade-10pct);
-      padding: 8px;
+      padding: 4px;
     }
     #header #title {
       flex: 0;
       margin: 0px 10px;
-      padding: 8px 0px;
+      padding: 4px 0px;
      }
     #header #rootPath {
       flex: 1;
       padding: unset;
       padding-left: 4px;
-      padding-right: 8px;
+      padding-right: 4px;
     }
     #loading {
       height: 100%; 
@@ -328,7 +328,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     #grid {
       height: unset;
       flex: 1;
-      margin: 0px 12px;
+      margin: 0px 8px;
     }
   `;
 

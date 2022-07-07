@@ -75,11 +75,11 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     #header {
       align-items: center; 
       background: var(--lumo-shade-10pct);
-      padding: 8px;
+      padding: 4px;
     }
     #header #title {
       margin: 0px 10px;
-      padding: 8px 0px;
+      padding: 4px 0px;
     }
     #loading {
       height: 100%; 
@@ -89,7 +89,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     #grid {
       height: unset;
       flex: 1;
-      margin: 0px 12px;
+      margin: 0px 8px;
     }
   `;
   

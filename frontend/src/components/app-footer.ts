@@ -60,7 +60,7 @@ export class ResticBrowserAppFooter extends MobxLitElement {
     #footer {
       background: var(--lumo-shade-10pct);
       height: 100%;
-      padding: 0 8px;
+      padding: 0 4px;
       align-items: center;
       font-size: smaller;
     }
