@@ -12,6 +12,7 @@ import './components/location-dialog';
 import './components/error-message';
 
 import '@vaadin/vertical-layout';
+import '@vaadin/split-layout';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -32,11 +33,17 @@ export class ResticBrowserApp extends MobxLitElement {
     #footer {
       height: auto;
     }
+    #split {
+      height: 100%;
+      width: 100vw;
+    }
     #snapshots {
-      height: 35vh;
+      height: 30%;
+      min-height: 25%;
     }
     #filelist {
-      height: 100%;
+      height: 70%;
+      min-height: 25%;
     }
     #footer {
       height: 44px;
@@ -82,9 +89,11 @@ export class ResticBrowserApp extends MobxLitElement {
         <restic-browser-app-header id="header" 
           .openRepositoryClick=${() => this._showLocationDialog = true }>
         </restic-browser-app-header>
+        <vaadin-split-layout id="split" orientation="vertical" theme="small">
         <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
-        <restic-browser-file-list id="filelist"></restic-browser-file-list>
-        <restic-browser-app-footer id="footer"></restic-browser-app-footer> 
+          <restic-browser-file-list id="filelist"></restic-browser-file-list>
+        </vaadin-split-layout> 
+        <restic-browser-app-footer id="footer"></restic-browser-app-footer>
       </vaadin-vertical-layout>
     `;
   }
