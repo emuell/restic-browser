@@ -11,6 +11,7 @@ import (
 
 type ResticBrowserApp struct {
 	context     *context.Context
+	tempPath    string
 	restic      *Restic
 	resticError error
 	repo        *Repository
@@ -44,6 +45,19 @@ func (r *ResticBrowserApp) Startup(ctx context.Context) {
 			Icon:    nil,
 		}
 		runtime.MessageDialog(*r.context, options)
+	}
+	// create app temp dir
+	tempPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
+	if err != nil {
+		fmt.Printf("failed to create app temp dir: %s\n", err.Error())
+	}
+	r.tempPath = tempPath
+}
+
+func (r *ResticBrowserApp) Shutdown(ctx context.Context) {
+	err := os.RemoveAll(r.tempPath)
+	if err != nil {
+		fmt.Printf("failed to remove app temp dir: %s\n", err.Error())
 	}
 }
 
@@ -164,12 +178,11 @@ func (r *ResticBrowserApp) DumpFileToTemp(snapshotID string, file *File) (string
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
 	}
-	targetPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
+	targetPath, err := ioutil.TempDir(r.tempPath, "dump")
 	if err != nil {
 		return "", err
 	}
-	var targetFilePath string
-	targetFilePath, err = r.repo.DumpFile(snapshot, file, targetPath)
+	targetFilePath, err := r.repo.DumpFile(snapshot, file, targetPath)
 	if err != nil {
 		return "", err
 	}
