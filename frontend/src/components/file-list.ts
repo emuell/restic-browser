@@ -11,6 +11,8 @@ import { lib } from '../../wailsjs/go/models';
 
 import { appState } from '../states/app-state';
 
+import { OpenFileOrUrl } from '../../wailsjs/go/lib/ResticBrowserApp';
+
 import './error-message';
 import './spinner';
 
@@ -83,10 +85,22 @@ export class ResticBrowserFileList extends MobxLitElement {
     appState.dumpFile(file)
       .then((path) => { 
         if (path) {
-          Notification.show(`Successfully restored '${file.name} 'to: '${path}'`, {
-            position: 'bottom-center',
-            theme: "info"
-          });
+          Notification.show(
+            html`<p>
+              Successfully restored '${file.name}' to 
+                <a href=${path} @click=${() => { 
+                    OpenFileOrUrl(path)
+                      .catch(_err => { /* ignore */ }) 
+                  }}>
+                  ${path}
+                </a>
+             </p>`,
+            {
+              position: 'bottom-center',
+              duration: 10000,
+              theme: "info"
+            }
+          );
         }
       })
       .catch((err) => { 
