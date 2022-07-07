@@ -103,6 +103,7 @@ body {
     font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
         "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
         sans-serif;
+    overscroll-behavior: none;
 }
 
 h1,
@@ -130,4 +131,16 @@ code,
 pre {
     background-color: var(--lumo-contrast-10pct);
     border-radius: var(--lumo-border-radius-m);
+}
+
+/* disable text selection */
+:not(input):not(textarea),
+:not(input):not(textarea)::after,
+:not(input):not(textarea)::before {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+input, button, textarea, :focus {
+    outline: none;
 }
