@@ -1,12 +1,13 @@
-import { css, html, render } from 'lit'
-import { customElement, state } from 'lit/decorators.js'
+import { css, html, PropertyValues, render } from 'lit'
+import { customElement, query, state } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
+import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
 
 import { lib } from '../../wailsjs/go/models';
 
-import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 
 import './spinner';
 
@@ -23,14 +24,39 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
   @state() 
   private _selectedItems: lib.Snapshot[] = [];
 
-  // @query("#grid")
-  // private _grid!: Grid<lib.Snapshot>;
+  @query("#grid")
+  private _grid!: Grid<lib.Snapshot> | null;
+  private _recalculateColumnWidths: boolean = false;
 
   constructor() {
     super();
 
+    mobx.reaction(
+      () => appState.snapShots, 
+      (snapShots: lib.Snapshot[]) => {
+        // auto-select first snapshot when none is selected
+        if (snapShots.length && ! this._selectedItems.length) {
+          const firstSnapShot = snapShots[0]
+          this._selectedItems = [firstSnapShot];
+          appState.setNewSnapshotId(firstSnapShot.id);
+        }
+        // request auto column width update
+        this._recalculateColumnWidths = true;
+      }, 
+      { fireImmediately: true }
+    );
+    
     // bind this to renderers
     this._timeRenderer = this._timeRenderer.bind(this);
+  }
+
+  private _activeItemChanged(e: GridActiveItemChangedEvent<lib.Snapshot>) {
+    const item = e.detail.value;
+    // don't deselect selected itesm
+    if (item) {
+      this._selectedItems = [item];
+      appState.setNewSnapshotId(item.id);
+    }
   }
 
   private _timeRenderer(
@@ -67,6 +93,17 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     }
   `;
   
+  updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+    // apply auto column width updates after content got rendered
+    if (this._recalculateColumnWidths) {
+      this._recalculateColumnWidths = false;
+      if (this._grid) {
+        this._grid.recalculateColumnWidths();
+      }
+    }
+  }
+  
   render() {
     const header = html`
       <vaadin-horizontal-layout id="header" style="">
@@ -90,18 +127,14 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         theme="compact no-border" 
         .items=${appState.snapShots}
         .selectedItems=${this._selectedItems}
-        @active-item-changed=${(e: GridActiveItemChangedEvent<lib.Snapshot>) => {
-          const item = e.detail.value;
-          appState.setNewSnapshotId(item ? item.id : "");
-          this._selectedItems = item ? [item] : [];
-        }}
+        @active-item-changed=${this._activeItemChanged}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="short_id"></vaadin-grid-column>
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="time" 
            .renderer=${this._timeRenderer}></vaadin-grid-column>
         <vaadin-grid-column .flexGrow=${1} path="paths"></vaadin-grid-column>
         <vaadin-grid-column .flexGrow=${1} path="tags"></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} path="hostname"></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-column>
         <!-- <vaadin-grid-column path="username"></vaadin-grid-column> -->
       </vaadin-grid>
     `;

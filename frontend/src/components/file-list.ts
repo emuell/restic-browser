@@ -1,10 +1,10 @@
-import { css, html, render } from 'lit'
-import { customElement, state } from 'lit/decorators.js'
+import { css, html, PropertyValues, render } from 'lit'
+import { customElement, query, state } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
 import prettyBytes from 'pretty-bytes';
 import * as mobx from 'mobx'
 
-import { GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 import { Notification } from '@vaadin/notification';
 
 import { lib } from '../../wailsjs/go/models';
@@ -26,6 +26,9 @@ import '@vaadin/notification';
 @customElement('restic-browser-file-list')
 export class ResticBrowserFileList extends MobxLitElement {
   
+  @mobx.observable
+  private _rootPath: string = "";
+
   @state() 
   private _files: lib.File[] = [];
   
@@ -33,27 +36,28 @@ export class ResticBrowserFileList extends MobxLitElement {
   private _fetchError: string = "";
 
   @state() 
-  private _selectedFiles: lib.File[] = [];
-  
-  @mobx.observable
-  private _rootPath: string = "";
+  private _selectedFiles: lib.File[] = [];  
+  private _selectedItemsClicked = new Set<string>();
 
-  // @query("#grid")
-  // private _grid!: Grid<lib.File>;
+  @query("#grid")
+  private _grid!: Grid<lib.File> | null;
+  private _recalculateColumnWidths: boolean = false;
 
   constructor() {
     super();
     mobx.makeObservable(this);
 
-    // fetch file list on repo path, snapshot or root dir changes - debounced
+    // fetch file list on repo path, snapshot or root dir changes
     mobx.reaction(
       () => appState.repoLocation.type + ":" + appState.repoLocation.path + ":" + 
               appState.selectedSnapshotID + ":" + this._rootPath,
       () => this._fetchFiles(),
-      { fireImmediately: true })
+      { fireImmediately: true }
+    );
 
     // bind context for renderers
     this._pathRenderer = this._pathRenderer.bind(this);
+    this._nameRenderer = this._nameRenderer.bind(this);
     this._modeRenderer = this._modeRenderer.bind(this);
     this._cTimeRenderer = this._cTimeRenderer.bind(this);
     this._mTimeRenderer = this._mTimeRenderer.bind(this);
@@ -107,6 +111,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   private _fetchFiles() {
     if (! appState.selectedSnapshotID) {
       this._fetchError = "No snapshot selected";
+      this._selectedFiles = [];
       this._files = [];
       return;
     }
@@ -120,13 +125,17 @@ export class ResticBrowserFileList extends MobxLitElement {
           files.push({name: "..", type: "dir", path: parentRootPath})
         }
         // assign and sort
+        this._selectedFiles = [];
         this._files = files;
         this._applyColumnSorting();
-        // reset error - if any
+        // request auto column width update
+        this._recalculateColumnWidths = true;
+        // reset fetch errors - if any
         this._fetchError = "";
       })
       .catch((error) => {
         this._fetchError = error.message || String(error);
+        this._selectedFiles = [];
         this._files = [];
       })
   }
@@ -141,6 +150,30 @@ export class ResticBrowserFileList extends MobxLitElement {
       }
       return a.name.localeCompare(b.name);
     });
+  }
+
+  private _activeItemChanged(e: GridActiveItemChangedEvent<lib.File>) {
+    const item = e.detail.value;
+    // don't deselect selected itesm
+    if (item) {
+      this._selectedFiles = [item];
+    }
+    // double click handling
+    const doubleClickItem = this._selectedFiles.length ?
+      this._selectedFiles[0] : undefined;
+    if (doubleClickItem) {
+      if (this._selectedItemsClicked.has(doubleClickItem.path)) {
+        if (doubleClickItem.type === "dir") {
+          this._setRootPath(doubleClickItem.path);
+        } else {
+          this._openFile(doubleClickItem); 
+        }
+      }
+      this._selectedItemsClicked.add(doubleClickItem.path);
+      setTimeout(() => {
+        this._selectedItemsClicked.delete(doubleClickItem.path);
+      }, 500);
+    }
   }
 
   private _pathRenderer(
@@ -180,6 +213,26 @@ export class ResticBrowserFileList extends MobxLitElement {
           ${downloadButton}
         `, root)
     }     
+  }
+  
+  private _nameRenderer(
+    root: HTMLElement, 
+    _column: GridColumn<lib.File>, 
+    model: GridItemModel<lib.File>
+  ) {
+    if (model.item.type === "dir") {
+      render(html`
+          <vaadin-button theme="small tertiary icon" 
+              style="height: 1.25rem; margin: unset; padding: 0;">
+            <vaadin-icon icon="vaadin:folder"
+              style="margin-bottom: 2px; color: var(--lumo-contrast-50pct);">
+            </vaadin-icon>
+          </vaadin-button>
+          ${model.item.name}
+        `, root);
+    } else{
+      render(html`${model.item.name}`, root);
+    }
   }
   
   private _sizeRenderer(
@@ -265,6 +318,17 @@ export class ResticBrowserFileList extends MobxLitElement {
     }
   `;
 
+  updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+    // apply auto column width updates after content got rendered
+    if (this._recalculateColumnWidths) {
+      this._recalculateColumnWidths = false;
+      if (this._grid) {
+        this._grid.recalculateColumnWidths();
+      }
+    }
+  }
+
   render() {
     const header = html`
       <vaadin-horizontal-layout id="header">
@@ -315,14 +379,12 @@ export class ResticBrowserFileList extends MobxLitElement {
         theme="compact no-border small" 
         .items=${this._files}
         .selectedItems=${this._selectedFiles}
-        @active-item-changed=${(e: GridActiveItemChangedEvent<lib.File>) => {
-          const item = e.detail.value;
-          this._selectedFiles = item ? [item] : [];
-        }}
+        @active-item-changed=${this._activeItemChanged}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" 
           .renderer=${this._pathRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${1} path="name"></vaadin-grid-column>
+        <vaadin-grid-column .flexGrow=${1} path="name"
+          .renderer=${this._nameRenderer}></vaadin-grid-column>
         <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="size"
           .renderer=${this._sizeRenderer}></vaadin-grid-column>
         <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="mode"
