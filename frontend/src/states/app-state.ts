@@ -109,7 +109,8 @@ export class AppState {
   // open a new repository and populate snapshots
   @mobx.action
   openRepository(): void {
-    ++this.isLoadingSnapshots; 
+    ++this.isLoadingSnapshots;
+    this.repoError = "";
     OpenRepo(lib.Location.createFrom(this.repoLocation), this.repoPass)
       .then(mobx.action((result) => {
         if (result instanceof Error) {
