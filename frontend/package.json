@@ -1,7 +1,7 @@
 {
   "name": "restic-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/app.es.js",
   "exports": {
     ".": "./dist/app.es.js"
