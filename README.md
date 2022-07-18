@@ -1,4 +1,6 @@
-# Restic Browser
+<img src="./frontend/src/assets/images/eye.png" alt="drawing" height="48px"/> <img src="./frontend/src/assets/images/logo.png" alt="drawing" height="48px"/> 
+
+---
 
 A simple, cross-platform [restic backup](https://github.com/restic/restic) GUI for browsing and restoring restic repositories. 
 
