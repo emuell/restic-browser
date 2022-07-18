@@ -4,6 +4,9 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 
 import { appState } from '../states/app-state';
 
+import eye from '../assets/images/eye.png'
+import logo from '../assets/images/logo.png'
+
 import '@vaadin/horizontal-layout';
 import '@vaadin/button';
 
@@ -21,10 +24,16 @@ export class ResticBrowserAppHeader extends MobxLitElement {
     #header {
       align-items: center;
     }
-    #header h3 {
-      font-size: var(--lumo-font-size-l);
+    #header #eye {
       margin-left: 12px;
+      width: auto; 
+      height: var(--lumo-font-size-xxl);
+    }
+    #header #logo {
+      margin-left: 8px;
       margin-right: 12px;
+      width: auto; 
+      height: var(--lumo-font-size-xl);
     }
     #header #repoPath {
       margin-left: 12px;
@@ -50,7 +59,8 @@ export class ResticBrowserAppHeader extends MobxLitElement {
     
     return html`
       <vaadin-horizontal-layout id="header">
-        <h3>Restic-Browser</h3>
+        <img src=${eye} id="eye" />
+        <img src=${logo} id="logo" alt="Restic-Browser" />
         <vaadin-button theme="primary" 
           @click=${() => {
             if (this.openRepositoryClick) { 

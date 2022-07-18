@@ -59,7 +59,7 @@
     --lumo-error-color: hsl(3, 79%, 49%);
     --lumo-error-color-50pct: hsla(3, 75%, 62%, 0.5);
     --lumo-error-color-10pct: hsla(3, 75%, 62%, 0.14);
-    --lumo-error-text-color: hsl(3, 100%, 80%);
+    --lumo-error-text-color: hsl(25, 100%, 50%);
 
     /* Success */
     --lumo-success-color: hsl(145, 72%, 30%);
