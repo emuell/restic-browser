@@ -8,5 +8,13 @@
   "author": {
     "name": "Eduard Müller",
     "email": "mail@emuell.net"
+  },
+  "info": {
+    "productName": "Restic-Browser",
+    "companyName": "The Restic-Browser Team",
+    "productVersion": "0.2.0",
+    "copyright": "See https://github.com/emuell/restic-browser",
+	  "description": "Restic Backup Browser GUI",
+    "comments": "Built using Wails: https://wails.io"
   }
 }
