@@ -78,7 +78,7 @@ jobs:
         MACOS_CODE_CERT_TEAM_ID: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
         MACOS_EXECUTABLE_PATH: ./build/bin/${{ matrix.config.executable_name }}
       run: |
-        echo $MACOS_CODE_CERT_DATA | base64 —decode > certificate.p12
+        echo $MACOS_CODE_CERT_DATA | base64 -—decode > certificate.p12
         security create-keychain -p $MACOS_CODE_CERT_PASS build.keychain
         security default-keychain -s build.keychain
         security unlock-keychain -p $MACOS_CODE_CERT_PASS build.keychain
