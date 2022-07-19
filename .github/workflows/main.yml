@@ -18,18 +18,21 @@ jobs:
         - {
             name: "Windows", 
             artifact: "Windows.tar.gz",
+            executable_name: "Restic-Browser.exe",
             os: windows-2022,
             build_tags: "production,desktop",
           }
         - {
             name: "Ubuntu", 
             artifact: "Linux.tar.gz",
+            executable_name: "restic-browser",
             os: ubuntu-22.04,
             build_tags: "production,desktop",
           }
         - {
             name: "macOS", 
             artifact: "macOS.tar.gz",
+            executable_name: "restic-browser.app",
             os: macos-11,
             build_tags: "production,desktop",
           }
@@ -59,6 +62,40 @@ jobs:
     - name: Build
       run: wails build -tags ${{ matrix.config.build_tags }}
 
+    - name: Code Sign (Windows)
+      if: ${{ matrix.config.name == 'Windows' }}
+      uses: lando/code-sign-action@v2
+      with:
+        file: build/bin/${{ matrix.config.executable_name }}
+        certificate-data: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
+        certificate-password: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
+
+    - name: Code Sign (macOS)
+      if: ${{ matrix.config.name == 'macOS' }}
+      env: 
+        MACOS_CODE_CERT_DATA: ${{ secrets.MACOS_CODE_CERT_DATA }}
+        MACOS_CODE_CERT_PASS: ${{ secrets.MACOS_CODE_CERT_PASS }}
+        MACOS_CODE_CERT_TEAM_ID: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
+        MACOS_EXECUTABLE_PATH: ./build/bin/${{ matrix.config.executable_name }}
+      run: |
+        echo $MACOS_CODE_CERT_DATA | base64 --decode > certificate.p12
+        security create-keychain -p $MACOS_CODE_CERT_PASS build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p $MACOS_CODE_CERT_PASS build.keychain
+        security import certificate.p12 -k build.keychain -P $MACOS_CODE_CERT_PASS -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CODE_CERT_PASS build.keychain
+        /usr/bin/codesign --force -s $MACOS_CODE_CERT_TEAM_ID --deep --options=runtime "$MACOS_EXECUTABLE_PATH"
+
+    - name: Notarize (macOS)
+      if: ${{ matrix.config.name == 'macOS' }}
+      uses: devbotsxyz/xcode-notarize@v1
+      with:
+        appstore-connect-username: ${{ secrets.MACOS_NOTARY_USER }}
+        appstore-connect-password: ${{ secrets.MACOS_NOTARY_PASS }}
+        primary-bundle-id: com.wails.restic-browser
+        product-path: ./build/bin/${{ matrix.config.executable_name }}
+        verbose: false
+    
     - name: Archive
       uses: thedoctor0/zip-release@main
       with:
