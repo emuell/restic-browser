@@ -18,18 +18,21 @@ jobs:
         - {
             name: "Windows", 
             artifact: "Windows.tar.gz",
+            executable_name: "Restic-Browser.exe",
             os: windows-2022,
             build_tags: "production,desktop",
           }
         - {
             name: "Ubuntu", 
             artifact: "Linux.tar.gz",
+            executable_name: "Restic-Browser",
             os: ubuntu-22.04,
             build_tags: "production,desktop",
           }
         - {
             name: "macOS", 
             artifact: "macOS.tar.gz",
+            executable_name: "Restic-Browser.app",
             os: macos-11,
             build_tags: "production,desktop",
           }
@@ -58,6 +61,14 @@ jobs:
     
     - name: Build
       run: wails build -tags ${{ matrix.config.build_tags }}
+
+    - name: Sign (Windows)
+      uses: lando/code-sign-action@v2
+      with:
+        file: build/bin/${{ matrix.config.executable_name }}
+        certificate-data: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
+        certificate-password: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
+      if: ${{ matrix.config.name == 'Windows' }}
 
     - name: Archive
       uses: thedoctor0/zip-release@main
