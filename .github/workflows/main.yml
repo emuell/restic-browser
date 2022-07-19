@@ -32,7 +32,7 @@ jobs:
         - {
             name: "macOS", 
             artifact: "macOS.tar.gz",
-            executable_name: "restic-browser.app",
+            executable_name: "restic-browser.app/Contents/MacOS/restic-browser",
             os: macos-11,
             build_tags: "production,desktop",
           }
