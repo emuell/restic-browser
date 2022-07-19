@@ -62,13 +62,22 @@ jobs:
     - name: Build
       run: wails build -tags ${{ matrix.config.build_tags }}
 
-    - name: Sign (Windows)
+    - name: Code Sign (Windows)
       uses: lando/code-sign-action@v2
       with:
         file: build/bin/${{ matrix.config.executable_name }}
         certificate-data: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
         certificate-password: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
       if: ${{ matrix.config.name == 'Windows' }}
+
+    - name: Code Sign (macOS)
+      uses: lando/code-sign-action@v2
+      with:
+        file: build/bin/${{ matrix.config.executable_name }}
+        certificate-data: ${{ secrets.MACOS_CODE_CERT_DATA }}
+        certificate-password: ${{ secrets.MACOS_CODE_CERT_PASS }}
+        apple-team-id: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
+      if: ${{ matrix.config.name == 'macOS' }}
 
     - name: Archive
       uses: thedoctor0/zip-release@main
