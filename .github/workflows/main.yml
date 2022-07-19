@@ -77,6 +77,11 @@ jobs:
         certificate-data: ${{ secrets.MACOS_CODE_CERT_DATA }}
         certificate-password: ${{ secrets.MACOS_CODE_CERT_PASS }}
         apple-team-id: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
+        apple-product-id: com.wails.restic-browser
+        apple-notary-user: ${{ secrets.MACOS_NOTARY_USER }}
+        apple-notary-password: ${{ secrets.MACOS_NOTARY_PASS }}
+        options: --options runtime
+
       if: ${{ matrix.config.name == 'macOS' }}
 
     - name: Archive
