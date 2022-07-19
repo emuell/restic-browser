@@ -25,14 +25,14 @@ jobs:
         - {
             name: "Ubuntu", 
             artifact: "Linux.tar.gz",
-            executable_name: "Restic-Browser",
+            executable_name: "restic-browser",
             os: ubuntu-22.04,
             build_tags: "production,desktop",
           }
         - {
             name: "macOS", 
             artifact: "macOS.tar.gz",
-            executable_name: "Restic-Browser.app",
+            executable_name: "restic-browser.app",
             os: macos-11,
             build_tags: "production,desktop",
           }
