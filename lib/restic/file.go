@@ -1,4 +1,4 @@
-package lib
+package restic
 
 // contains all the data relating to a restic File
 type File struct {

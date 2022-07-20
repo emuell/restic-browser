@@ -3,7 +3,7 @@ import * as mobx from 'mobx';
 import { DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, SelectLocalRepo } 
   from '../../wailsjs/go/lib/ResticBrowserApp';
 
-import { lib } from '../../wailsjs/go/models';
+import { restic } from '../../wailsjs/go/models';
 
 // -------------------------------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ export class AppState {
   selectedSnapshotID: string = "";
   
   @mobx.observable
-  snapShots: lib.Snapshot[] = [];
+  snapShots: restic.Snapshot[] = [];
   
   // loading status 
   @mobx.observable
@@ -66,7 +66,7 @@ export class AppState {
 
   // pending open or dump operations
   @mobx.observable
-  pendingFileDumps: { file: lib.File, mode: "open" | "restore" }[] = [];
+  pendingFileDumps: { file: restic.File, mode: "open" | "restore" }[] = [];
 
   // initialize app state
   constructor() {
@@ -111,7 +111,7 @@ export class AppState {
   openRepository(): void {
     ++this.isLoadingSnapshots;
     this.repoError = "";
-    OpenRepo(lib.Location.createFrom(this.repoLocation), this.repoPass)
+    OpenRepo(restic.Location.createFrom(this.repoLocation), this.repoPass)
       .then(mobx.action((result) => {
         if (result instanceof Error) {
           throw result;
@@ -144,7 +144,7 @@ export class AppState {
 
   // fetch files at \param rootPath in the selected snapshot
   @mobx.action
-  fetchFiles(rootPath: string): Promise<lib.File[]> {
+  fetchFiles(rootPath: string): Promise<restic.File[]> {
     if (! this.selectedSnapshotID) {
       return Promise.reject(new Error("No snapshot selected"));
     }
@@ -165,7 +165,7 @@ export class AppState {
 
   // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
-  async openFile(file: lib.File): Promise<void> {
+  async openFile(file: restic.File): Promise<void> {
     
     this.pendingFileDumps.push({file, mode: "open"});
     
@@ -196,7 +196,7 @@ export class AppState {
 
   // dump specified snapshot file to a custom target directory
   @mobx.action
-  dumpFile(file: lib.File): Promise<string> {
+  dumpFile(file: restic.File): Promise<string> {
     
     this.pendingFileDumps.push({file, mode: "restore"});
     

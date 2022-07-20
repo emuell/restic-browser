@@ -1,4 +1,4 @@
-package lib
+package restic
 
 // holds snapshot info
 type Snapshot struct {
