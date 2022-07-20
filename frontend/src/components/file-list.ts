@@ -7,7 +7,7 @@ import * as mobx from 'mobx'
 import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 import { Notification } from '@vaadin/notification';
 
-import { lib } from '../../wailsjs/go/models';
+import { restic } from '../../wailsjs/go/models';
 
 import { appState } from '../states/app-state';
 
@@ -32,17 +32,17 @@ export class ResticBrowserFileList extends MobxLitElement {
   private _rootPath: string = "";
 
   @state() 
-  private _files: lib.File[] = [];
+  private _files: restic.File[] = [];
   
   @state()
   private _fetchError: string = "";
 
   @state() 
-  private _selectedFiles: lib.File[] = [];  
+  private _selectedFiles: restic.File[] = [];  
   private _selectedItemsClicked = new Set<string>();
 
   @query("#grid")
-  private _grid!: Grid<lib.File> | null;
+  private _grid!: Grid<restic.File> | null;
   private _recalculateColumnWidths: boolean = false;
 
   constructor() {
@@ -71,7 +71,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     this._rootPath = newPath;
   }
 
-  private _openFile(file: lib.File): void {
+  private _openFile(file: restic.File): void {
     appState.openFile(file)
       .catch((err) => { 
         Notification.show(`Failed to restore file: ${err.message || err}`, {
@@ -81,7 +81,7 @@ export class ResticBrowserFileList extends MobxLitElement {
       });
   }
 
-  private _dumpFile(file: lib.File): void {
+  private _dumpFile(file: restic.File): void {
     appState.dumpFile(file)
       .then((path) => { 
         if (path) {
@@ -169,7 +169,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     });
   }
 
-  private _activeItemChanged(e: GridActiveItemChangedEvent<lib.File>) {
+  private _activeItemChanged(e: GridActiveItemChangedEvent<restic.File>) {
     const item = e.detail.value;
     // don't deselect selected itesm
     if (item) {
@@ -195,8 +195,8 @@ export class ResticBrowserFileList extends MobxLitElement {
 
   private _pathRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     const downloadButton = html`
       <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset; padding: 0;"
@@ -234,8 +234,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _nameRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     if (model.item.type === "dir") {
       render(html`
@@ -254,8 +254,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _sizeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     render(html`
         ${model.item.size ? prettyBytes(model.item.size) : "-"}
@@ -264,8 +264,8 @@ export class ResticBrowserFileList extends MobxLitElement {
 
   private _modeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     render(html`
         ${model.item.mode ? (model.item.mode & 0xFFFF).toString(8) : "-"}
@@ -274,8 +274,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _aTimeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     render(html`
         ${model.item.atime ? new Date(model.item.atime).toLocaleString() : "-"}
@@ -284,8 +284,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _cTimeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     render(html`
         ${model.item.ctime ? new Date(model.item.ctime).toLocaleString() : "-"}
@@ -294,8 +294,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   private _mTimeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.File>, 
-    model: GridItemModel<lib.File>
+    _column: GridColumn<restic.File>, 
+    model: GridItemModel<restic.File>
   ) {
     render(html`
         ${model.item.mtime ? new Date(model.item.mtime).toLocaleString() : "-"}

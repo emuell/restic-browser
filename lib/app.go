@@ -7,28 +7,29 @@ import (
 	"os"
 
 	"github.com/emuell/restic-browser/lib/open"
+	"github.com/emuell/restic-browser/lib/restic"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type ResticBrowserApp struct {
 	context     *context.Context
 	tempPath    string
-	restic      *Restic
+	restic      *restic.Restic
 	resticError error
-	repo        *Repository
-	snapshots   map[string]*Snapshot
+	repo        *restic.Repository
+	snapshots   map[string]*restic.Snapshot
 }
 
 func NewResticBrowser() *ResticBrowserApp {
-	restic, err := NewRestic()
+	program, err := restic.NewRestic()
 	if err != nil {
 		// continue without a valid restic instance
 		fmt.Print(err.Error() + "\n")
 	}
 	return &ResticBrowserApp{
-		restic:      restic,
+		restic:      program,
 		resticError: err,
-		snapshots:   make(map[string]*Snapshot),
+		snapshots:   make(map[string]*restic.Snapshot),
 	}
 }
 
@@ -81,17 +82,17 @@ func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	if err == nil && dir == "" {
 		return "", nil
 	}
-	if err != nil || !IsDirectoryARepository(dir) {
+	if err != nil || !restic.IsDirectoryARepository(dir) {
 		return "", fmt.Errorf("directory doesn't look like a restic backup location")
 	}
 	return dir, nil
 }
 
-func (r *ResticBrowserApp) OpenRepo(location Location, password string) ([]*Snapshot, error) {
+func (r *ResticBrowserApp) OpenRepo(location restic.Location, password string) ([]*restic.Snapshot, error) {
 	if r.restic == nil {
 		return nil, fmt.Errorf("failed to find restic program")
 	}
-	repo := NewRepository(location, password, r.restic)
+	repo := restic.NewRepository(location, password, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		return nil, err
@@ -106,7 +107,7 @@ func (r *ResticBrowserApp) OpenRepo(location Location, password string) ([]*Snap
 	return snapshots, nil
 }
 
-func (r *ResticBrowserApp) GetFilesForPath(snapshotID, path string) ([]*File, error) {
+func (r *ResticBrowserApp) GetFilesForPath(snapshotID, path string) ([]*restic.File, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return nil, fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -114,7 +115,7 @@ func (r *ResticBrowserApp) GetFilesForPath(snapshotID, path string) ([]*File, er
 	return r.repo.GetFiles(snapshot, path)
 }
 
-func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *restic.File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -143,7 +144,7 @@ func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *File) (string, e
 	return targetPath, nil
 }
 
-func (r *ResticBrowserApp) DumpFile(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) DumpFile(snapshotID string, file *restic.File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)
@@ -173,7 +174,7 @@ func (r *ResticBrowserApp) DumpFile(snapshotID string, file *File) (string, erro
 	return targetFilePath, nil
 }
 
-func (r *ResticBrowserApp) DumpFileToTemp(snapshotID string, file *File) (string, error) {
+func (r *ResticBrowserApp) DumpFileToTemp(snapshotID string, file *restic.File) (string, error) {
 	snapshot := r.snapshots[snapshotID]
 	if snapshot == nil {
 		return "", fmt.Errorf("%s is not a valid snapshot ID", snapshotID)

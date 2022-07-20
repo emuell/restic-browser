@@ -5,7 +5,7 @@ import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
 
-import { lib } from '../../wailsjs/go/models';
+import { restic } from '../../wailsjs/go/models';
 
 import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
 
@@ -22,10 +22,10 @@ import '@vaadin/grid';
 export class ResticBrowserSnapshotList extends MobxLitElement {
   
   @state() 
-  private _selectedItems: lib.Snapshot[] = [];
+  private _selectedItems: restic.Snapshot[] = [];
 
   @query("#grid")
-  private _grid!: Grid<lib.Snapshot> | null;
+  private _grid!: Grid<restic.Snapshot> | null;
   private _recalculateColumnWidths: boolean = false;
 
   constructor() {
@@ -33,7 +33,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
     mobx.reaction(
       () => appState.snapShots, 
-      (snapShots: lib.Snapshot[]) => {
+      (snapShots: restic.Snapshot[]) => {
         // auto-select first snapshot when none is selected
         if (snapShots.length && ! this._selectedItems.length) {
           const firstSnapShot = snapShots[0]
@@ -50,7 +50,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     this._timeRenderer = this._timeRenderer.bind(this);
   }
 
-  private _activeItemChanged(e: GridActiveItemChangedEvent<lib.Snapshot>) {
+  private _activeItemChanged(e: GridActiveItemChangedEvent<restic.Snapshot>) {
     const item = e.detail.value;
     // don't deselect selected itesm
     if (item) {
@@ -61,8 +61,8 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   private _timeRenderer(
     root: HTMLElement, 
-    _column: GridColumn<lib.Snapshot>, 
-    model: GridItemModel<lib.Snapshot>
+    _column: GridColumn<restic.Snapshot>, 
+    model: GridItemModel<restic.Snapshot>
   ) {
     render(html`${new Date(model.item.time).toLocaleString()}`, root);
   }
