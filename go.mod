@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/leaanthony/sail v0.3.0
 	github.com/wailsapp/wails/v2 v2.0.0-beta.38
+	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/net v0.0.0-20220622184535-263ec571b305 // indirect
-	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
 

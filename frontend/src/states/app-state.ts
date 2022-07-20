@@ -184,8 +184,8 @@ export class AppState {
         }
         removePendingFile();
         OpenFileOrUrl(path)
-          .catch(_err => {
-            // ignore
+          .catch(err => {
+            throw err;
           })
       })
       .catch((err) => {

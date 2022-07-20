@@ -88,9 +88,12 @@ export class ResticBrowserFileList extends MobxLitElement {
           Notification.show(
             html`<p>
               Successfully restored '${file.name}' to 
-                <a href=${path} @click=${() => { 
+                <a href=${path} @click=${(e: Event) => { 
+                    e.preventDefault()
                     OpenFileOrUrl(path)
-                      .catch(_err => { /* ignore */ }) 
+                      .catch(_err => { 
+                        // ignore 
+                      })
                   }}>
                   ${path}
                 </a>

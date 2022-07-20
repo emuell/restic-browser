@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/emuell/restic-browser/lib/open"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -62,8 +63,7 @@ func (r *ResticBrowserApp) Shutdown(ctx context.Context) {
 }
 
 func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
-	runtime.BrowserOpenURL(*r.context, path)
-	return nil
+	return open.OpenFileOrURL(path)
 }
 
 func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
