@@ -136,7 +136,7 @@ func TestResticFiles(t *testing.T) {
 	}
 }
 
-func TestFileDump(t *testing.T) {
+func TestResticFileDump(t *testing.T) {
 	repoPath := getTestRepoPath()
 	restic, err := NewRestic()
 	if err != nil {
@@ -157,10 +157,10 @@ func TestFileDump(t *testing.T) {
 	randFile := files[rand.Intn(len(files)-1)]
 	restoredFilePath, err := repo.DumpFile(randSnapshot, randFile, t.TempDir())
 	if err != nil || len(restoredFilePath) == 0 {
-		t.Fatal("failed to dump file")
+		t.Fatal("failed to restore file")
 	}
 	restoredFile, err := ioutil.ReadFile(restoredFilePath)
 	if err != nil || len(restoredFile) == 0 {
-		t.Fatal("failed to read restored file")
+		t.Error("failed to read restored file")
 	}
 }
