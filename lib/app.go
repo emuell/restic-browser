@@ -44,9 +44,11 @@ func (r *ResticBrowserApp) Startup(ctx context.Context) {
 			Title:   "Restic Binary Missing",
 			Message: message,
 			Buttons: []string{"Okay"},
-			Icon:    nil,
 		}
-		runtime.MessageDialog(*r.context, options)
+		_, err := runtime.MessageDialog(*r.context, options)
+		if err != nil {
+			fmt.Printf("failed to show message: %s\n", err.Error())
+		}
 	}
 	// create app temp dir
 	tempPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
