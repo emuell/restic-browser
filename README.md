@@ -7,6 +7,10 @@ A simple, cross-platform [restic backup](https://github.com/restic/restic) GUI f
 Built with [Wails2](https://wails.io), based on leaanthony's [Restoric](https://github.com/leaanthony/restoric) PoC. 
 
 
+## Download
+
+Prebuilt binaries can be downloaded from the [GitHub releases](https://github.com/emuell/restic-browser/releases) page.
+
 ## Features
 
 * *Displays* contents (snapshots, files) of local and remote restic repositories.
@@ -16,6 +20,20 @@ Built with [Wails2](https://wails.io), based on leaanthony's [Restoric](https://
 This is not a restic backup tool GUI - it only allows you to *browse* existing repositories!  
 
 ![Screenshot](./screenshot.png "Restic Browser")
+
+
+## System Requirements
+
+#### All platforms
+- Install [restic](https://github.com/restic/restic/releases/) and *make sure it is included in your $PATH*. 
+
+#### Windows:
+- Windows 10 or later with WebView2 Runtime
+#### MacOS:
+- macOS 10.14 or later
+#### Linux:
+- Linux with GLIBC_2.34 (e.g. Ubuntu 22)
+- WebKit2 (libwebkit2gtk-4.0)
 
 
 ## Development
