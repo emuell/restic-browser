@@ -7,25 +7,24 @@ import { restic } from '../../wailsjs/go/models';
 
 // -------------------------------------------------------------------------------------------------
 
-export type RepositoryType = "local" | "sftp" | "rest" | "amazons3" | "backblaze" | "msazure";
- 
-export const repositoryPrefixes = new Map<RepositoryType, string>([
-  ["local", ""],
-  ["sftp", "sftp"],
-  ["rest", "rest"],
-  ["amazons3", "s3"],
-  ["backblaze", "b2"],
-  ["msazure", "azure"],
-]);
+export type RepositoryType = "local" | "sftp" | "rest" | "rclone" | "amazons3" | "backblaze" | "msazure";
 
-export const repositoryCredentials = new Map<RepositoryType, string[]>([
-  ["local", []],
-  ["sftp", []],
-  ["rest", []],
-  ["amazons3", ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]],
-  ["backblaze", ["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"]],
-  ["msazure", ["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"]],
-]);
+export interface RepositoryLocationInfo {
+  type: RepositoryType;
+  prefix: string;
+  displayName: string;
+  credentials: string[];
+}
+
+export const repositoryLocationInfos: RepositoryLocationInfo[] = [
+  { type: "local", prefix: "", displayName: "Local Path", credentials: [] },
+  { type: "sftp", prefix: "sftp", displayName: "SFTP", credentials: [] },
+  { type: "rest", prefix: "rest", displayName: "REST Server", credentials: [] },
+  { type: "rclone", prefix: "rclone", displayName: "RCLONE", credentials: [] },
+  { type: "amazons3", prefix: "s3", displayName: "Amazon S3", credentials: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"] },
+  { type: "backblaze", prefix: "b2", displayName: "Backblaze B2", credentials: ["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"] },
+  { type: "msazure", prefix: "azure", displayName: "Azure Blob Storage", credentials: ["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"] },
+];
 
 // -------------------------------------------------------------------------------------------------
 
@@ -224,17 +223,17 @@ export class AppState {
 
   @mobx.action
   private _setLocationPrefixFromType(): void {
-    this.repoLocation.prefix = repositoryPrefixes.get(this.repoLocation.type)!;
+    const locationInfo = repositoryLocationInfos.find(v => v.type === this.repoLocation.type);
+    this.repoLocation.prefix = locationInfo?.prefix || "";
   }
 
   @mobx.action
   private _setLocationCredentialsFromType(): void {
     const location = this.repoLocation;
-    const reqiredCredentials = repositoryCredentials.get(location.type)!;
+    const locationInfo = repositoryLocationInfos.find(v => v.type === this.repoLocation.type);
+    const reqiredCredentials = locationInfo?.credentials || [];
     if (location.credentials.map(v => v.name).toString() !== reqiredCredentials.toString()) {
-      location.credentials = reqiredCredentials.map((v) => {
-        return { name: v, value: "" };
-      })
+      location.credentials = reqiredCredentials.map((v) => { return { name: v, value: "" }; })
     }
   }
 }
