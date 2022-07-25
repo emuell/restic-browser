@@ -36,6 +36,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     { label: "Local Path", value: "local" },
     { label: "SFTP", value: "sftp" },
     { label: "REST Server", value: "rest" },
+    { label: "RCLONE", value: "rclone" },
     { label: "Amazon S3", value: "amazons3" },
     { label: "Backblaze B2", value: "backblaze" },
     { label: "Azure Blob Storage", value: "msazure" }

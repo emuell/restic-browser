@@ -7,12 +7,13 @@ import { restic } from '../../wailsjs/go/models';
 
 // -------------------------------------------------------------------------------------------------
 
-export type RepositoryType = "local" | "sftp" | "rest" | "amazons3" | "backblaze" | "msazure";
+export type RepositoryType = "local" | "sftp" | "rest" | "rclone" | "amazons3" | "backblaze" | "msazure";
  
 export const repositoryPrefixes = new Map<RepositoryType, string>([
   ["local", ""],
   ["sftp", "sftp"],
   ["rest", "rest"],
+  ["rclone", "rclone"],
   ["amazons3", "s3"],
   ["backblaze", "b2"],
   ["msazure", "azure"],
@@ -22,6 +23,7 @@ export const repositoryCredentials = new Map<RepositoryType, string[]>([
   ["local", []],
   ["sftp", []],
   ["rest", []],
+  ["rclone", []],
   ["amazons3", ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]],
   ["backblaze", ["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"]],
   ["msazure", ["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"]],
