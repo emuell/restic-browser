@@ -10,9 +10,7 @@
       "command": "wails",
       "args": [
         "build",
-        "-debug",
-        "-tags",
-        "production,desktop,debug"
+        "-debug"
       ]
     },
     {
@@ -23,9 +21,7 @@
       },
       "command": "wails",
       "args": [
-        "build",
-        "-tags",
-        "production,desktop"
+        "build"
       ]
     }
   ]
