@@ -34,7 +34,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   private _browseLocalRepositoryPath() {
     appState.browseLocalRepositoryPath()
       .catch((err) => {
-        Notification.show(`Invalid selection: '${err.message || err}'`, {
+        Notification.show(`Invalid repository: '${err.message || err}'`, {
           position: 'bottom-center',
           theme: "error"
         }); 

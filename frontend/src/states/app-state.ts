@@ -96,9 +96,6 @@ export class AppState {
   browseLocalRepositoryPath(): Promise<void> {
     return SelectLocalRepo()
       .then(mobx.action((directory) => {
-        if (directory instanceof Error) {
-          throw directory; 
-        }
         if (directory) {
           appState.repoLocation.path = directory;
         }
@@ -112,9 +109,6 @@ export class AppState {
     this.repoError = "";
     OpenRepo(restic.Location.createFrom(this.repoLocation), this.repoPass)
       .then(mobx.action((result) => {
-        if (result instanceof Error) {
-          throw result;
-        } 
         this.repoError = "";
         this.snapShots = result;
         if (result.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
@@ -150,9 +144,6 @@ export class AppState {
     ++this.isLoadingFiles;
     return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
       .then((files) => {
-        if (files instanceof Error) {
-          throw files;
-        }
         --this.isLoadingFiles;
         return files;
       })
@@ -178,9 +169,6 @@ export class AppState {
 
     return DumpFileToTemp(this.selectedSnapshotID, file)
       .then((path) => { 
-        if (path instanceof Error) {
-          throw path;
-        }
         removePendingFile();
         OpenFileOrUrl(path)
           .catch(err => {
@@ -209,9 +197,6 @@ export class AppState {
     
     return DumpFile(this.selectedSnapshotID, file)
       .then((path) => { 
-        if (path instanceof Error) {
-          throw path;
-        }
         removePendingFile();
         return path;
       })
