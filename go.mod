@@ -4,8 +4,8 @@ go 1.17
 
 require (
 	github.com/leaanthony/sail v0.3.0
-	github.com/wailsapp/wails/v2 v2.0.0-beta.38
-	golang.org/x/sys v0.0.0-20220622161953-175b2fd9d664
+	github.com/wailsapp/wails/v2 v2.0.0-beta.42
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 )
 
 require (
@@ -28,8 +28,8 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20220622184535-263ec571b305 // indirect
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/net v0.0.0-20220725212005-46097bf591d3 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
 
