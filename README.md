@@ -11,13 +11,14 @@ Built with [Wails2](https://wails.io), based on leaanthony's [Restoric](https://
 
 Prebuilt binaries can be downloaded from the [GitHub releases](https://github.com/emuell/restic-browser/releases) page.
 
+
 ## Features
 
-* *Displays* contents (snapshots, files) of local and remote restic repositories.
-* *Restores* selected files or folders (as zip archives) to a desired location.
-* *Previews* selected files by moving them to the temp and then opening them with your OSs associated default program.
+* *Displays* contents (snapshots, files) from local and remote restic repositories.
+* *Restores* selected files or folders (as a zip archive) to a desired location.
+* *Opens* selected files by moving them to TEMP, then opens them with your operating system's default programs.
 
-This is not a restic backup tool GUI - it only allows you to *browse* existing repositories!  
+This is not a fullblown restic backup GUI - it only allows you to *browse* existing repositories!  
 
 ![Screenshot](./screenshot.png "Restic Browser")
 
@@ -43,15 +44,15 @@ This is not a restic backup tool GUI - it only allows you to *browse* existing r
 * Follow the [Wails2 Installation Docs](https://wails.io/docs/gettingstarted/installation) to install Wails2 for your platform.
 * Install [restic](https://github.com/restic/restic/releases/) and *make sure it is included in your $PATH*. 
 
-### Frontend and App Development
+### Front-end and App Development
 
 To work in live development mode with automatic hot-reloading, run `wails dev` in the root directory. 
 
 ### Go Backend Debugging
 
-To debug the Wails Go application code, you can use the existing startup tasks of vscode. If you press "F5" in vscode, the application will be built in debug mode and then will be launched.   
+To debug the Wails Go application code, you can use the included startup tasks of vscode. If you press "F5" in vscode, the application will be built in debug mode and then started.   
 
-### Build Production Packages
+### Building Production Packages
 
 To build a redistributable package in production mode, use `wails build -tags production,desktop` or use the default build task in vscode.
 
