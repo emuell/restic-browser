@@ -36,6 +36,15 @@ func NewResticBrowser() *ResticBrowserApp {
 func (r *ResticBrowserApp) Startup(ctx context.Context) {
 	// memorize context
 	r.context = &ctx
+	// create app temp dir
+	tempPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create app temp dir: %s\n", err.Error())
+	}
+	r.tempPath = tempPath
+}
+
+func (r *ResticBrowserApp) DomReady(ctx context.Context) {
 	// warn about missing restic program: this is the first time we can show a dialog
 	if r.restic == nil {
 		message := fmt.Sprintf("Failed to find a restic program in your $PATH: %s\n\n", r.resticError.Error()) +
@@ -76,12 +85,6 @@ func (r *ResticBrowserApp) Startup(ctx context.Context) {
 			}
 		}
 	}
-	// create app temp dir
-	tempPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create app temp dir: %s\n", err.Error())
-	}
-	r.tempPath = tempPath
 }
 
 func (r *ResticBrowserApp) Shutdown(ctx context.Context) {
