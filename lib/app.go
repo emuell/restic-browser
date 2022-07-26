@@ -33,6 +33,27 @@ func NewResticBrowser() *ResticBrowserApp {
 	}
 }
 
+func (r *ResticBrowserApp) showWarning(title, message string) {
+	r.showMessage(title, message, "warning")
+}
+
+func (r *ResticBrowserApp) showError(title, message string) {
+	r.showMessage(title, message, "error")
+}
+
+func (r *ResticBrowserApp) showMessage(title, message string, messageType runtime.DialogType) {
+	messageOptions := runtime.MessageDialogOptions{
+		Type:    messageType,
+		Title:   title,
+		Message: message,
+		Buttons: []string{"Okay"},
+	}
+	_, err := runtime.MessageDialog(*r.context, messageOptions)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to show error message: %s\n", err.Error())
+	}
+}
+
 func (r *ResticBrowserApp) Startup(ctx context.Context) {
 	// memorize context
 	r.context = &ctx
@@ -47,18 +68,10 @@ func (r *ResticBrowserApp) Startup(ctx context.Context) {
 func (r *ResticBrowserApp) DomReady(ctx context.Context) {
 	// warn about missing restic program: this is the first time we can show a dialog
 	if r.restic == nil {
-		message := fmt.Sprintf("Failed to find a restic program in your $PATH: %s\n\n", r.resticError.Error()) +
+		message := fmt.Sprintf(
+			"Failed to find a restic program in your $PATH: %s\n\n", r.resticError.Error()) +
 			"Please select your installed restic binary manually in the following dialog."
-		messageOptions := runtime.MessageDialogOptions{
-			Type:    "warning",
-			Title:   "Restic Binary Missing",
-			Message: message,
-			Buttons: []string{"Okay"},
-		}
-		_, err := runtime.MessageDialog(ctx, messageOptions)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to show message: %s\n", err.Error())
-		}
+		r.showWarning("Restic Binary Missing", message)
 		selectFileOptions := runtime.OpenDialogOptions{
 			DefaultFilename:            restic.ResticProgramName(),
 			Title:                      "Please select your restic program",
@@ -68,20 +81,10 @@ func (r *ResticBrowserApp) DomReady(ctx context.Context) {
 		// then ask to locate the restic binary manually
 		path, err := runtime.OpenFileDialog(ctx, selectFileOptions)
 		if err == nil && path != "" {
-			newRestic, err := restic.NewResticFromPath(path)
+			r.restic, err = restic.NewResticFromPath(path)
 			if err != nil {
-				messageOptions = runtime.MessageDialogOptions{
-					Type:    "warning",
-					Title:   "Restic Binary Error",
-					Message: fmt.Sprintf("Failed to set restic binary: %s", err.Error()),
-					Buttons: []string{"Okay"},
-				}
-				_, err := runtime.MessageDialog(ctx, messageOptions)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to show message: %s\n", err.Error())
-				}
-			} else {
-				r.restic = newRestic
+				r.showError("Restic Binary Error",
+					fmt.Sprintf("Failed to set restic binary: %s", err.Error()))
 			}
 		}
 	}
