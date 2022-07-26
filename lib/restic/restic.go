@@ -3,6 +3,7 @@ package restic
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -31,14 +32,20 @@ func (r *Restic) NewRepo(location Location, password string) (*Repository, error
 	return NewRepository(location, password, r), nil
 }
 
-// NewRestic creates a new Restic struct
-func NewRestic() (restic *Restic, err error) {
-
-	// Find restic executable
-	var programName = "restic"
+// ResticProgramName returns the expected platform dependend restic program name
+func ResticProgramName() string {
+	programName := "restic"
 	if runtime.GOOS == "windows" {
 		programName += ".exe"
 	}
+	return programName
+}
+
+// NewRestic creates a new Restic struct
+func NewRestic() (restic *Restic, err error) {
+
+	// Find restic executable in PATH
+	programName := ResticProgramName()
 	resticProgram := program.Find(programName, "Restic")
 	if resticProgram == nil {
 		return nil, fmt.Errorf("unable to find '%s'", programName)
@@ -49,8 +56,49 @@ func NewRestic() (restic *Restic, err error) {
 	if code != 0 {
 		return nil, fmt.Errorf("failed to fetch restic version from %s", resticProgram.Path)
 	}
+	version := "unknown"
+	splitVersion := strings.Split(versionstring, " ")
+	if len(splitVersion) > 2 {
+		version = splitVersion[1]
+	}
 
-	// Get restic version
+	restic = &Restic{
+		VersionString: versionstring,
+		Version:       version,
+		restic:        resticProgram,
+	}
+
+	return restic, nil
+}
+
+// NewResticFromPath creates a new Restic struct from the given file path
+func NewResticFromPath(path string) (restic *Restic, err error) {
+
+	// Ensure given path is an abs path
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure path is valid
+	fileInfo, err := os.Stat(path)
+	if err != nil || fileInfo.IsDir() {
+		return nil, os.ErrNotExist
+	}
+
+	// Create new restic program from path
+	programName := ResticProgramName()
+	resticProgram := &program.Program{
+		Name:     "Restic",
+		Filename: programName,
+		Path:     path,
+	}
+
+	// Get the version
+	versionstring, _, code, _ := resticProgram.Run("version")
+	if code != 0 {
+		return nil, fmt.Errorf("failed to fetch restic version from %s", resticProgram.Path)
+	}
 	version := "unknown"
 	splitVersion := strings.Split(versionstring, " ")
 	if len(splitVersion) > 2 {

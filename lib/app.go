@@ -33,35 +33,68 @@ func NewResticBrowser() *ResticBrowserApp {
 	}
 }
 
-func (r *ResticBrowserApp) Startup(ctx context.Context) {
-	r.context = &ctx
-	// warn about missing restic program: this is the first time we can show a dialog
-	if r.restic == nil {
-		message := fmt.Sprintf("Failed to find a compatible restic program: %s\n\n", r.resticError.Error()) +
-			"Please make sure restic is installed and is in your $PATH."
-		options := runtime.MessageDialogOptions{
-			Type:    "warning",
-			Title:   "Restic Binary Missing",
-			Message: message,
-			Buttons: []string{"Okay"},
-		}
-		_, err := runtime.MessageDialog(*r.context, options)
-		if err != nil {
-			fmt.Printf("failed to show message: %s\n", err.Error())
-		}
+func (r *ResticBrowserApp) showWarning(title, message string) {
+	r.showMessage(title, message, "warning")
+}
+
+func (r *ResticBrowserApp) showError(title, message string) {
+	r.showMessage(title, message, "error")
+}
+
+func (r *ResticBrowserApp) showMessage(title, message string, messageType runtime.DialogType) {
+	messageOptions := runtime.MessageDialogOptions{
+		Type:    messageType,
+		Title:   title,
+		Message: message,
+		Buttons: []string{"Okay"},
 	}
+	_, err := runtime.MessageDialog(*r.context, messageOptions)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to show error message: %s\n", err.Error())
+	}
+}
+
+func (r *ResticBrowserApp) Startup(ctx context.Context) {
+	// memorize context
+	r.context = &ctx
 	// create app temp dir
 	tempPath, err := ioutil.TempDir(os.TempDir(), "restic-browser")
 	if err != nil {
-		fmt.Printf("failed to create app temp dir: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "failed to create app temp dir: %s\n", err.Error())
 	}
 	r.tempPath = tempPath
 }
 
+func (r *ResticBrowserApp) DomReady(ctx context.Context) {
+	// warn about missing restic program: this is the first time we can show a dialog
+	if r.restic == nil {
+		message := fmt.Sprintf(
+			"Failed to find a restic program in your $PATH: %s\n\n", r.resticError.Error()) +
+			"Please select your installed restic binary manually in the following dialog."
+		r.showWarning("Restic Binary Missing", message)
+		selectFileOptions := runtime.OpenDialogOptions{
+			DefaultFilename:            restic.ResticProgramName(),
+			Title:                      "Please select your restic program",
+			ShowHiddenFiles:            true,
+			TreatPackagesAsDirectories: true,
+		}
+		// then ask to locate the restic binary manually
+		path, err := runtime.OpenFileDialog(ctx, selectFileOptions)
+		if err == nil && path != "" {
+			r.restic, err = restic.NewResticFromPath(path)
+			if err != nil {
+				r.showError("Restic Binary Error",
+					fmt.Sprintf("Failed to set restic binary: %s", err.Error()))
+			}
+		}
+	}
+}
+
 func (r *ResticBrowserApp) Shutdown(ctx context.Context) {
+	// remove app temp dir
 	err := os.RemoveAll(r.tempPath)
 	if err != nil {
-		fmt.Printf("failed to remove app temp dir: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "failed to remove app temp dir: %s\n", err.Error())
 	}
 }
 
