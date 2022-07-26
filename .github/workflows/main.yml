@@ -54,7 +54,7 @@ jobs:
       if: ${{ matrix.config.name == 'Ubuntu' }}
 
     - name: Setup Wails
-      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.0.0-beta.42
 
     - name: Checkout
       uses: actions/checkout@v3
