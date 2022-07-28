@@ -16,7 +16,7 @@ func TestOpenFile(t *testing.T) {
 	err := OpenFileOrURL(absFilePath)
 	if err != nil {
 		// NB: skip instead of failing as this will fail when running headless
-		t.Skip("failed to open file", err)
+		t.Skip("failed to open abs file path", err)
 	}
 	// test relative file path
 	directory := filepath.Dir(absFilePath)
@@ -28,7 +28,7 @@ func TestOpenFile(t *testing.T) {
 	err = OpenFileOrURL(filename)
 	if err != nil {
 		// NB: skip instead of failing as this will fail when running headless
-		t.Skip("failed to open URL", err)
+		t.Skip("failed to open relative file path", err)
 	}
 }
 
@@ -37,6 +37,7 @@ func TestOpenURL(t *testing.T) {
 	const url = "https://github.com/emuell/restic-browser"
 	err := OpenFileOrURL(url)
 	if err != nil {
-		t.Error("failed to open URL", err)
+		// NB: skip instead of failing as this will fail when running headless
+		t.Skip("failed to open URL", err)
 	}
 }
