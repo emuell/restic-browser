@@ -18,7 +18,6 @@ func getBasePath() string {
 		panic(err)
 	}
 	for _, err := ioutil.ReadFile(filepath.Join(dir, "go.mod")); err != nil && len(dir) > 1; {
-		println(dir)
 		dir = filepath.Dir(dir)
 		_, err = ioutil.ReadFile(filepath.Join(dir, "go.mod"))
 	}
