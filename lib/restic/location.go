@@ -11,9 +11,9 @@ type EnvValue struct {
 
 // Defines a repository location for restic
 type Location struct {
-	Prefix       string     `json:"prefix"`      // e.g. "b2"
-	Path         string     `json:"path"`        // local path or url or bucket name
-	Credientials []EnvValue `json:"credentials"` // optional env values
+	Prefix      string     `json:"prefix"`      // e.g. "b2"
+	Path        string     `json:"path"`        // local path or url or bucket name
+	Credentials []EnvValue `json:"credentials"` // optional env values
 }
 
 // return plain location path for local repositories, else prepends the prefix
@@ -27,7 +27,7 @@ func (l *Location) PathOrBucketName() string {
 
 // Set env values from credentials
 func (l *Location) SetEnv() error {
-	for _, env := range l.Credientials {
+	for _, env := range l.Credentials {
 		err := os.Setenv(env.Name, env.Value)
 		if err != nil {
 			return err
@@ -38,7 +38,7 @@ func (l *Location) SetEnv() error {
 
 // Unset env values from credentials
 func (l *Location) UnsetEnv() error {
-	for _, env := range l.Credientials {
+	for _, env := range l.Credentials {
 		err := os.Setenv(env.Name, "")
 		if err != nil {
 			return err
