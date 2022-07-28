@@ -60,7 +60,7 @@ jobs:
       uses: actions/checkout@v3
     
     - name: Test
-      run: got test ./...
+      run: go test ./...
 
     - name: Build
       run: wails build -tags ${{ matrix.config.build_tags }}
