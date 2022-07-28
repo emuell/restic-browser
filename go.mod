@@ -32,5 +32,3 @@ require (
 	golang.org/x/net v0.0.0-20220725212005-46097bf591d3 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
-
-// replace github.com/wailsapp/wails/v2 v2.0.0-beta.37 => C:\Users\muell\go\pkg\mod\github.com\wailsapp\wails\v2@v2.0.0-beta.37
