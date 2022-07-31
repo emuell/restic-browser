@@ -10,7 +10,7 @@ export function GetFilesForPath(arg1:string,arg2:string):Promise<Array<restic.Fi
 
 export function OpenFileOrUrl(arg1:string):Promise<Error>;
 
-export function OpenRepo(arg1:restic.Location,arg2:string):Promise<Array<restic.Snapshot>>;
+export function OpenRepo(arg1:restic.Location):Promise<Array<restic.Snapshot>>;
 
 export function RestoreFile(arg1:string,arg2:restic.File):Promise<string>;
 

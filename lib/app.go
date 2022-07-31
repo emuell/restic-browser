@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/emuell/restic-browser/lib/open"
 	"github.com/emuell/restic-browser/lib/restic"
@@ -102,6 +103,52 @@ func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	return open.OpenFileOrURL(path)
 }
 
+func (r *ResticBrowserApp) DefaultRepo() (location restic.Location, pass string) {
+	repo := os.Getenv("RESTIC_REPOSITORY")
+	if len(repo) == 0 {
+		return
+	}
+	location.Password = os.Getenv("RESTIC_PASSWORD")
+	if strings.HasPrefix(repo, "bs:") {
+		location.Prefix = "bs"
+		location.Path = strings.Replace(repo, "bs:", "", 1)
+	} else if strings.HasPrefix(repo, "sftp:") {
+		location.Prefix = "sftp"
+		location.Path = strings.Replace(repo, "sftp:", "", 1)
+	} else if strings.HasPrefix(repo, "rest:") {
+		location.Prefix = "rest"
+		location.Path = strings.Replace(repo, "rest:", "", 1)
+	} else if strings.HasPrefix(repo, "rclone:") {
+		location.Prefix = "rclone"
+		location.Path = strings.Replace(repo, "rclone:", "", 1)
+	} else if strings.HasPrefix(repo, "s3:") {
+		location.Prefix = "s3"
+		location.Path = strings.Replace(repo, "s3:", "", 1)
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "AWS_ACCESS_KEY_ID", Value: os.Getenv("AWS_ACCESS_KEY_ID")})
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "AWS_SECRET_ACCESS_KEY", Value: os.Getenv("AWS_SECRET_ACCESS_KEY")})
+	} else if strings.HasPrefix(repo, "b2:") {
+		location.Prefix = "b2"
+		location.Path = strings.Replace(repo, "b2:", "", 1)
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "B2_ACCOUNT_ID", Value: os.Getenv("B2_ACCOUNT_ID")})
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "B2_ACCOUNT_KEY", Value: os.Getenv("B2_ACCOUNT_ID")})
+	} else if strings.HasPrefix(repo, "azure:") {
+		location.Prefix = "azure"
+		location.Path = strings.Replace(repo, "azure:", "", 1)
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "AZURE_ACCOUNT_NAME", Value: os.Getenv("AZURE_ACCOUNT_NAME")})
+		location.Credentials = append(location.Credentials,
+			restic.EnvValue{Name: "AZURE_ACCOUNT_KEY", Value: os.Getenv("B2_ACCOUNT_KEY")})
+	} else {
+		location.Prefix = ""
+		location.Path = repo
+	}
+	return
+}
+
 func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",
@@ -123,11 +170,11 @@ func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	return dir, nil
 }
 
-func (r *ResticBrowserApp) OpenRepo(location restic.Location, password string) ([]*restic.Snapshot, error) {
+func (r *ResticBrowserApp) OpenRepo(location restic.Location) ([]*restic.Snapshot, error) {
 	if r.restic == nil {
 		return nil, fmt.Errorf("failed to find restic program")
 	}
-	repo := restic.NewRepository(location, password, r.restic)
+	repo := restic.NewRepository(location, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		return nil, err

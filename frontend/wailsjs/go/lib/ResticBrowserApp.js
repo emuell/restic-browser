@@ -18,8 +18,8 @@ export function OpenFileOrUrl(arg1) {
   return window['go']['lib']['ResticBrowserApp']['OpenFileOrUrl'](arg1);
 }
 
-export function OpenRepo(arg1, arg2) {
-  return window['go']['lib']['ResticBrowserApp']['OpenRepo'](arg1, arg2);
+export function OpenRepo(arg1) {
+  return window['go']['lib']['ResticBrowserApp']['OpenRepo'](arg1);
 }
 
 export function RestoreFile(arg1, arg2) {

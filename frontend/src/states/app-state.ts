@@ -40,11 +40,9 @@ export class AppState {
       type: "local" as RepositoryType, 
       prefix: "", 
       path: "", 
-      credentials: [] as { name: string, value: string }[]  
+      credentials: [] as { name: string, value: string }[],
+      password: "" 
   };
-
-  @mobx.observable
-  repoPass: string = "";
 
   @mobx.observable
   repoError: string = "";
@@ -107,7 +105,7 @@ export class AppState {
   openRepository(): void {
     ++this.isLoadingSnapshots;
     this.repoError = "";
-    OpenRepo(restic.Location.createFrom(this.repoLocation), this.repoPass)
+    OpenRepo(restic.Location.createFrom(this.repoLocation))
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;

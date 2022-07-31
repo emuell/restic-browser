@@ -86,9 +86,9 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
         <vaadin-password-field
           label="Repository Password"
           required
-          value=${appState.repoPass}
+          value=${appState.repoLocation.password}
           @change=${mobx.action((event: CustomEvent) => {
-            appState.repoPass = (event.target as HTMLInputElement).value;
+            appState.repoLocation.password = (event.target as HTMLInputElement).value;
             this._handledClose = true;
             this.onClose();
           })}

@@ -16,12 +16,11 @@ import (
 type Repository struct {
 	location Location
 	restic   *Restic
-	password string
 }
 
 // NewRepository creates a new Repository struct
-func NewRepository(location Location, password string, restic *Restic) *Repository {
-	return &Repository{location: location, password: password, restic: restic}
+func NewRepository(location Location, restic *Restic) *Repository {
+	return &Repository{location: location, restic: restic}
 }
 
 // IsDirectoryARepository returns true if the given directory contains everything a
@@ -130,9 +129,7 @@ func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string)
 
 func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
 	r.location.SetEnv()
-	os.Setenv("RESTIC_PASSWORD", r.password)
 	defer r.location.UnsetEnv()
-	defer os.Setenv("RESTIC_PASSWORD", "")
 	command = append(command, "--repo", r.location.PathOrBucketName())
 	stdout, stderr, code, err = r.restic.Run(command)
 	return
@@ -140,9 +137,7 @@ func (r *Repository) run(command ...string) (stdout, stderr string, code int, er
 
 func (r *Repository) runRedirected(stdout *os.File, command ...string) (stderr string, code int, err error) {
 	r.location.SetEnv()
-	os.Setenv("RESTIC_PASSWORD", r.password)
 	defer r.location.UnsetEnv()
-	defer os.Setenv("RESTIC_PASSWORD", "")
 	command = append(command, "--repo", r.location.PathOrBucketName())
 	stderr, code, err = r.restic.RunRedirected(stdout, command)
 	return
