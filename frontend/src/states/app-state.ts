@@ -114,6 +114,7 @@ export class AppState {
         if (result.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
           this.selectedSnapshotID = "";
         }
+        this._filesCache.clear();
         --this.isLoadingSnapshots; 
       }))
       .catch(mobx.action((err) => {
