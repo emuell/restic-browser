@@ -114,8 +114,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       });
   }
 
-  private _parentRootPath(): string | undefined {
-    let rootPath = this._rootPath.trim();
+  private _parentRootPath(path: string): string | undefined {
+    let rootPath = path.trim();
     if (rootPath && rootPath != "/") {
       if (rootPath.endsWith("/")) {
         rootPath = rootPath.substring(0, rootPath.length - 1);
@@ -132,12 +132,14 @@ export class ResticBrowserFileList extends MobxLitElement {
       this._files = [];
       return;
     }
-    appState.fetchFiles(this._rootPath)
+    // memorize rootpath we're fetching files for
+    const rootPath = this._rootPath;
+    appState.fetchFiles(rootPath)
       .then((files) => {
         // remove . entry
-        files = files.filter((f) => f.path !== this._rootPath);
+        files = files.filter((f) => f.path !== rootPath);
         // add .. entry
-        const parentRootPath = this._parentRootPath();
+        const parentRootPath = this._parentRootPath(rootPath)
         if (parentRootPath) {
           files.push({name: "..", type: "dir", path: parentRootPath})
         }
@@ -351,8 +353,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       <vaadin-horizontal-layout id="header">
         <strong id="title">Files</strong>
         <vaadin-button id="rootPathButton" theme="icon small secondary" 
-            @click=${() => this._setRootPath(this._parentRootPath() || "/")}
-            .disabled=${! this._parentRootPath()}
+            @click=${() => this._setRootPath(this._parentRootPath(this._rootPath) || "/")}
+            .disabled=${! this._parentRootPath(this._rootPath)}
             .hidden=${! appState.selectedSnapshotID}>
           ${appState.isLoadingFiles 
               ? html`<restic-browser-spinner size="16px" style="margin: 0 2px;"></restic-browser-spinner>` 
