@@ -138,19 +138,27 @@ export class AppState {
   // fetch files at \param rootPath in the selected snapshot
   @mobx.action
   fetchFiles(rootPath: string): Promise<restic.File[]> {
-    if (! this.selectedSnapshotID) {
+    const selectedSnapshotID = this.selectedSnapshotID;
+    if (! selectedSnapshotID) {
       return Promise.reject(new Error("No snapshot selected"));
     }
+    // do we got cached files for this snapshot and path?
+    const cachedFiles = this._getCachedFiles(selectedSnapshotID, rootPath);
+    if (cachedFiles) {
+      return Promise.resolve(cachedFiles)
+    } 
+    // else fetch new ones and cache them
     ++this.isLoadingFiles;
     return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
       .then((files) => {
         --this.isLoadingFiles;
+        this._addCachedFiles(selectedSnapshotID, rootPath, files);
         return files;
       })
       .catch((error) => {
         --this.isLoadingFiles;
         throw error;
-      })
+      });
   }
 
   // dump specified snapshot file to temp, then open it with the system's default program
@@ -206,12 +214,16 @@ export class AppState {
       });
   }
 
+  // --- private helper functions
+
+  // set a location prefix from the current location type
   @mobx.action
   private _setLocationPrefixFromType(): void {
     const locationInfo = repositoryLocationInfos.find(v => v.type === this.repoLocation.type);
     this.repoLocation.prefix = locationInfo?.prefix || "";
   }
 
+  // set location credentials from the current location type
   @mobx.action
   private _setLocationCredentialsFromType(): void {
     const location = this.repoLocation;
@@ -221,6 +233,48 @@ export class AppState {
       location.credentials = reqiredCredentials.map((v) => { return { name: v, value: "" }; })
     }
   }
+
+  // get cached files for the given snapshot and path. 
+  // returns undefined when no cached files are present. 
+  private _getCachedFiles(snapShotId: string, path: string): restic.File[] | undefined {
+    const entry = this._filesCache.get(AppState._cachedFilesKey(snapShotId, path))
+    if (entry) {
+      return entry.files;
+    }
+    return undefined;
+  }
+
+  // add files for the given snapshot and path to the cache. 
+  private _addCachedFiles(snapShotId: string, path: string, files: restic.File[]) {
+    const currentTime = Date.now();
+    if (this._filesCache.size > AppState.MAX_CACHED_FILE_ENTRIES) {
+      // remove oldest cache entry
+      let oldestTime = currentTime; 
+      let oldestKey = "";
+      for (const [key, value] of Array.from(this._filesCache)) {
+        if (value.lastAccessTime < oldestTime) {
+          oldestTime = value.lastAccessTime
+          oldestKey = key
+        }
+      }
+      this._filesCache.delete(oldestKey)
+    }
+    // add new entry
+    this._filesCache.set(AppState._cachedFilesKey(snapShotId, path), { 
+      files: files, lastAccessTime: currentTime 
+    });
+  }
+
+  // maximum size of the files cache
+  static readonly MAX_CACHED_FILE_ENTRIES = 50;
+
+  // construct a key for the filesList cache 
+  private static _cachedFilesKey(snapShotId: string, path: string): string {
+    return snapShotId + ":" + path;
+  }
+
+  // file cache for \function fetchFiles 
+  private _filesCache = new Map<string, { files: restic.File[], lastAccessTime: number }>();
 }
 
 // -------------------------------------------------------------------------------------------------
