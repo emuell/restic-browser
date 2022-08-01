@@ -1,6 +1,6 @@
 import * as mobx from 'mobx';
 
-import { DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, SelectLocalRepo } 
+import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, SelectLocalRepo } 
   from '../../wailsjs/go/lib/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
@@ -77,6 +77,38 @@ export class AppState {
         this._setLocationCredentialsFromType();
       }
     );
+
+    // fetch and open default repository location, if set
+    DefaultRepoLocation()
+      .then(mobx.action((defaultLocation) => {
+        // find matching location type 
+        const locationInfo = repositoryLocationInfos.find(v => v.prefix === defaultLocation.prefix);
+        if (! locationInfo) {
+          console.warn("Unexpected default location prefix: '%s'", defaultLocation.prefix)
+          return;
+        }
+        // apply default repository path and password
+        this.repoLocation.type = locationInfo.type;
+        this.repoLocation.path = defaultLocation.path;
+        this.repoLocation.password = defaultLocation.password;
+        this._setLocationPrefixFromType();
+        this._setLocationCredentialsFromType();
+        // set all required credentials as well, if they are valid
+        for (const c of locationInfo.credentials) {
+          const defaultValue = defaultLocation.credentials.find(v => v.name === c)
+          const locationValue = this.repoLocation.credentials.find(v => v.name === c)
+          if (defaultValue && locationValue) {
+            locationValue.value = defaultValue.value;
+          }
+        }
+        // try opening the repository, when we have a path set
+        if (this.repoLocation.path) {
+          this.openRepository();
+        }
+      }))
+      .catch((err) => {
+        console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
+      })
   }
 
   // reset location, error and snapshots
