@@ -1,29 +1,5 @@
 export namespace restic {
 	
-	export class Snapshot {
-	    id: string;
-	    short_id: string;
-	    time: string;
-	    paths: string[];
-	    tags: string[];
-	    hostname: string;
-	    username: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Snapshot(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.short_id = source["short_id"];
-	        this.time = source["time"];
-	        this.paths = source["paths"];
-	        this.tags = source["tags"];
-	        this.hostname = source["hostname"];
-	        this.username = source["username"];
-	    }
-	}
 	export class EnvValue {
 	    name: string;
 	    value: string;
@@ -102,6 +78,30 @@ export namespace restic {
 	        this.mtime = source["mtime"];
 	        this.atime = source["atime"];
 	        this.ctime = source["ctime"];
+	    }
+	}
+	export class Snapshot {
+	    id: string;
+	    short_id: string;
+	    time: string;
+	    paths: string[];
+	    tags: string[];
+	    hostname: string;
+	    username: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Snapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.short_id = source["short_id"];
+	        this.time = source["time"];
+	        this.paths = source["paths"];
+	        this.tags = source["tags"];
+	        this.hostname = source["hostname"];
+	        this.username = source["username"];
 	    }
 	}
 

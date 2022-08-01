@@ -103,50 +103,40 @@ func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	return open.OpenFileOrURL(path)
 }
 
-func (r *ResticBrowserApp) DefaultRepo() (location restic.Location, pass string) {
+func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
+	location := restic.Location{}
+	location.Password = os.Getenv("RESTIC_PASSWORD")
 	repo := os.Getenv("RESTIC_REPOSITORY")
 	if len(repo) == 0 {
-		return
+		return location
 	}
-	location.Password = os.Getenv("RESTIC_PASSWORD")
-	if strings.HasPrefix(repo, "bs:") {
-		location.Prefix = "bs"
-		location.Path = strings.Replace(repo, "bs:", "", 1)
-	} else if strings.HasPrefix(repo, "sftp:") {
-		location.Prefix = "sftp"
-		location.Path = strings.Replace(repo, "sftp:", "", 1)
-	} else if strings.HasPrefix(repo, "rest:") {
-		location.Prefix = "rest"
-		location.Path = strings.Replace(repo, "rest:", "", 1)
-	} else if strings.HasPrefix(repo, "rclone:") {
-		location.Prefix = "rclone"
-		location.Path = strings.Replace(repo, "rclone:", "", 1)
-	} else if strings.HasPrefix(repo, "s3:") {
-		location.Prefix = "s3"
-		location.Path = strings.Replace(repo, "s3:", "", 1)
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "AWS_ACCESS_KEY_ID", Value: os.Getenv("AWS_ACCESS_KEY_ID")})
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "AWS_SECRET_ACCESS_KEY", Value: os.Getenv("AWS_SECRET_ACCESS_KEY")})
-	} else if strings.HasPrefix(repo, "b2:") {
-		location.Prefix = "b2"
-		location.Path = strings.Replace(repo, "b2:", "", 1)
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "B2_ACCOUNT_ID", Value: os.Getenv("B2_ACCOUNT_ID")})
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "B2_ACCOUNT_KEY", Value: os.Getenv("B2_ACCOUNT_ID")})
-	} else if strings.HasPrefix(repo, "azure:") {
-		location.Prefix = "azure"
-		location.Path = strings.Replace(repo, "azure:", "", 1)
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "AZURE_ACCOUNT_NAME", Value: os.Getenv("AZURE_ACCOUNT_NAME")})
-		location.Credentials = append(location.Credentials,
-			restic.EnvValue{Name: "AZURE_ACCOUNT_KEY", Value: os.Getenv("B2_ACCOUNT_KEY")})
-	} else {
-		location.Prefix = ""
-		location.Path = repo
+	type LocationInfo struct {
+		prefix      string
+		credentials []string
 	}
-	return
+	locationInfos := []LocationInfo{
+		{prefix: "bs"},
+		{prefix: "sftp"},
+		{prefix: "rest"},
+		{prefix: "rclone"},
+		{prefix: "s3", credentials: []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"}},
+		{prefix: "b2", credentials: []string{"B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"}},
+		{prefix: "azure", credentials: []string{"AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"}},
+	}
+	location.Prefix = ""
+	location.Path = repo
+	for _, locationInfo := range locationInfos {
+		if strings.HasPrefix(repo, locationInfo.prefix+":") {
+			location.Prefix = locationInfo.prefix
+			location.Path = strings.Replace(repo, locationInfo.prefix+":", "", 1)
+			for _, credential := range locationInfo.credentials {
+				location.Credentials = append(location.Credentials,
+					restic.EnvValue{Name: credential, Value: os.Getenv(credential)})
+			}
+			break
+		}
+	}
+	return location
 }
 
 func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
