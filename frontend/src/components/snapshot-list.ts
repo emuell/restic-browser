@@ -31,17 +31,23 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
   constructor() {
     super();
 
+    // request auto column width update on snapshot changes
     mobx.reaction(
       () => appState.snapShots, 
-      (snapShots: restic.Snapshot[]) => {
-        // auto-select first snapshot when none is selected
-        if (snapShots.length && ! this._selectedItems.length) {
-          const firstSnapShot = snapShots[0]
-          this._selectedItems = [firstSnapShot];
-          appState.setNewSnapshotId(firstSnapShot.id);
-        }
-        // request auto column width update
+      () => {
         this._recalculateColumnWidths = true;
+      }, 
+      { fireImmediately: true }
+    );
+    
+    // sync selected item changes with appState
+    mobx.reaction(
+      () => appState.selectedSnapshotID, 
+      (snapShotId: string) => {
+        const selectedSnapshot = appState.snapShots.find(v => v.id == snapShotId)
+        if (selectedSnapshot) {
+          this._selectedItems = [selectedSnapshot];
+        }
       }, 
       { fireImmediately: true }
     );

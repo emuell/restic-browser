@@ -70,15 +70,15 @@ func TestResticSnapshots(t *testing.T) {
 		t.Fatal("failed to resolve restic binary", err)
 	}
 	// open repo and fetch snapshots
-	repoWrongPath := NewRepository(Location{Path: getBasePath()}, testRepoPass, restic)
+	repoWrongPath := NewRepository(Location{Path: getBasePath(), Password: testRepoPass}, restic)
 	if _, err = repoWrongPath.GetSnapshots(); err == nil {
 		t.Error("expecting an error when fetching snapshots for invalid location")
 	}
-	repoWrongPass := NewRepository(Location{Path: repoPath}, "wrong-password", restic)
+	repoWrongPass := NewRepository(Location{Path: repoPath, Password: "wrong-password"}, restic)
 	if _, err = repoWrongPass.GetSnapshots(); err == nil {
 		t.Error("expecting an error when fetching snapshots with wrong password")
 	}
-	repo := NewRepository(Location{Path: repoPath}, testRepoPass, restic)
+	repo := NewRepository(Location{Path: repoPath, Password: testRepoPass}, restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		t.Fatal("failed to fetch snapshots")
@@ -102,7 +102,7 @@ func TestResticFiles(t *testing.T) {
 		t.Fatal("failed to resolve restic binary", err)
 	}
 	// open repo and fetch snapshots
-	repo := NewRepository(Location{Path: repoPath}, testRepoPass, restic)
+	repo := NewRepository(Location{Path: repoPath, Password: testRepoPass}, restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		t.Error("failed to fetch snapshots")
@@ -142,7 +142,7 @@ func TestResticFileDump(t *testing.T) {
 		t.Fatal("failed to resolve restic binary", err)
 	}
 	// open repo and fetch a random file
-	repo := NewRepository(Location{Path: repoPath}, testRepoPass, restic)
+	repo := NewRepository(Location{Path: repoPath, Password: testRepoPass}, restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		t.Error("failed to fetch snapshots")

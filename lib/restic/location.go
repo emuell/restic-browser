@@ -14,6 +14,7 @@ type Location struct {
 	Prefix      string     `json:"prefix"`      // e.g. "b2"
 	Path        string     `json:"path"`        // local path or url or bucket name
 	Credentials []EnvValue `json:"credentials"` // optional env values
+	Password    string     `json:"password"`    // repo password
 }
 
 // return plain location path for local repositories, else prepends the prefix
@@ -27,6 +28,10 @@ func (l *Location) PathOrBucketName() string {
 
 // Set env values from credentials
 func (l *Location) SetEnv() error {
+	err := os.Setenv("RESTIC_PASSWORD", l.Password)
+	if err != nil {
+		return err
+	}
 	for _, env := range l.Credentials {
 		err := os.Setenv(env.Name, env.Value)
 		if err != nil {
@@ -38,6 +43,10 @@ func (l *Location) SetEnv() error {
 
 // Unset env values from credentials
 func (l *Location) UnsetEnv() error {
+	err := os.Setenv("RESTIC_PASSWORD", "")
+	if err != nil {
+		return err
+	}
 	for _, env := range l.Credentials {
 		err := os.Setenv(env.Name, "")
 		if err != nil {

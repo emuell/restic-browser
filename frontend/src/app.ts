@@ -61,7 +61,6 @@ export class ResticBrowserApp extends MobxLitElement {
           }}
           .onCancel=${() => {
             this._showLocationDialog = false; 
-            appState.resetLocation(); 
           }}>
         </restic-browser-location-dialog>
       `;

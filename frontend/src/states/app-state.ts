@@ -1,30 +1,11 @@
 import * as mobx from 'mobx';
 
-import { DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, SelectLocalRepo } 
+import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo }
   from '../../wailsjs/go/lib/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
 
-// -------------------------------------------------------------------------------------------------
-
-export type RepositoryType = "local" | "sftp" | "rest" | "rclone" | "amazons3" | "backblaze" | "msazure";
-
-export interface RepositoryLocationInfo {
-  type: RepositoryType;
-  prefix: string;
-  displayName: string;
-  credentials: string[];
-}
-
-export const repositoryLocationInfos: RepositoryLocationInfo[] = [
-  { type: "local", prefix: "", displayName: "Local Path", credentials: [] },
-  { type: "sftp", prefix: "sftp", displayName: "SFTP", credentials: [] },
-  { type: "rest", prefix: "rest", displayName: "REST Server", credentials: [] },
-  { type: "rclone", prefix: "rclone", displayName: "RCLONE", credentials: [] },
-  { type: "amazons3", prefix: "s3", displayName: "Amazon S3", credentials: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"] },
-  { type: "backblaze", prefix: "b2", displayName: "Backblaze B2", credentials: ["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"] },
-  { type: "msazure", prefix: "azure", displayName: "Azure Blob Storage", credentials: ["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"] },
-];
+import { Location } from './location';
 
 // -------------------------------------------------------------------------------------------------
 
@@ -32,19 +13,11 @@ export const repositoryLocationInfos: RepositoryLocationInfo[] = [
  * Global application state and controller
 !*/
 
-export class AppState {
+class AppState {
 
   // repository setup
-  @mobx.observable.deep
-  repoLocation = {
-      type: "local" as RepositoryType, 
-      prefix: "", 
-      path: "", 
-      credentials: [] as { name: string, value: string }[]  
-  };
-
   @mobx.observable
-  repoPass: string = "";
+  repoLocation: Location = new Location();
 
   @mobx.observable
   repoError: string = "";
@@ -71,35 +44,19 @@ export class AppState {
   constructor() {
     mobx.makeObservable(this);
 
-    // auto-update credentials and prefix on location type changes
-    mobx.reaction(
-      () => this.repoLocation.type, 
-      () => {
-        this._setLocationPrefixFromType(); 
-        this._setLocationCredentialsFromType();
-      }
-    );
-  }
-
-  // reset location, error and snapshots
-  @mobx.action
-  resetLocation(): void {
-    this.repoLocation.path = "";
-    this.repoError = "";
-    this.snapShots = [];
-    this.selectedSnapshotID = "";
-  }
-
-  // open a directory dialog to select a new local repository
-  // throws, when the selected path does not look like a restic repository
-  @mobx.action
-  browseLocalRepositoryPath(): Promise<void> {
-    return SelectLocalRepo()
-      .then(mobx.action((directory) => {
-        if (directory) {
-          appState.repoLocation.path = directory;
+    // fetch and open default repository location, if set
+    DefaultRepoLocation()
+      .then(location => {
+        // set location from default
+        this.repoLocation.setFromResticLocation(location);
+        // try opening the repository
+        if (this.repoLocation.path) {
+          this.openRepository();
         }
-      }))
+      })
+      .catch(err => {
+        console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
+      });
   }
 
   // open a new repository and populate snapshots
@@ -107,12 +64,15 @@ export class AppState {
   openRepository(): void {
     ++this.isLoadingSnapshots;
     this.repoError = "";
-    OpenRepo(restic.Location.createFrom(this.repoLocation), this.repoPass)
+    OpenRepo(restic.Location.createFrom(this.repoLocation))
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;
-        if (result.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
+        if (! result.find((s) => s.short_id === this.selectedSnapshotID)) {
           this.selectedSnapshotID = "";
+          if (result.length) {
+            this.selectedSnapshotID = result[0].id;
+          }
         }
         this._filesCache.clear();
         --this.isLoadingSnapshots; 
@@ -216,24 +176,6 @@ export class AppState {
   }
 
   // --- private helper functions
-
-  // set a location prefix from the current location type
-  @mobx.action
-  private _setLocationPrefixFromType(): void {
-    const locationInfo = repositoryLocationInfos.find(v => v.type === this.repoLocation.type);
-    this.repoLocation.prefix = locationInfo?.prefix || "";
-  }
-
-  // set location credentials from the current location type
-  @mobx.action
-  private _setLocationCredentialsFromType(): void {
-    const location = this.repoLocation;
-    const locationInfo = repositoryLocationInfos.find(v => v.type === this.repoLocation.type);
-    const reqiredCredentials = locationInfo?.credentials || [];
-    if (location.credentials.map(v => v.name).toString() !== reqiredCredentials.toString()) {
-      location.credentials = reqiredCredentials.map((v) => { return { name: v, value: "" }; })
-    }
-  }
 
   // get cached files for the given snapshot and path. 
   // returns undefined when no cached files are present. 

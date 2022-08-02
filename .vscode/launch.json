@@ -8,7 +8,10 @@
       "mode": "exec",
       "preLaunchTask": "build debug",
       "cwd": "${workspaceFolder}",
-      "env": { },
+      "env": {
+        "RESTIC_REPOSITORY": "${workspaceFolder}/lib/restic/test-repo",
+        "RESTIC_PASSWORD": "test-repo-pass"
+      },
       "linux": {
         "program": "${workspaceFolder}/build/bin/Restic-Browser",
       },
