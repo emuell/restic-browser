@@ -1,8 +1,7 @@
 import * as mobx from 'mobx';
 
-import { 
-	DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo  
-} from '../../wailsjs/go/lib/ResticBrowserApp';
+import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo }
+  from '../../wailsjs/go/lib/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
 
@@ -47,17 +46,17 @@ class AppState {
 
     // fetch and open default repository location, if set
     DefaultRepoLocation()
-			.then(location => {
+      .then(location => {
         // set location from default
-				this.repoLocation.setFromResticLocation(location);
-				// try opening the repository
-				if (this.repoLocation.path) {
-					this.openRepository();
-				}
-			})
-			.catch(err => {
-				console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
-			});
+        this.repoLocation.setFromResticLocation(location);
+        // try opening the repository
+        if (this.repoLocation.path) {
+          this.openRepository();
+        }
+      })
+      .catch(err => {
+        console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
+      });
   }
 
   // open a new repository and populate snapshots
