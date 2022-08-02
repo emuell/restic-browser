@@ -1,8 +1,7 @@
 import * as mobx from 'mobx';
 
 import { 
-	DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, 
-	OpenFileOrUrl, OpenRepo, SelectLocalRepo 
+	DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo  
 } from '../../wailsjs/go/lib/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
@@ -50,7 +49,7 @@ class AppState {
     DefaultRepoLocation()
 			.then(location => {
         // set location from default
-				this.repoLocation.setFromLocation(location);
+				this.repoLocation.setFromResticLocation(location);
 				// try opening the repository
 				if (this.repoLocation.path) {
 					this.openRepository();
@@ -59,27 +58,6 @@ class AppState {
 			.catch(err => {
 				console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
 			});
-  }
-
-  // reset location, error and snapshots
-  @mobx.action
-  resetLocation(): void {
-    this.repoLocation.reset();
-    this.repoError = "";
-    this.snapShots = [];
-    this.selectedSnapshotID = "";
-  }
-
-  // open a directory dialog to select a new local repository
-  // throws, when the selected path does not look like a restic repository
-  @mobx.action
-  browseLocalRepositoryPath(): Promise<void> {
-    return SelectLocalRepo()
-      .then(mobx.action((directory) => {
-        if (directory) {
-          appState.repoLocation.path = directory;
-        }
-      }))
   }
 
   // open a new repository and populate snapshots
@@ -91,8 +69,11 @@ class AppState {
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;
-        if (result.findIndex((s) => s.short_id === this.selectedSnapshotID) === -1) {
+        if (! result.find((s) => s.short_id === this.selectedSnapshotID)) {
           this.selectedSnapshotID = "";
+          if (result.length) {
+            this.selectedSnapshotID = result[0].id;
+          }
         }
         this._filesCache.clear();
         --this.isLoadingSnapshots; 

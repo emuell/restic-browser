@@ -69,9 +69,19 @@ export class Location {
     this.password = "";
   }
 
+  // set location properties from some other Location
+  @mobx.action
+  setFromOtherLocation(other: Location): void {
+    this.type = other.type;
+    this.prefix = other.prefix;
+    this.path = other.path;
+    this.credentials = Array.from(other.credentials);
+    this.password = other.password;
+  }
+
   // set location properties from a restic.Location
   @mobx.action
-  setFromLocation(location: restic.Location): void {
+  setFromResticLocation(location: restic.Location): void {
     // find matching location type 
     const locationInfo = locationInfos.find(v => v.prefix === location.prefix);
     if (! locationInfo) {
