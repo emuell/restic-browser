@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/emuell/restic-browser/lib/open"
 	"github.com/emuell/restic-browser/lib/restic"
@@ -102,6 +103,42 @@ func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	return open.OpenFileOrURL(path)
 }
 
+func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
+	location := restic.Location{}
+	location.Password = os.Getenv("RESTIC_PASSWORD")
+	repo := os.Getenv("RESTIC_REPOSITORY")
+	if len(repo) == 0 {
+		return location
+	}
+	type LocationInfo struct {
+		prefix      string
+		credentials []string
+	}
+	locationInfos := []LocationInfo{
+		{prefix: "bs"},
+		{prefix: "sftp"},
+		{prefix: "rest"},
+		{prefix: "rclone"},
+		{prefix: "s3", credentials: []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"}},
+		{prefix: "b2", credentials: []string{"B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"}},
+		{prefix: "azure", credentials: []string{"AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"}},
+	}
+	location.Prefix = ""
+	location.Path = repo
+	for _, locationInfo := range locationInfos {
+		if strings.HasPrefix(repo, locationInfo.prefix+":") {
+			location.Prefix = locationInfo.prefix
+			location.Path = strings.Replace(repo, locationInfo.prefix+":", "", 1)
+			for _, credential := range locationInfo.credentials {
+				location.Credentials = append(location.Credentials,
+					restic.EnvValue{Name: credential, Value: os.Getenv(credential)})
+			}
+			break
+		}
+	}
+	return location
+}
+
 func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",
@@ -123,11 +160,11 @@ func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	return dir, nil
 }
 
-func (r *ResticBrowserApp) OpenRepo(location restic.Location, password string) ([]*restic.Snapshot, error) {
+func (r *ResticBrowserApp) OpenRepo(location restic.Location) ([]*restic.Snapshot, error) {
 	if r.restic == nil {
 		return nil, fmt.Errorf("failed to find restic program")
 	}
-	repo := restic.NewRepository(location, password, r.restic)
+	repo := restic.NewRepository(location, r.restic)
 	snapshots, err := repo.GetSnapshots()
 	if err != nil {
 		return nil, err

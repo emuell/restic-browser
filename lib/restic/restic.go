@@ -28,8 +28,8 @@ func (r *Restic) RunRedirected(stdOutFile *os.File, command []string) (stdErr st
 }
 
 // NewRepo creates a new repo instance
-func (r *Restic) NewRepo(location Location, password string) (*Repository, error) {
-	return NewRepository(location, password, r), nil
+func (r *Restic) NewRepo(location Location) (*Repository, error) {
+	return NewRepository(location, r), nil
 }
 
 // ResticProgramName returns the expected platform dependend restic program name
