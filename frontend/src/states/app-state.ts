@@ -111,15 +111,15 @@ class AppState {
     // else fetch new ones and cache them
     ++this.isLoadingFiles;
     return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
-      .then((files) => {
+      .then(mobx.action((files) => {
         --this.isLoadingFiles;
         this._addCachedFiles(selectedSnapshotID, rootPath, files);
         return files;
-      })
-      .catch((error) => {
+      }))
+      .catch(mobx.action((error) => {
         --this.isLoadingFiles;
         throw error;
-      });
+      }));
   }
 
   // dump specified snapshot file to temp, then open it with the system's default program

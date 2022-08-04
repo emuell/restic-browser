@@ -48,9 +48,11 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _browseLocalRepositoryPath() {
     SelectLocalRepo()
-      .then((directory) => {
-        this._location.path = directory;
-      })
+      .then(mobx.action((directory) => {
+        if (directory.length) {
+          this._location.path = directory;
+        }
+      }))
       .catch((err) => {
         Notification.show(`Invalid repository: '${err.message || err}'`, {
           position: 'bottom-center',
