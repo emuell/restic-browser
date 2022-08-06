@@ -4,19 +4,24 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import prettyBytes from 'pretty-bytes';
 import * as mobx from 'mobx'
 
-import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { 
+  Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel,
+  GridDataProviderCallback, GridDataProviderParams, GridSorterDefinition
+} from '@vaadin/grid';
+
 import { Notification } from '@vaadin/notification';
 
 import { restic } from '../../wailsjs/go/models';
 
-import { appState } from '../states/app-state';
-
 import { OpenFileOrUrl } from '../../wailsjs/go/lib/ResticBrowserApp';
+
+import { appState } from '../states/app-state';
 
 import './error-message';
 import './spinner';
 
 import '@vaadin/grid';
+import '@vaadin/grid/vaadin-grid-sort-column.js';
 import '@vaadin/text-field';
 import '@vaadin/button';
 import '@vaadin/notification';
@@ -30,8 +35,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   
   @mobx.observable
   private _rootPath: string = "";
-
-  @state() 
+  
+  // NB: not a state or observable: data-provider update is manually triggered 
   private _files: restic.File[] = [];
   
   @state()
@@ -64,6 +69,8 @@ export class ResticBrowserFileList extends MobxLitElement {
     this._cTimeRenderer = this._cTimeRenderer.bind(this);
     this._mTimeRenderer = this._mTimeRenderer.bind(this);
     this._aTimeRenderer = this._aTimeRenderer.bind(this);
+    // bind context for data provider
+    this._dataProvider = this._dataProvider.bind(this);
   }
 
   @mobx.action
@@ -143,10 +150,12 @@ export class ResticBrowserFileList extends MobxLitElement {
         if (parentRootPath) {
           files.push({name: "..", type: "dir", path: parentRootPath})
         }
-        // assign and sort
+        // assign and request data provider update
         this._selectedFiles = [];
         this._files = files;
-        this._applyColumnSorting();
+        if (this._grid) {
+          this._grid.clearCache();
+        }
         // request auto column width update
         this._recalculateColumnWidths = true;
         // reset fetch errors - if any
@@ -159,16 +168,93 @@ export class ResticBrowserFileList extends MobxLitElement {
       })
   }
 
-  private _applyColumnSorting() {
-    this._files.sort((a, b) => {
-      if (a.type === "dir" && b.type !== "dir") {
+  private _sortFiles(params: GridDataProviderParams<restic.File>): restic.File[] {
+
+    // sorting helper functions, copied from @vaadin-grid/array-data-provider.js
+    function normalizeEmptyValue(value: any) {
+      if ([undefined, null].includes(value)) {
+        return '';
+      } else if (isNaN(value)) {
+        return value.toString();
+      }
+      return value;
+    }
+    function compare(a: any, b: any) {
+      a = normalizeEmptyValue(a);
+      b = normalizeEmptyValue(b);
+
+      if (a < b) {
         return -1;
-      } 
-      else if (a.type !== "dir" && b.type === "dir") {
+      }
+      if (a > b) {
         return 1;
       }
-      return a.name.localeCompare(b.name);
+      return 0;
+    }
+    function get(path: string, object: any) {
+      return path.split('.').reduce((obj, property) => obj[property], object);
+    }
+
+    // get sort order (multi sorting not supported ATM)
+    let sortOrder: GridSorterDefinition = {
+      path: "name",
+      direction: "asc"
+    };
+    if (params.sortOrders && params.sortOrders.length) {
+      if (params.sortOrders[0].direction) {
+        sortOrder = params.sortOrders[0];
+      }
+    }
+
+    // get items from files and apply our customized sorting
+    const items = Array.from(this._files);
+    items.sort((a: restic.File, b: restic.File) => {
+      // always keep .. item at top
+      if (a.type === "dir" && a.name == "..") {
+        return -1;
+      } else if (b.type === "dir" && b.name == "..") {
+        return 1;
+      }
+      // keep directories at top or bottom when sorting by name
+      if (sortOrder.path === "name") {
+        if (a.type === "dir" && b.type !== "dir") {
+          return (sortOrder.direction === "asc") ? -1 : 1;
+        } else if (a.type !== "dir" && b.type === "dir") {
+          return (sortOrder.direction === "asc") ? 1 : -1;
+        }
+        // and do a "natural" sort on names
+        const options = { numeric: true, sensitivity: "base" };
+        if (sortOrder.direction === 'asc') {
+          return a.name.localeCompare(b.name, undefined, options);
+        } else { 
+          return b.name.localeCompare(a.name, undefined, options);
+        }
+      } else {
+        // apply custom sorting 
+        if (sortOrder.direction === 'asc') {
+          return compare(get(sortOrder.path, a), get(sortOrder.path, b));
+        } else { 
+          return compare(get(sortOrder.path, b), get(sortOrder.path, a));
+        }
+      }
     });
+  
+    return items;
+  }
+
+  private _dataProvider(
+    params: GridDataProviderParams<restic.File>,
+    callback: GridDataProviderCallback<restic.File>
+  ) {
+    const items = this._sortFiles(params);
+    const count = Math.min(items.length, params.pageSize);
+    const start = params.page * count;
+    const end = start + count;
+    if (start !== 0 || end !== items.length) {
+      callback(items.slice(start, end), items.length);
+    } else {
+      callback(items, items.length);
+    }
   }
 
   private _activeItemChanged(e: GridActiveItemChangedEvent<restic.File>) {
@@ -396,24 +482,24 @@ export class ResticBrowserFileList extends MobxLitElement {
       <vaadin-grid
         id="grid"
         theme="compact no-border small" 
-        .items=${this._files}
+        .dataProvider=${this._dataProvider}
         .selectedItems=${this._selectedFiles}
         @active-item-changed=${this._activeItemChanged}
       >
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" 
+        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" header=""
           .renderer=${this._pathRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${1} path="name"
-          .renderer=${this._nameRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="size"
-          .renderer=${this._sizeRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .width=${"6rem"} path="mode"
-          .renderer=${this._modeRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="mtime" 
-          .renderer=${this._mTimeRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="atime" 
-          .renderer=${this._aTimeRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="ctime" 
-          .renderer=${this._cTimeRenderer}></vaadin-grid-column>
+          <vaadin-grid-sort-column .flexGrow=${1} path="name" direction="asc"
+          .renderer=${this._nameRenderer}></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="size"
+          .renderer=${this._sizeRenderer}></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="mode"
+          .renderer=${this._modeRenderer}></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="mtime" 
+          .renderer=${this._mTimeRenderer}></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="atime" 
+          .renderer=${this._aTimeRenderer}></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="ctime" 
+          .renderer=${this._cTimeRenderer}></vaadin-grid-sort-column>
       </vaadin-grid>
     `;
   }
