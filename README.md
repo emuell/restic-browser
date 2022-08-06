@@ -33,8 +33,8 @@ This is not a fullblown restic backup GUI - it only allows you to *browse* exist
 #### MacOS:
 - macOS 10.14 or later
 #### Linux:
-- Linux with GLIBC_2.34 (e.g. Ubuntu 22)
-- WebKit2 (libwebkit2gtk-4.0)
+- Linux with GLIBC_2.31 or later (e.g. Ubuntu 20.04 or later)
+- WebKit2 (install via `apt install libwebkit2gtk-4.0` on Ubuntu)
 
 
 ## Development
