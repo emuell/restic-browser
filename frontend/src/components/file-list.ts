@@ -143,8 +143,9 @@ export class ResticBrowserFileList extends MobxLitElement {
     const rootPath = this._rootPath;
     appState.fetchFiles(rootPath)
       .then((files) => {
+        const normalizedRootPath = rootPath.replace(/\\/g, "/");
         // remove . entry
-        files = files.filter((f) => f.path !== rootPath);
+        files = files.filter((f) => f.path.replace(/\\/g, "/") !== normalizedRootPath);
         // add .. entry
         const parentRootPath = this._parentRootPath(rootPath)
         if (parentRootPath) {

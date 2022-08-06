@@ -182,6 +182,7 @@ class AppState {
   private _getCachedFiles(snapShotId: string, path: string): restic.File[] | undefined {
     const entry = this._filesCache.get(AppState._cachedFilesKey(snapShotId, path))
     if (entry) {
+      entry.lastAccessTime = Date.now();
       return entry.files;
     }
     return undefined;
@@ -213,7 +214,8 @@ class AppState {
 
   // construct a key for the filesList cache 
   private static _cachedFilesKey(snapShotId: string, path: string): string {
-    return snapShotId + ":" + path;
+    const normalizedPath = !path ? "/" : path.replace(/\\/g, "/");
+    return snapShotId + ":" + normalizedPath;
   }
 
   // file cache for \function fetchFiles 
