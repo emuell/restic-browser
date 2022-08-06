@@ -168,11 +168,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       })
   }
 
-  private _dataProvider(
-    params: GridDataProviderParams<restic.File>,
-    callback: GridDataProviderCallback<restic.File>
-  ) {
-   
+  private _sortFiles(params: GridDataProviderParams<restic.File>): restic.File[] {
+
     // sorting helper functions, copied from @vaadin-grid/array-data-provider.js
     function normalizeEmptyValue(value: any) {
       if ([undefined, null].includes(value)) {
@@ -197,18 +194,21 @@ export class ResticBrowserFileList extends MobxLitElement {
     function get(path: string, object: any) {
       return path.split('.').reduce((obj, property) => obj[property], object);
     }
-    
-    // get sort order (multi sort not supported ATM)
+
+    // get sort order (multi sorting not supported ATM)
     let sortOrder: GridSorterDefinition = {
       path: "name",
       direction: "asc"
     };
     if (params.sortOrders && params.sortOrders.length) {
-      sortOrder = params.sortOrders[0];
+      if (params.sortOrders[0].direction) {
+        sortOrder = params.sortOrders[0];
+      }
     }
+
     // get items from files and apply our customized sorting
     const items = Array.from(this._files);
-    items.sort((a, b) => {
+    items.sort((a: restic.File, b: restic.File) => {
       // always keep .. item at top
       if (a.type === "dir" && a.name == "..") {
         return -1;
@@ -238,7 +238,15 @@ export class ResticBrowserFileList extends MobxLitElement {
         }
       }
     });
+  
+    return items;
+  }
 
+  private _dataProvider(
+    params: GridDataProviderParams<restic.File>,
+    callback: GridDataProviderCallback<restic.File>
+  ) {
+    const items = this._sortFiles(params);
     const count = Math.min(items.length, params.pageSize);
     const start = params.page * count;
     const end = start + count;
