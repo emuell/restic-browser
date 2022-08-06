@@ -13,6 +13,7 @@ import './spinner';
 
 import '@vaadin/horizontal-layout';
 import '@vaadin/grid';
+import '@vaadin/grid/vaadin-grid-sort-column.js';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -136,12 +137,12 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         @active-item-changed=${this._activeItemChanged}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="short_id"></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="time" 
-           .renderer=${this._timeRenderer}></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${1} path="paths"></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${1} path="tags"></vaadin-grid-column>
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-column>
-        <!-- <vaadin-grid-column path="username"></vaadin-grid-column> -->
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="time" 
+           .renderer=${this._timeRenderer} direction="asc"></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${1} path="paths"></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${1} path="tags"></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-sort-column>
+        <!-- <vaadin-grid-sort-column path="username"></vaadin-grid-sort-column> -->
       </vaadin-grid>
     `;
   }
