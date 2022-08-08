@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/emuell/restic-browser/lib/program"
+	"restic-browser/backend/program"
 )
 
 // Restic holds information about the Restic Binary

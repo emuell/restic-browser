@@ -1,4 +1,4 @@
-module github.com/emuell/restic-browser
+module restic-browser
 
 go 1.17
 

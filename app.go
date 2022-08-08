@@ -1,4 +1,4 @@
-package lib
+package main
 
 import (
 	"context"
@@ -7,8 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/emuell/restic-browser/lib/open"
-	"github.com/emuell/restic-browser/lib/restic"
+	"restic-browser/backend/open"
+	"restic-browser/backend/restic"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 

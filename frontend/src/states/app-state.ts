@@ -1,7 +1,7 @@
 import * as mobx from 'mobx';
 
 import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo }
-  from '../../wailsjs/go/lib/ResticBrowserApp';
+  from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
 

@@ -13,7 +13,7 @@ import { Notification } from '@vaadin/notification';
 
 import { restic } from '../../wailsjs/go/models';
 
-import { OpenFileOrUrl } from '../../wailsjs/go/lib/ResticBrowserApp';
+import { OpenFileOrUrl } from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { appState } from '../states/app-state';
 

@@ -6,7 +6,7 @@ import * as mobx from 'mobx';
 import { appState } from '../states/app-state';
 import { locationInfos, RepositoryType, Location } from '../states/location';
 
-import { SelectLocalRepo } from '../../wailsjs/go/lib/ResticBrowserApp';
+import { SelectLocalRepo } from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { Notification } from '@vaadin/notification';
 

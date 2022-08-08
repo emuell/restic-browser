@@ -30,7 +30,7 @@ func getBasePath() string {
 // get abs path of our test-repo
 func getTestRepoPath() string {
 	basePath := getBasePath()
-	repoPath := filepath.Join(basePath, "lib", "restic", "test-repo")
+	repoPath := filepath.Join(basePath, "backend", "restic", "test-repo")
 	if _, err := os.Stat(repoPath); err != nil {
 		panic(fmt.Errorf("failed to resolve test-repo at %s", repoPath))
 	}
