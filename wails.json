@@ -12,7 +12,7 @@
   "info": {
     "productName": "Restic-Browser",
     "companyName": "The Restic-Browser Team",
-    "productVersion": "0.2.1",
+    "productVersion": "0.2.2",
     "copyright": "See https://github.com/emuell/restic-browser",
 	  "description": "Restic Backup Browser GUI",
     "comments": "Built using Wails: https://wails.io"
