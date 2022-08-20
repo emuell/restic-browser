@@ -105,10 +105,19 @@ func (r *Repository) RestoreFile(snapshot *Snapshot, file *File, targetPath stri
 
 func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string) (string, error) {
 
+	// zip compression for folders and -a option was added in restic 0.12.0
+	hasZipDumpSupport := r.restic.Version[0] > 1 ||
+		(r.restic.Version[0] == 0 && r.restic.Version[1] >= 12)
+
+	if file.Type == "dir" && !hasZipDumpSupport {
+		return "", fmt.Errorf("your version of restic does not support folder dumps. " +
+			"Please upgrade restic to version >= 0.12.0 to restore folders")
+	}
+
 	// open the target file for writing
 	targetFileName := filepath.Join(targetPath, file.Name)
 	if file.Type == "dir" {
-		targetFileName = targetFileName + ".zip"
+		targetFileName += ".zip"
 	}
 	if fs.FileExists(targetFileName) {
 		return "", fmt.Errorf("target file '%s' already exists", targetFileName)
