@@ -9,7 +9,7 @@
       "preLaunchTask": "build debug",
       "cwd": "${workspaceFolder}",
       "env": {
-        "RESTIC_REPOSITORY": "${workspaceFolder}/lib/restic/test-repo",
+        "RESTIC_REPOSITORY": "${workspaceFolder}/backend/restic/test-repo",
         "RESTIC_PASSWORD": "test-repo-pass"
       },
       "linux": {
