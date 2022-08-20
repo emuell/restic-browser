@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -57,8 +56,10 @@ func TestResticProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to resolve restic binary", err)
 	}
-	if len(strings.Split(restic.Version, ".")) != 3 {
-		t.Error("unexpected restic version number")
+	if restic.Version[0] == 0 &&
+		restic.Version[1] == 0 &&
+		restic.Version[2] == 0 {
+		t.Error("failed to parse restic version number")
 	}
 }
 

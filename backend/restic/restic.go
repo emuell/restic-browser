@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"restic-browser/backend/program"
@@ -12,9 +13,8 @@ import (
 
 // Restic holds information about the Restic Binary
 type Restic struct {
-	VersionString string
-	Version       string
-	restic        *program.Program
+	Version [3]int // major, minor, rev
+	restic  *program.Program
 }
 
 // Run restic program and return stdout and err, exitCode and error.
@@ -41,6 +41,37 @@ func ResticProgramName() string {
 	return programName
 }
 
+// resticVersionNumber gets the restic version from the restic program
+func resticVersionNumber(resticProgram *program.Program) ([3]int, error) {
+	versionstring, _, code, _ := resticProgram.Run("version")
+	if code != 0 {
+		return [3]int{0, 0, 0}, fmt.Errorf("failed to fetch restic version from %s", resticProgram.Path)
+	}
+	version := [3]int{0, 0, 0}
+	splitVersion := strings.Split(versionstring, " ") // "restic x.y.z some other info"
+	if len(splitVersion) > 2 {
+		versionSplits := strings.Split(splitVersion[1], ".") // "x.y.z"
+		if len(versionSplits) > 2 {
+			major, err := strconv.ParseInt(versionSplits[0], 10, 32)
+			if err != nil {
+				major = 0
+			}
+			minor, err := strconv.ParseInt(versionSplits[1], 10, 32)
+			if err != nil {
+				minor = 0
+			}
+			rev, err := strconv.ParseInt(versionSplits[2], 10, 32)
+			if err != nil {
+				rev = 0
+			}
+			version[0] = int(major)
+			version[1] = int(minor)
+			version[2] = int(rev)
+		}
+	}
+	return version, nil
+}
+
 // NewRestic creates a new Restic struct
 func NewRestic() (restic *Restic, err error) {
 
@@ -52,20 +83,14 @@ func NewRestic() (restic *Restic, err error) {
 	}
 
 	// Get the version
-	versionstring, _, code, _ := resticProgram.Run("version")
-	if code != 0 {
-		return nil, fmt.Errorf("failed to fetch restic version from %s", resticProgram.Path)
-	}
-	version := "unknown"
-	splitVersion := strings.Split(versionstring, " ")
-	if len(splitVersion) > 2 {
-		version = splitVersion[1]
+	version, err := resticVersionNumber(resticProgram)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to fetch restic version from %s: %s", resticProgram.Path, err.Error())
 	}
 
 	restic = &Restic{
-		VersionString: versionstring,
-		Version:       version,
-		restic:        resticProgram,
+		Version: version,
+		restic:  resticProgram,
 	}
 
 	return restic, nil
@@ -95,20 +120,14 @@ func NewResticFromPath(path string) (restic *Restic, err error) {
 	}
 
 	// Get the version
-	versionstring, _, code, _ := resticProgram.Run("version")
-	if code != 0 {
-		return nil, fmt.Errorf("failed to fetch restic version from %s", resticProgram.Path)
-	}
-	version := "unknown"
-	splitVersion := strings.Split(versionstring, " ")
-	if len(splitVersion) > 2 {
-		version = splitVersion[1]
+	version, err := resticVersionNumber(resticProgram)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to fetch restic version from %s: %s", resticProgram.Path, err.Error())
 	}
 
 	restic = &Restic{
-		VersionString: versionstring,
-		Version:       version,
-		restic:        resticProgram,
+		Version: version,
+		restic:  resticProgram,
 	}
 
 	return restic, nil
