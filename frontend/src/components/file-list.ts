@@ -83,7 +83,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       .catch((err) => { 
         Notification.show(`Failed to restore file: ${err.message || err}`, {
           position: 'middle',
-          theme: "error"
+          theme: "error",
+          duration: 10000
         });
       });
   }
