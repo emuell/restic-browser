@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -10,7 +11,9 @@ import (
 	"restic-browser/backend/open"
 	"restic-browser/backend/restic"
 
+	"github.com/pkg/errors"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/text/encoding/unicode"
 )
 
 type ResticBrowserApp struct {
@@ -104,9 +107,45 @@ func (r *ResticBrowserApp) OpenFileOrUrl(path string) error {
 	return open.OpenFileOrURL(path)
 }
 
+// read a text file, skipping BOM headers if present
+func readTextFile(filename string) ([]byte, error) {
+	var (
+		bomUTF8              = []byte{0xef, 0xbb, 0xbf}
+		bomUTF16BigEndian    = []byte{0xfe, 0xff}
+		bomUTF16LittleEndian = []byte{0xff, 0xfe}
+	)
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	if bytes.HasPrefix(data, bomUTF8) {
+		return data[len(bomUTF8):], nil
+	}
+	if !bytes.HasPrefix(data, bomUTF16BigEndian) && !bytes.HasPrefix(data, bomUTF16LittleEndian) {
+		return data, nil
+	}
+	// UseBom means automatic endianness selection
+	e := unicode.UTF16(unicode.BigEndian, unicode.UseBOM)
+	return e.NewDecoder().Bytes(data)
+}
+
+// defaultRepoPassword determines the default restic repository password from the environment.
+func defaultRepoPassword() (string, error) {
+	passwordFile := os.Getenv("RESTIC_PASSWORD_FILE")
+	if passwordFile != "" {
+		s, err := readTextFile(passwordFile)
+		if errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("%s does not exist", passwordFile)
+		}
+		return strings.TrimSpace(strings.Replace(string(s), "\n", "", -1)), err
+	}
+	password := os.Getenv("RESTIC_PASSWORD")
+	return password, nil
+}
+
 func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
 	location := restic.Location{}
-	location.Password = os.Getenv("RESTIC_PASSWORD")
+	location.Password, _ = defaultRepoPassword()
 	repo := os.Getenv("RESTIC_REPOSITORY")
 	if len(repo) == 0 {
 		return location
