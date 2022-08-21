@@ -14,6 +14,8 @@ export function OpenFileOrUrl(arg1:string):Promise<Error>;
 
 export function OpenRepo(arg1:restic.Location):Promise<Array<restic.Snapshot>>;
 
+export function ReadPasswordFromFile():Promise<string>;
+
 export function RestoreFile(arg1:string,arg2:restic.File):Promise<string>;
 
 export function SelectLocalRepo():Promise<string>;

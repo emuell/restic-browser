@@ -179,6 +179,31 @@ func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
 	return location
 }
 
+func (r *ResticBrowserApp) ReadPasswordFromFile() (string, error) {
+	options := runtime.OpenDialogOptions{
+		DefaultDirectory:           "",
+		DefaultFilename:            "",
+		Title:                      "Please select a password file",
+		Filters:                    []runtime.FileFilter{},
+		ShowHiddenFiles:            true,
+		CanCreateDirectories:       false,
+		ResolvesAliases:            true,
+		TreatPackagesAsDirectories: true,
+	}
+	filename, err := runtime.OpenFileDialog(*r.context, options)
+	if err == nil && filename == "" {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to show dialog: %s", err.Error())
+	}
+	bytes, err := readTextFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file: %s", err.Error())
+	}
+	return strings.TrimSpace(strings.Replace(string(bytes), "\n", "", -1)), nil
+}
+
 func (r *ResticBrowserApp) SelectLocalRepo() (string, error) {
 	options := runtime.OpenDialogOptions{
 		DefaultDirectory:           "",

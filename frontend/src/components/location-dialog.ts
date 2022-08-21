@@ -6,7 +6,7 @@ import * as mobx from 'mobx';
 import { appState } from '../states/app-state';
 import { locationInfos, RepositoryType, Location } from '../states/location';
 
-import { SelectLocalRepo } from '../../wailsjs/go/main/ResticBrowserApp';
+import { SelectLocalRepo, ReadPasswordFromFile } from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { Notification } from '@vaadin/notification';
 
@@ -44,6 +44,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     this._location.setFromOtherLocation(appState.repoLocation);
     // bind this to callbacks
     this._browseLocalRepositoryPath = this._browseLocalRepositoryPath.bind(this);
+    this._readRepositoryPasswordFile = this._readRepositoryPasswordFile.bind(this);
   }
 
   private _browseLocalRepositoryPath() {
@@ -55,6 +56,19 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
       }))
       .catch((err) => {
         Notification.show(`Invalid repository: '${err.message || err}'`, {
+          position: 'bottom-center',
+          theme: "error"
+        }); 
+      });
+  }
+
+  private _readRepositoryPasswordFile() {
+    ReadPasswordFromFile()
+      .then(mobx.action((password) => {
+          this._location.password = password;
+      }))
+      .catch((err) => {
+        Notification.show(`Invalid password file: '${err.message || err}'`, {
           position: 'bottom-center',
           theme: "error"
         }); 
@@ -85,7 +99,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
           })}
         ></vaadin-select>
         <vaadin-horizontal-layout style="width: 24rem">
-          <vaadin-text-field style="width: 100%; margin-right: 4px" 
+          <vaadin-text-field style="width: 100%; margin-right: 4px;" 
             label=${this._location.type === "local" 
               ? "Path" : (["sftp", "rest"].includes(this._location.type)) ? "URL" : "Bucket"}
             required
@@ -113,14 +127,21 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
             })}>
           </vaadin-password-field>
         `)}
-        <vaadin-password-field
-          label="Repository Password"
-          required
-          value=${this._location.password}
-          @change=${mobx.action((event: CustomEvent) => {
-            this._location.password = (event.target as HTMLInputElement).value;
-          })}
-        ></vaadin-password-field>
+        <vaadin-horizontal-layout style="width: 24rem">
+          <vaadin-password-field
+            style="width: 100%; margin-right: 4px;"
+            label="Repository Password"
+            required
+            value=${this._location.password}
+            @change=${mobx.action((event: CustomEvent) => {
+              this._location.password = (event.target as HTMLInputElement).value;
+            })}
+          >
+          </vaadin-password-field>
+          <vaadin-button theme="primary" style="width: 4rem; margin-top: 35.5px;" 
+            @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>
+        </vaadin-horizontal-layout>
+
       </vaadin-vertical-layout>
     `;
 
