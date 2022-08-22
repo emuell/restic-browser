@@ -26,6 +26,10 @@ export function OpenRepo(arg1) {
   return window['go']['main']['ResticBrowserApp']['OpenRepo'](arg1);
 }
 
+export function ReadPasswordFromFile() {
+  return window['go']['main']['ResticBrowserApp']['ReadPasswordFromFile']();
+}
+
 export function RestoreFile(arg1, arg2) {
   return window['go']['main']['ResticBrowserApp']['RestoreFile'](arg1, arg2);
 }
