@@ -23,10 +23,27 @@ This is not a fullblown restic backup GUI - it only allows you to *browse* exist
 ![Screenshot](./screenshot.png "Restic Browser")
 
 
+## Keyboard Navigation
+
+The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab` + `Shift-Tab` keys.
+
+### Global Shortcuts: 
+
+- `Control/CMD + O`: Open new repository
+
+### Snapshot-List
+- `Arrow keys`, `Page Up/Down`, `Home/End`: Change selected snapshot
+
+### File-List
+- `Arrow keys`, `Page Up/Down`, `Home/End`: Change selected file
+- `o` or `Enter` or `Space`: Open selected file or folder
+- `R`: Restore selected file or folder
+
+
 ## System Requirements
 
 #### All platforms
-- Install [restic](https://github.com/restic/restic/releases/) and *make sure it is included in your $PATH*. 
+- Install [restic](https://github.com/restic/restic/releases/) and *make sure it is included in your $PATH*.
 
 #### Windows:
 - Windows 10 or later with WebView2 Runtime
