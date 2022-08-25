@@ -57,7 +57,7 @@ jobs:
       uses: AnimMouse/setup-restic@v1
 
     - name: Setup Wails
-      run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.0.0-beta.42
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.0.0-beta.44.2
 
     - name: Checkout
       uses: actions/checkout@v3
