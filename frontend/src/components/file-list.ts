@@ -5,14 +5,12 @@ import prettyBytes from 'pretty-bytes';
 import * as mobx from 'mobx'
 
 import { 
-  Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel,
-  GridDataProviderCallback, GridDataProviderParams, GridSorterDefinition
+  Grid, GridActiveItemChangedEvent, GridCellFocusEvent, GridColumn, GridItemModel 
 } from '@vaadin/grid';
 
 import { Notification } from '@vaadin/notification';
 
 import { restic } from '../../wailsjs/go/models';
-
 import { OpenFileOrUrl } from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { appState } from '../states/app-state';
@@ -25,6 +23,7 @@ import '@vaadin/grid/vaadin-grid-sort-column.js';
 import '@vaadin/text-field';
 import '@vaadin/button';
 import '@vaadin/notification';
+import { FileListDataProvider } from './file-list-data-provider';
 
 // -------------------------------------------------------------------------------------------------
  
@@ -37,7 +36,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   private _rootPath: string = "";
   
   // NB: not a state or observable: data-provider update is manually triggered 
-  private _files: restic.File[] = [];
+  private _fileDataProvider = new FileListDataProvider();
   
   @state()
   private _fetchError: string = "";
@@ -69,8 +68,6 @@ export class ResticBrowserFileList extends MobxLitElement {
     this._cTimeRenderer = this._cTimeRenderer.bind(this);
     this._mTimeRenderer = this._mTimeRenderer.bind(this);
     this._aTimeRenderer = this._aTimeRenderer.bind(this);
-    // bind context for data provider
-    this._dataProvider = this._dataProvider.bind(this);
   }
 
   @mobx.action
@@ -137,7 +134,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     if (! appState.selectedSnapshotID) {
       this._fetchError = "No snapshot selected";
       this._selectedFiles = [];
-      this._files = [];
+      this._fileDataProvider.files = [];
       return;
     }
     // memorize rootpath we're fetching files for
@@ -154,7 +151,7 @@ export class ResticBrowserFileList extends MobxLitElement {
         }
         // assign and request data provider update
         this._selectedFiles = [];
-        this._files = files;
+        this._fileDataProvider.files = files;
         if (this._grid) {
           this._grid.clearCache();
         }
@@ -166,97 +163,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       .catch((error) => {
         this._fetchError = error.message || String(error);
         this._selectedFiles = [];
-        this._files = [];
+        this._fileDataProvider.files = [];
       })
-  }
-
-  private _sortFiles(params: GridDataProviderParams<restic.File>): restic.File[] {
-
-    // sorting helper functions, copied from @vaadin-grid/array-data-provider.js
-    function normalizeEmptyValue(value: any) {
-      if ([undefined, null].includes(value)) {
-        return '';
-      } else if (isNaN(value)) {
-        return value.toString();
-      }
-      return value;
-    }
-    function compare(a: any, b: any) {
-      a = normalizeEmptyValue(a);
-      b = normalizeEmptyValue(b);
-
-      if (a < b) {
-        return -1;
-      }
-      if (a > b) {
-        return 1;
-      }
-      return 0;
-    }
-    function get(path: string, object: any) {
-      return path.split('.').reduce((obj, property) => obj[property], object);
-    }
-
-    // get sort order (multi sorting not supported ATM)
-    let sortOrder: GridSorterDefinition = {
-      path: "name",
-      direction: "asc"
-    };
-    if (params.sortOrders && params.sortOrders.length) {
-      if (params.sortOrders[0].direction) {
-        sortOrder = params.sortOrders[0];
-      }
-    }
-
-    // get items from files and apply our customized sorting
-    const items = Array.from(this._files);
-    items.sort((a: restic.File, b: restic.File) => {
-      // always keep .. item at top
-      if (a.type === "dir" && a.name == "..") {
-        return -1;
-      } else if (b.type === "dir" && b.name == "..") {
-        return 1;
-      }
-      // keep directories at top or bottom when sorting by name
-      if (sortOrder.path === "name") {
-        if (a.type === "dir" && b.type !== "dir") {
-          return (sortOrder.direction === "asc") ? -1 : 1;
-        } else if (a.type !== "dir" && b.type === "dir") {
-          return (sortOrder.direction === "asc") ? 1 : -1;
-        }
-        // and do a "natural" sort on names
-        const options = { numeric: true, sensitivity: "base" };
-        if (sortOrder.direction === 'asc') {
-          return a.name.localeCompare(b.name, undefined, options);
-        } else { 
-          return b.name.localeCompare(a.name, undefined, options);
-        }
-      } else {
-        // apply custom sorting 
-        if (sortOrder.direction === 'asc') {
-          return compare(get(sortOrder.path, a), get(sortOrder.path, b));
-        } else { 
-          return compare(get(sortOrder.path, b), get(sortOrder.path, a));
-        }
-      }
-    });
-  
-    return items;
-  }
-
-  private _dataProvider(
-    params: GridDataProviderParams<restic.File>,
-    callback: GridDataProviderCallback<restic.File>
-  ) {
-    const items = this._sortFiles(params);
-    const count = Math.min(items.length, params.pageSize);
-    const start = params.page * count;
-    const end = start + count;
-    if (start !== 0 || end !== items.length) {
-      callback(items.slice(start, end), items.length);
-    } else {
-      callback(items, items.length);
-    }
   }
 
   private _activeItemChanged(e: GridActiveItemChangedEvent<restic.File>) {
@@ -283,20 +191,64 @@ export class ResticBrowserFileList extends MobxLitElement {
     }
   }
 
+  private _cellFocusChanged(event: GridCellFocusEvent<restic.File>) {
+    // auto-select rows on cell focus navigation
+    if (event.detail.context?.item) {
+      this._selectedFiles = [event.detail.context.item];
+    }
+  }
+
+  private _keyDownHandler(event: KeyboardEvent) {
+    let selectedFile = this._selectedFiles.length ? this._selectedFiles[0] : undefined;
+    if (! selectedFile) {
+      return;
+    }
+    
+    const isOpenFileShortcut = !event.ctrlKey && 
+      (["Space", "Enter"].includes(event.code) || 
+       event.key === "o");
+
+    const isDumpFileShortcut = !event.ctrlKey && 
+      ["d", "r"].includes(event.key);
+
+    if (isOpenFileShortcut) {
+      if (selectedFile.type === "dir") {
+        this._setRootPath(selectedFile.path);
+      } else {
+        this._openFile(selectedFile); 
+      }
+      event.preventDefault();
+    } 
+    else if (isDumpFileShortcut) {
+      if (selectedFile.name !== "..") {
+        this._dumpFile(selectedFile); 
+        event.preventDefault();
+      }
+    }
+  }
+
   private _pathRenderer(
     root: HTMLElement, 
     _column: GridColumn<restic.File>, 
     model: GridItemModel<restic.File>
   ) {
     const downloadButton = html`
-      <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset; padding: 0;"
+      <vaadin-button 
+          .tabindex=${null}
+          title="Restore file/folder contents" 
+          theme="small secondary icon" 
+          style="height: 1.5rem; margin: unset; padding: 0;"
           @click=${() => this._dumpFile(model.item)}>
         <vaadin-icon icon="vaadin:download"></vaadin-icon>
       </vaadin-button>
     `;
     if (model.item.type === "dir") {
       const setRootpathButton = html`
-        <vaadin-button theme="small primary icon" style="height: 1.5rem; margin: unset; padding: 0;" 
+        <vaadin-button 
+          .tabindex=${null}
+          title="Switch to directory"
+          theme="small primary icon" 
+          style="height: 1.5rem; margin: unset; padding: 0;" 
           @click=${() => this._setRootPath(model.item.path)}>
           <vaadin-icon icon="vaadin:level-right"></vaadin-icon>
         </vaadin-button>
@@ -313,7 +265,11 @@ export class ResticBrowserFileList extends MobxLitElement {
       }
     } else {
       render(html`
-          <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;padding: 0;" 
+          <vaadin-button 
+              .tabindex=${null} 
+              title="Open file content with the system's default app"
+              theme="small secondary icon" 
+              style="height: 1.5rem; margin: unset;padding: 0;" 
               @click=${() => this._openFile(model.item)}>
             <vaadin-icon icon="lumo:eye"></vaadin-icon>
           </vaadin-button>
@@ -329,7 +285,9 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     if (model.item.type === "dir") {
       render(html`
-          <vaadin-button theme="small tertiary icon" 
+          <vaadin-button 
+              .tabindex=${null} 
+              theme="small tertiary icon" 
               style="height: 1.25rem; margin: unset; padding: 0;">
             <vaadin-icon icon="vaadin:folder"
               style="margin-bottom: 2px; color: var(--lumo-contrast-50pct);">
@@ -432,6 +390,14 @@ export class ResticBrowserFileList extends MobxLitElement {
       this._recalculateColumnWidths = false;
       if (this._grid) {
         this._grid.recalculateColumnWidths();
+        // auto-focus a cell to ease keyboard navigation, if none is focused
+        const gridItems = this._grid.shadowRoot?.getElementById("items");
+        if (gridItems) {
+          const firstSelectableCell = gridItems.querySelector("[tabindex='0']");
+          if (firstSelectableCell) {
+            (firstSelectableCell as HTMLElement).focus();
+          }
+        }
       }
     }
   }
@@ -484,9 +450,11 @@ export class ResticBrowserFileList extends MobxLitElement {
       <vaadin-grid
         id="grid"
         theme="compact no-border small" 
-        .dataProvider=${this._dataProvider}
+        .dataProvider=${this._fileDataProvider.provider}
         .selectedItems=${this._selectedFiles}
         @active-item-changed=${this._activeItemChanged}
+        @cell-focus=${this._cellFocusChanged}
+        @keydown=${this._keyDownHandler}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" header=""
           .renderer=${this._pathRenderer}></vaadin-grid-column>

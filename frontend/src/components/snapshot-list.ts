@@ -4,10 +4,11 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
-
 import { restic } from '../../wailsjs/go/models';
 
-import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { 
+  Grid, GridActiveItemChangedEvent, GridCellFocusEvent, GridColumn, GridItemModel 
+} from '@vaadin/grid';
 
 import './spinner';
 
@@ -66,6 +67,14 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     }
   }
 
+  private _cellFocusChanged(event: GridCellFocusEvent<restic.Snapshot>) {
+    // auto-select rows on cell focus navigation
+    if (event.detail.context?.item) {
+      this._selectedItems = [event.detail.context.item];
+      appState.setNewSnapshotId(event.detail.context.item.id);
+    }
+  }
+  
   private _timeRenderer(
     root: HTMLElement, 
     _column: GridColumn<restic.Snapshot>, 
@@ -135,6 +144,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         .items=${appState.snapShots}
         .selectedItems=${this._selectedItems}
         @active-item-changed=${this._activeItemChanged}
+        @cell-focus=${this._cellFocusChanged}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="short_id"></vaadin-grid-column>
         <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="time" 
