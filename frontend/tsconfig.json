@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "lib": ["es2017", "dom", "dom.iterable"],
+    "lib": ["es2020", "dom", "dom.iterable"],
+    "target": "ES2020",
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./types",
