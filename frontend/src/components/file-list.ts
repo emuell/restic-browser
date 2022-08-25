@@ -234,7 +234,8 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     const downloadButton = html`
       <vaadin-button 
-          tabindex="-1" 
+          tabindex="-1"
+          title="Restore file/folder contents" 
           theme="small secondary icon" 
           style="height: 1.5rem; margin: unset; padding: 0;"
           @click=${() => this._dumpFile(model.item)}>
@@ -245,6 +246,7 @@ export class ResticBrowserFileList extends MobxLitElement {
       const setRootpathButton = html`
         <vaadin-button 
           tabindex="-1" 
+          title="Switch to directory"
           theme="small primary icon" 
           style="height: 1.5rem; margin: unset; padding: 0;" 
           @click=${() => this._setRootPath(model.item.path)}>
@@ -265,6 +267,7 @@ export class ResticBrowserFileList extends MobxLitElement {
       render(html`
           <vaadin-button 
               tabindex="-1" 
+              title="Open file content with the system's default app"
               theme="small secondary icon" 
               style="height: 1.5rem; margin: unset;padding: 0;" 
               @click=${() => this._openFile(model.item)}>
