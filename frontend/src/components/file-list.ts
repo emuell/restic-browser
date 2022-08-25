@@ -4,7 +4,10 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import prettyBytes from 'pretty-bytes';
 import * as mobx from 'mobx'
 
-import { Grid, GridActiveItemChangedEvent, GridColumn, GridItemModel } from '@vaadin/grid';
+import { 
+  Grid, GridActiveItemChangedEvent, GridCellFocusEvent, GridColumn, GridItemModel 
+} from '@vaadin/grid';
+
 import { Notification } from '@vaadin/notification';
 
 import { restic } from '../../wailsjs/go/models';
@@ -188,20 +191,62 @@ export class ResticBrowserFileList extends MobxLitElement {
     }
   }
 
+  private _cellFocusChanged(event: GridCellFocusEvent<restic.File>) {
+    // auto-select rows on cell focus navigation
+    if (event.detail.context?.item) {
+      this._selectedFiles = [event.detail.context.item];
+    }
+  }
+
+  private _keyDownHandler(event: KeyboardEvent) {
+    let selectedFile = this._selectedFiles.length ? this._selectedFiles[0] : undefined;
+    if (! selectedFile) {
+      return;
+    }
+    
+    const isOpenFileShortcut = !event.ctrlKey && 
+      (["Space", "Enter"].includes(event.code) || 
+       event.key === "o");
+
+    const isDumpFileShortcut = !event.ctrlKey && 
+      ["d", "r"].includes(event.key);
+
+    if (isOpenFileShortcut) {
+      if (selectedFile.type === "dir") {
+        this._setRootPath(selectedFile.path);
+      } else {
+        this._openFile(selectedFile); 
+      }
+      event.preventDefault();
+    } 
+    else if (isDumpFileShortcut) {
+      if (selectedFile.name !== "..") {
+        this._dumpFile(selectedFile); 
+        event.preventDefault();
+      }
+    }
+  }
+
   private _pathRenderer(
     root: HTMLElement, 
     _column: GridColumn<restic.File>, 
     model: GridItemModel<restic.File>
   ) {
     const downloadButton = html`
-      <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset; padding: 0;"
+      <vaadin-button 
+          tabindex="-1" 
+          theme="small secondary icon" 
+          style="height: 1.5rem; margin: unset; padding: 0;"
           @click=${() => this._dumpFile(model.item)}>
         <vaadin-icon icon="vaadin:download"></vaadin-icon>
       </vaadin-button>
     `;
     if (model.item.type === "dir") {
       const setRootpathButton = html`
-        <vaadin-button theme="small primary icon" style="height: 1.5rem; margin: unset; padding: 0;" 
+        <vaadin-button 
+          tabindex="-1" 
+          theme="small primary icon" 
+          style="height: 1.5rem; margin: unset; padding: 0;" 
           @click=${() => this._setRootPath(model.item.path)}>
           <vaadin-icon icon="vaadin:level-right"></vaadin-icon>
         </vaadin-button>
@@ -218,7 +263,10 @@ export class ResticBrowserFileList extends MobxLitElement {
       }
     } else {
       render(html`
-          <vaadin-button theme="small secondary icon" style="height: 1.5rem; margin: unset;padding: 0;" 
+          <vaadin-button 
+              tabindex="-1" 
+              theme="small secondary icon" 
+              style="height: 1.5rem; margin: unset;padding: 0;" 
               @click=${() => this._openFile(model.item)}>
             <vaadin-icon icon="lumo:eye"></vaadin-icon>
           </vaadin-button>
@@ -234,7 +282,9 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     if (model.item.type === "dir") {
       render(html`
-          <vaadin-button theme="small tertiary icon" 
+          <vaadin-button 
+              tabindex="-1" 
+              theme="small tertiary icon" 
               style="height: 1.25rem; margin: unset; padding: 0;">
             <vaadin-icon icon="vaadin:folder"
               style="margin-bottom: 2px; color: var(--lumo-contrast-50pct);">
@@ -337,6 +387,14 @@ export class ResticBrowserFileList extends MobxLitElement {
       this._recalculateColumnWidths = false;
       if (this._grid) {
         this._grid.recalculateColumnWidths();
+        // auto-focus a cell to ease keyboard navigation, if none is focused
+        const gridItems = this._grid.shadowRoot?.getElementById("items");
+        if (gridItems) {
+          const firstSelectableCell = gridItems.querySelector("[tabindex='0']");
+          if (firstSelectableCell) {
+            (firstSelectableCell as HTMLElement).focus();
+          }
+        }
       }
     }
   }
@@ -392,6 +450,8 @@ export class ResticBrowserFileList extends MobxLitElement {
         .dataProvider=${this._fileDataProvider.provider}
         .selectedItems=${this._selectedFiles}
         @active-item-changed=${this._activeItemChanged}
+        @cell-focus=${this._cellFocusChanged}
+        @keydown=${this._keyDownHandler}
       >
         <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" header=""
           .renderer=${this._pathRenderer}></vaadin-grid-column>
