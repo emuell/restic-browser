@@ -24,6 +24,18 @@ export class ResticBrowserApp extends MobxLitElement {
   @state()
   private _showLocationDialog: boolean = false;
 
+  constructor() {
+    super();
+    this._keyDownHandler = this._keyDownHandler.bind(this);
+  }
+  
+  private _keyDownHandler(event: KeyboardEvent) {
+    if (event.ctrlKey && event.key == "o") {
+      this._showLocationDialog = true;
+      event.preventDefault();
+    }
+  }
+
   static styles = css`
     #layout {
        align-items: stretch; 
@@ -49,6 +61,16 @@ export class ResticBrowserApp extends MobxLitElement {
       height: 44px;
     }
   `;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    document.body.addEventListener("keydown", this._keyDownHandler);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    document.body.removeEventListener("keydown", this._keyDownHandler);
+  }
 
   render() {
     // repository location dialog
