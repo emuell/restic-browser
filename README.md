@@ -49,6 +49,7 @@ The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab
 - Windows 10 or later with WebView2 Runtime
 #### MacOS:
 - macOS 10.14 or later
+- Set `$PATH` by using `launchctl`. Because any `$PATH` set in your `~/.zprofile` or `~/.bash_profile` is not read by a non-shell process, if the output of `which restic` is `/usr/local/bin/restic`, you can run `sudo launchctl config user path "/usr/local/bin/"` to set it as a `$PATH` that can be read by restic-browser. See [this answer](https://stackoverflow.com/a/3756686/) and [this answer](https://stackoverflow.com/a/70510488) for more details.
 #### Linux:
 - Linux with GLIBC_2.31 or later (e.g. Ubuntu 20.04 or later)
 - WebKit2 (install via `apt install libwebkit2gtk-4.0` on Ubuntu)
