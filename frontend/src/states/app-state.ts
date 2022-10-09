@@ -1,6 +1,6 @@
 import * as mobx from 'mobx';
 
-import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo }
+import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, RestoreFile }
   from '../../wailsjs/go/main/ResticBrowserApp';
 
 import { restic } from '../../wailsjs/go/models';
@@ -151,6 +151,7 @@ class AppState {
   }
 
   // dump specified snapshot file to a custom target directory
+  // files will be restored as they are, folders will be restored as zip files
   @mobx.action
   dumpFile(file: restic.File): Promise<string> {
     
@@ -165,6 +166,31 @@ class AppState {
     });
     
     return DumpFile(this.selectedSnapshotID, file)
+      .then((path) => { 
+        removePendingFile();
+        return path;
+      })
+      .catch((err) => {
+        removePendingFile();
+        throw err;
+      });
+  }
+
+  // restore specified snapshot file to a custom target directory
+  @mobx.action
+  restoreFile(file: restic.File): Promise<string> {
+    
+    this.pendingFileDumps.push({file, mode: "restore"});
+    
+    const removePendingFile = mobx.action(() => {
+      const index = this.pendingFileDumps.findIndex(
+        item => item.file.path === file.path && item.mode === "restore");
+      if (index !== -1) {
+        this.pendingFileDumps.splice(index, 1);
+      }
+    });
+    
+    return RestoreFile(this.selectedSnapshotID, file)
       .then((path) => { 
         removePendingFile();
         return path;
