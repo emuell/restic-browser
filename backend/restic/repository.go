@@ -95,7 +95,18 @@ func (r *Repository) GetFiles(snapshot *Snapshot, path string) ([]*File, error) 
 }
 
 func (r *Repository) RestoreFile(snapshot *Snapshot, file *File, targetPath string) error {
-
+	// check if the target already exists
+	targetFileOrFolderName := filepath.Join(targetPath, file.Name)
+	if file.Type == "dir" {
+		if fs.DirExists(targetFileOrFolderName) {
+			return fmt.Errorf("target directory '%s' already exists", targetFileOrFolderName)
+		}
+	} else {
+		if fs.FileExists(targetFileOrFolderName) {
+			return fmt.Errorf("target file '%s' already exists", targetFileOrFolderName)
+		}
+	}
+	// restore the file or foolder
 	_, stderr, code, _ := r.run("restore", snapshot.ID, "--target", targetPath, "--include", file.Path)
 	if code != 0 {
 		return fmt.Errorf(stderr)
