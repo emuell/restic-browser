@@ -37,6 +37,7 @@ The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab
 ### File-List
 - `Arrow keys`, `Page Up/Down`, `Home/End`: Change selected file
 - `o` or `Enter` or `Space`: Open selected file or folder
+- `D`: Dump selected file or folder as zip file
 - `R`: Restore selected file or folder
 
 

@@ -92,6 +92,39 @@ export class ResticBrowserFileList extends MobxLitElement {
         if (path) {
           Notification.show(
             html`<p>
+              Successfully dumped '${file.name}' to 
+                <a href=${path} @click=${(e: Event) => { 
+                    e.preventDefault()
+                    OpenFileOrUrl(path)
+                      .catch(_err => { 
+                        // ignore 
+                      })
+                  }}>
+                  ${path}
+                </a>
+             </p>`,
+            {
+              position: 'bottom-center',
+              duration: 10000,
+              theme: "info"
+            }
+          );
+        }
+      })
+      .catch((err) => { 
+        Notification.show(`Dump operation of '${file.name}' failed: ${err.message || err}`, {
+          position: 'middle',
+          theme: "error"
+        });
+      });
+  }
+
+  private _restoreFile(file: restic.File): void {
+    appState.restoreFile(file)
+      .then((path) => { 
+        if (path) {
+          Notification.show(
+            html`<p>
               Successfully restored '${file.name}' to 
                 <a href=${path} @click=${(e: Event) => { 
                     e.preventDefault()
@@ -209,9 +242,12 @@ export class ResticBrowserFileList extends MobxLitElement {
        event.key === "o");
 
     const isDumpFileShortcut = !event.ctrlKey && 
-      ["d", "r"].includes(event.key);
+      ["d"].includes(event.key);
 
-    if (isOpenFileShortcut) {
+    const isRestoreFileShortcut = !event.ctrlKey && 
+      ["r"].includes(event.key);
+    
+      if (isOpenFileShortcut) {
       if (selectedFile.type === "dir") {
         this._setRootPath(selectedFile.path);
       } else {
@@ -222,6 +258,12 @@ export class ResticBrowserFileList extends MobxLitElement {
     else if (isDumpFileShortcut) {
       if (selectedFile.name !== "..") {
         this._dumpFile(selectedFile); 
+        event.preventDefault();
+      }
+    }
+    else if (isRestoreFileShortcut) {
+      if (selectedFile.name !== "..") {
+        this._restoreFile(selectedFile); 
         event.preventDefault();
       }
     }
@@ -238,7 +280,7 @@ export class ResticBrowserFileList extends MobxLitElement {
           title="Restore file/folder contents" 
           theme="small secondary icon" 
           style="height: 1.5rem; margin: unset; padding: 0;"
-          @click=${() => this._dumpFile(model.item)}>
+          @click=${() => this._restoreFile(model.item)}>
         <vaadin-icon icon="vaadin:download"></vaadin-icon>
       </vaadin-button>
     `;

@@ -274,11 +274,11 @@ func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *restic.File) (st
 	if targetPath == "" {
 		return "", nil
 	}
-	err = r.repo.RestoreFile(snapshot, file, targetPath)
+	targetFilePath, err := r.repo.RestoreFile(snapshot, file, targetPath)
 	if err != nil {
 		return "", err
 	}
-	return targetPath, nil
+	return targetFilePath, nil
 }
 
 func (r *ResticBrowserApp) DumpFile(snapshotID string, file *restic.File) (string, error) {
