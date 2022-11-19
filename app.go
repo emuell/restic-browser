@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"restic-browser/backend/open"
 	"restic-browser/backend/restic"
 
+	"github.com/leaanthony/sail/fs"
 	"github.com/pkg/errors"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/text/encoding/unicode"
@@ -44,6 +46,21 @@ func (r *ResticBrowserApp) showWarning(title, message string) {
 
 func (r *ResticBrowserApp) showError(title, message string) {
 	r.showMessage(title, message, "error")
+}
+
+func (r *ResticBrowserApp) showConfirmation(title, message string) bool {
+	messageOptions := runtime.MessageDialogOptions{
+		Type:    "question",
+		Title:   title,
+		Message: message,
+		Buttons: []string{"Yes", "No"},
+	}
+	result, err := runtime.MessageDialog(*r.context, messageOptions)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to show confirmation message: %s\n", err.Error())
+		return false
+	}
+	return (result == "Yes")
 }
 
 func (r *ResticBrowserApp) showMessage(title, message string, messageType runtime.DialogType) {
@@ -274,6 +291,28 @@ func (r *ResticBrowserApp) RestoreFile(snapshotID string, file *restic.File) (st
 	if targetPath == "" {
 		return "", nil
 	}
+
+	targetFileOrFolderName := filepath.Join(targetPath, file.Path)
+	if file.Type == "dir" {
+		if fs.DirExists(targetFileOrFolderName) {
+			if !r.showConfirmation("Overwrite existing directory?",
+				fmt.Sprintf("The target directory '%s' already exists.\n\n"+
+					"Are you sure that you want to overwrite the existing directory?",
+					targetFileOrFolderName)) {
+				return "", fmt.Errorf("target directory '%s' already exists", targetFileOrFolderName)
+			}
+		}
+	} else {
+		if fs.FileExists(targetFileOrFolderName) {
+			if !r.showConfirmation("Overwrite existing file?",
+				fmt.Sprintf("The target file '%s' already exists.\n\n"+
+					"Are you sure that you want to overwrite the existing file?",
+					targetFileOrFolderName)) {
+				return "", fmt.Errorf("target directory '%s' already exists", targetFileOrFolderName)
+			}
+		}
+	}
+
 	targetFilePath, err := r.repo.RestoreFile(snapshot, file, targetPath)
 	if err != nil {
 		return "", err
@@ -303,8 +342,21 @@ func (r *ResticBrowserApp) DumpFile(snapshotID string, file *restic.File) (strin
 	if targetPath == "" {
 		return "", nil
 	}
-	var targetFilePath string
-	targetFilePath, err = r.repo.DumpFile(snapshot, file, targetPath)
+
+	targetFileName := filepath.Join(targetPath, file.Name)
+	if file.Type == "dir" {
+		targetFileName += ".zip"
+	}
+	if fs.FileExists(targetFileName) {
+		if !r.showConfirmation("Overwrite existing file?",
+			fmt.Sprintf("The target file '%s' already exists.\n\n"+
+				"Are you sure that you want to overwrite the existing file?",
+				targetFileName)) {
+			return "", fmt.Errorf("target file '%s' already exists", targetFileName)
+		}
+	}
+
+	targetFilePath, err := r.repo.DumpFile(snapshot, file, targetPath)
 	if err != nil {
 		return "", err
 	}
