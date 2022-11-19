@@ -15,7 +15,8 @@ Prebuilt binaries can be downloaded from the [GitHub releases](https://github.co
 ## Features
 
 * *Displays* contents (snapshots, files) from local and remote restic repositories.
-* *Restores* selected files or folders (as a zip archive) to a desired location.
+* *Dumps* selected files or folders (as a zip archive) to a desired location.
+* *Restores* selected files or folders to a desired location.
 * *Opens* selected files by moving them to TEMP, then opens them with your operating system's default programs.
 
 This is not a fullblown restic backup GUI - it only allows you to *browse* existing repositories!  
@@ -37,8 +38,8 @@ The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab
 ### File-List
 - `Arrow keys`, `Page Up/Down`, `Home/End`: Change selected file
 - `o` or `Enter` or `Space`: Open selected file or folder
-- `D`: Dump selected file or folder as zip file
-- `R`: Restore selected file or folder
+- `d`: Dump selected file or folder as zip file
+- `r`: Restore selected file or folder
 
 
 ## System Requirements
