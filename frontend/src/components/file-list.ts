@@ -274,17 +274,26 @@ export class ResticBrowserFileList extends MobxLitElement {
     _column: GridColumn<restic.File>, 
     model: GridItemModel<restic.File>
   ) {
-    const downloadButton = html`
+    const dumpButton = html`
+      <vaadin-button 
+          .tabindex=${null}
+          title="Dump file/folder contents as zip file" 
+          theme="small secondary icon" 
+          style="height: 1.5rem; margin: unset; padding: 0;"
+          @click=${() => this._dumpFile(model.item)}>
+        <vaadin-icon icon="vaadin:download"></vaadin-icon>
+      </vaadin-button>
+    `;
+    const restoreButton = html`
       <vaadin-button 
           .tabindex=${null}
           title="Restore file/folder contents" 
           theme="small secondary icon" 
           style="height: 1.5rem; margin: unset; padding: 0;"
           @click=${() => this._restoreFile(model.item)}>
-        <vaadin-icon icon="vaadin:download"></vaadin-icon>
+        <vaadin-icon icon="lumo:undo"></vaadin-icon>
       </vaadin-button>
-    `;
-    if (model.item.type === "dir") {
+    `;if (model.item.type === "dir") {
       const setRootpathButton = html`
         <vaadin-button 
           .tabindex=${null}
@@ -302,7 +311,8 @@ export class ResticBrowserFileList extends MobxLitElement {
       } else {
         render(html`
             ${setRootpathButton}
-            ${downloadButton}
+            ${dumpButton}
+            ${restoreButton}
           `, root);
       }
     } else {
@@ -315,7 +325,8 @@ export class ResticBrowserFileList extends MobxLitElement {
               @click=${() => this._openFile(model.item)}>
             <vaadin-icon icon="lumo:eye"></vaadin-icon>
           </vaadin-button>
-          ${downloadButton}
+          ${dumpButton}
+          ${restoreButton}
         `, root)
     }     
   }
