@@ -10,7 +10,7 @@ export function DumpFileToTemp(arg1:string,arg2:restic.File):Promise<string>;
 
 export function GetFilesForPath(arg1:string,arg2:string):Promise<Array<restic.File>>;
 
-export function OpenFileOrUrl(arg1:string):Promise<Error>;
+export function OpenFileOrUrl(arg1:string):Promise<void>;
 
 export function OpenRepo(arg1:restic.Location):Promise<Array<restic.Snapshot>>;
 
