@@ -19,7 +19,10 @@ type Restic struct {
 
 // Run restic program and return stdout and err, exitCode and error.
 func (r *Restic) Run(command []string) (stdout, stderr string, code int, err error) {
-	return r.restic.Run(command...)
+	stdout, stderr, code, err = r.restic.Run(command...)
+	// see https://github.com/restic/restic/issues/4144
+	stdout = strings.ReplaceAll(stdout, "b2_download_file_by_name: 404: : b2.b2err", "")
+	return stdout, stderr, code, err
 }
 
 // Run restic program and write stdout to the given file. returns stdErr, exitCode and error.
