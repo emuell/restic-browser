@@ -146,6 +146,20 @@ func readTextFile(filename string) ([]byte, error) {
 	return e.NewDecoder().Bytes(data)
 }
 
+// defaultRepo determines the default restic repository location from the environment.
+func defaultRepo() (string, error) {
+	repositoryFile := os.Getenv("RESTIC_REPOSITORY_FILE")
+	if repositoryFile != "" {
+		s, err := readTextFile(repositoryFile)
+		if errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("%s does not exist", repositoryFile)
+		}
+		return strings.TrimSpace(strings.Replace(string(s), "\n", "", -1)), err
+	}
+	repository := os.Getenv("RESTIC_REPOSITORY")
+	return repository, nil
+}
+
 // defaultRepoPassword determines the default restic repository password from the environment.
 func defaultRepoPassword() (string, error) {
 	passwordFile := os.Getenv("RESTIC_PASSWORD_FILE")
@@ -162,9 +176,10 @@ func defaultRepoPassword() (string, error) {
 
 func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
 	location := restic.Location{}
+	location.Path, _ = defaultRepo()
 	location.Password, _ = defaultRepoPassword()
-	repo := os.Getenv("RESTIC_REPOSITORY")
-	if len(repo) == 0 {
+	if len(location.Path) == 0 {
+		// skip reading other location info when no repo is present
 		return location
 	}
 	type LocationInfo struct {
@@ -181,11 +196,10 @@ func (r *ResticBrowserApp) DefaultRepoLocation() restic.Location {
 		{prefix: "azure", credentials: []string{"AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"}},
 	}
 	location.Prefix = ""
-	location.Path = repo
 	for _, locationInfo := range locationInfos {
-		if strings.HasPrefix(repo, locationInfo.prefix+":") {
+		if strings.HasPrefix(location.Path, locationInfo.prefix+":") {
 			location.Prefix = locationInfo.prefix
-			location.Path = strings.Replace(repo, locationInfo.prefix+":", "", 1)
+			location.Path = strings.Replace(location.Path, locationInfo.prefix+":", "", 1)
 			for _, credential := range locationInfo.credentials {
 				location.Credentials = append(location.Credentials,
 					restic.EnvValue{Name: credential, Value: os.Getenv(credential)})

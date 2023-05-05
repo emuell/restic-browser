@@ -28,12 +28,21 @@ func (l *Location) PathOrBucketName() string {
 
 // Set env values from credentials
 func (l *Location) SetEnv() error {
-	err := os.Setenv("RESTIC_PASSWORD", l.Password)
+	err := os.Setenv("RESTIC_REPOSITORY", l.PathOrBucketName())
+	if err != nil {
+		return err
+	}
+	// unset env file variable in case it's set: restic will else neglect the repository arg
+	err = os.Setenv("RESTIC_REPOSITORY_FILE", "")
+	if err != nil {
+		return err
+	}
+	err = os.Setenv("RESTIC_PASSWORD", l.Password)
 	if err != nil {
 		return err
 	}
 	for _, env := range l.Credentials {
-		err := os.Setenv(env.Name, env.Value)
+		err = os.Setenv(env.Name, env.Value)
 		if err != nil {
 			return err
 		}
@@ -43,7 +52,11 @@ func (l *Location) SetEnv() error {
 
 // Unset env values from credentials
 func (l *Location) UnsetEnv() error {
-	err := os.Setenv("RESTIC_PASSWORD", "")
+	err := os.Setenv("RESTIC_REPOSITORY", "")
+	if err != nil {
+		return err
+	}
+	err = os.Setenv("RESTIC_PASSWORD", "")
 	if err != nil {
 		return err
 	}

@@ -142,7 +142,6 @@ func (r *Repository) DumpFile(snapshot *Snapshot, file *File, targetPath string)
 func (r *Repository) run(command ...string) (stdout, stderr string, code int, err error) {
 	r.location.SetEnv()
 	defer r.location.UnsetEnv()
-	command = append(command, "--repo", r.location.PathOrBucketName())
 	stdout, stderr, code, err = r.restic.Run(command)
 	return
 }
@@ -150,7 +149,6 @@ func (r *Repository) run(command ...string) (stdout, stderr string, code int, er
 func (r *Repository) runRedirected(stdout *os.File, command ...string) (stderr string, code int, err error) {
 	r.location.SetEnv()
 	defer r.location.UnsetEnv()
-	command = append(command, "--repo", r.location.PathOrBucketName())
 	stderr, code, err = r.restic.RunRedirected(stdout, command)
 	return
 }
