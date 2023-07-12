@@ -75,7 +75,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
         <div id="repoPath" class="${!appState.repoLocation.path ? "disabled" : ""}">
           ${repositoryName}
         </div>
-        <vaadin-button theme="primary success"
+          <vaadin-button theme="primary success icon"
           @click=${() => {
             if (this.refreshRepositoryClick) {
               this.refreshRepositoryClick();
@@ -83,7 +83,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
           }}
           style="margin-left: auto; margin-right: 10px;"
         >
-          Refresh Repository
+            <vaadin-icon icon="lumo:reload"></vaadin-icon>
         </vaadin-button>
       </vaadin-horizontal-layout>
     `;
