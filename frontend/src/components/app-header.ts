@@ -53,10 +53,13 @@ export class ResticBrowserAppHeader extends MobxLitElement {
 
     if (repositoryName) {
       try {
-        const credentialsPattern = /(.*?:\/\/)?(.*?:)(.*?)@(.*)/;
-        const matches = repositoryName.match(credentialsPattern);
-        if (matches && matches.length === 5) {
-          repositoryName = `${matches[1] || ''}${matches[2]}***@${matches[4]}`;
+        const urlPattern = /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
+        const matches = repositoryName.match(urlPattern)
+        if (matches && matches.groups) {
+          const { protocol = '', username = '', password = '', host = '', port = '', path = '' } = matches.groups;
+          if (username && password) {
+            repositoryName = `${protocol || ''}${username}:***@${host}${port ? `:${port}` : ''}${path}`;
+          }
         }
       } catch (error) {}
     }
