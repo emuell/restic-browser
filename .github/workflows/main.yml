@@ -76,7 +76,10 @@ jobs:
       run: wails build -tags ${{ matrix.config.build_tags }} -platform ${{ matrix.config.build_platform }}
 
     - name: Code Sign (Windows)
-      if: ${{ matrix.config.name == 'Windows' }}
+      env:
+       WINDOWS_CODE_CERT_DATA: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
+       WINDOWS_CODE_CERT_PASS: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
+      if: ${{ matrix.config.name == 'Windows' && env.WINDOWS_CODE_CERT_DATA != null && env.WINDOWS_CODE_CERT_PASS != null }}
       uses: lando/code-sign-action@v2
       with:
         file: build/bin/${{ matrix.config.executable_name }}
@@ -84,12 +87,12 @@ jobs:
         certificate-password: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
 
     - name: Code Sign (macOS)
-      if: ${{ matrix.config.name == 'macOS' }}
       env: 
         MACOS_CODE_CERT_DATA: ${{ secrets.MACOS_CODE_CERT_DATA }}
         MACOS_CODE_CERT_PASS: ${{ secrets.MACOS_CODE_CERT_PASS }}
         MACOS_CODE_CERT_TEAM_ID: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
         MACOS_EXECUTABLE_PATH: ./build/bin/${{ matrix.config.executable_name }}
+      if: ${{ matrix.config.name == 'macOS' && env.MACOS_CODE_CERT_DATA != null && env.MACOS_CODE_CERT_PASS != null && env.MACOS_CODE_CERT_TEAM_ID != null }}
       run: |
         echo $MACOS_CODE_CERT_DATA | base64 --decode > certificate.p12
         security create-keychain -p $MACOS_CODE_CERT_PASS build.keychain
@@ -100,7 +103,10 @@ jobs:
         /usr/bin/codesign --force -s $MACOS_CODE_CERT_TEAM_ID --deep --options=runtime "$MACOS_EXECUTABLE_PATH"
 
     - name: Notarize (macOS)
-      if: ${{ matrix.config.name == 'macOS' }}
+      env: 
+        MACOS_NOTARY_USER: ${{ secrets.MACOS_NOTARY_USER }}
+        MACOS_NOTARY_PASS: ${{ secrets.MACOS_NOTARY_PASS }}
+      if: ${{ matrix.config.name == 'macOS' && env.MACOS_NOTARY_USER != null && env.MACOS_NOTARY_USER != null }}
       uses: devbotsxyz/xcode-notarize@v1
       with:
         appstore-connect-username: ${{ secrets.MACOS_NOTARY_USER }}
