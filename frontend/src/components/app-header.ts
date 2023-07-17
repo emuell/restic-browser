@@ -76,6 +76,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
         </div>
           <vaadin-button theme="primary icon"
             .hidden=${appState.repoLocation.path == ''}
+            title="Reload repository snapshots" 
             @click=${() => {
               if (this.refreshRepositoryClick) {
                 this.refreshRepositoryClick();
