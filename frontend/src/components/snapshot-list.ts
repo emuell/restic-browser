@@ -41,17 +41,31 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       }, 
       { fireImmediately: true }
     );
-    
-    // sync selected item changes with appState
+   
+    // sync selection changes with appState
+    const updateGridSelectionFromAppState = () => {
+      const selectedSnapshot = appState.snapShots.find(v => v.id == appState.selectedSnapshotID);
+      if (selectedSnapshot) {
+        this._selectedItems = [selectedSnapshot];
+      }
+    };
     mobx.reaction(
       () => appState.selectedSnapshotID, 
-      (snapShotId: string) => {
-        const selectedSnapshot = appState.snapShots.find(v => v.id == snapShotId)
-        if (selectedSnapshot) {
-          this._selectedItems = [selectedSnapshot];
-        }
+      () => {
+        // when switching snapshot ids, update the selection in our grid
+       updateGridSelectionFromAppState(); 
       }, 
       { fireImmediately: true }
+    );    
+    mobx.reaction(
+      () => appState.isLoadingSnapshots > 0, 
+      (isLoading: boolean) => {
+        // when loading finished, this is the first time the grid actually is shown
+        if (!isLoading) {
+          updateGridSelectionFromAppState();
+        }
+      }, 
+      { fireImmediately: false }
     );
     
     // bind this to renderers
