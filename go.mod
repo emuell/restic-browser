@@ -5,16 +5,15 @@ go 1.18
 require (
 	github.com/leaanthony/sail v0.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/wailsapp/wails/v2 v2.3.1
-	golang.org/x/sys v0.4.0
-	golang.org/x/text v0.6.0
+	github.com/wailsapp/wails/v2 v2.4.1
+	golang.org/x/sys v0.5.0
+	golang.org/x/text v0.7.0
 )
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.10.0 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
@@ -32,5 +31,5 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 )
