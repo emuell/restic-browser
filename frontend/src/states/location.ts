@@ -59,6 +59,27 @@ export class Location {
     );
   }
 
+  // get repository path with possibly cloaked password string in REST or SFTP paths.
+  // should only used for display purposes, as this malforms the path.
+  get clokedPath(): string {
+    let repositoryName = this.path;
+    if (repositoryName != "") {
+      try {
+        const urlPattern = /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
+        const matches = urlPattern.exec(repositoryName);
+        if (matches && matches.groups) {
+          const { protocol = '', username = '', password = '', host = '', port = '', path = '' } = matches.groups;
+          if (username && password) {
+            repositoryName = `${protocol || ''}${username}:***@${host}${port ? `:${port}` : ''}${path}`;
+          }
+        }
+      } catch (error) {
+        // silently ignore regex errors here
+      }
+    }
+    return repositoryName; 
+  }
+
   // reset all location properties 
   @mobx.action
   reset(): void {

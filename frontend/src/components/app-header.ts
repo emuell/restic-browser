@@ -51,28 +51,13 @@ export class ResticBrowserAppHeader extends MobxLitElement {
   `;
 
   render() {
-    let repositoryName = appState.repoLocation.path;
-
-    if (repositoryName) {
-      try {
-        const urlPattern = /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
-        const matches = repositoryName.match(urlPattern)
-        if (matches && matches.groups) {
-          const { protocol = '', username = '', password = '', host = '', port = '', path = '' } = matches.groups;
-          if (username && password) {
-            repositoryName = `${protocol || ''}${username}:***@${host}${port ? `:${port}` : ''}${path}`;
-          }
-        }
-      } catch (error) {}
-    }
-
+    let repositoryName = appState.repoLocation.clokedPath;
     if (repositoryName && appState.repoLocation.prefix) {
       repositoryName = appState.repoLocation.prefix + ": " + repositoryName;
     }
     if (! repositoryName) {
       repositoryName = "No repository selected";
     }
-    
     return html`
       <vaadin-horizontal-layout id="header">
         <img src=${eye} id="eye" />
@@ -90,14 +75,15 @@ export class ResticBrowserAppHeader extends MobxLitElement {
           ${repositoryName}
         </div>
           <vaadin-button theme="primary icon"
-          @click=${() => {
-            if (this.refreshRepositoryClick) {
-              this.refreshRepositoryClick();
-            }
-          }}
-          style="margin-left: auto; margin-right: 10px;"
-        >
-            <vaadin-icon icon="lumo:reload"></vaadin-icon>
+            .hidden=${appState.repoLocation.path == ''}
+            @click=${() => {
+              if (this.refreshRepositoryClick) {
+                this.refreshRepositoryClick();
+              }
+            }}
+            style="margin-left: auto; margin-right: 10px;"
+          >
+          <vaadin-icon icon="lumo:reload"></vaadin-icon>
         </vaadin-button>
       </vaadin-horizontal-layout>
     `;
