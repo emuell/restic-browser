@@ -4,18 +4,18 @@ import {restic} from '../models';
 
 export function DefaultRepoLocation():Promise<restic.Location>;
 
-export function DumpFile(arg1:string,arg2:restic.File):Promise<string>;
+export function DumpFile(arg1:string,arg2:any):Promise<string>;
 
-export function DumpFileToTemp(arg1:string,arg2:restic.File):Promise<string>;
+export function DumpFileToTemp(arg1:string,arg2:any):Promise<string>;
 
-export function GetFilesForPath(arg1:string,arg2:string):Promise<Array<restic.File>>;
+export function GetFilesForPath(arg1:string,arg2:string):Promise<Array<any>>;
 
 export function OpenFileOrUrl(arg1:string):Promise<void>;
 
-export function OpenRepo(arg1:restic.Location):Promise<Array<restic.Snapshot>>;
+export function OpenRepo(arg1:restic.Location):Promise<Array<any>>;
 
 export function ReadPasswordFromFile():Promise<string>;
 
-export function RestoreFile(arg1:string,arg2:restic.File):Promise<string>;
+export function RestoreFile(arg1:string,arg2:any):Promise<string>;
 
 export function SelectLocalRepo():Promise<string>;
