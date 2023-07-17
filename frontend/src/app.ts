@@ -95,7 +95,9 @@ export class ResticBrowserApp extends MobxLitElement {
       return html`
         <vaadin-vertical-layout id="layout">
           <restic-browser-app-header id="header" 
-            .openRepositoryClick=${() => this._showLocationDialog = true }>
+            .openRepositoryClick=${() => this._showLocationDialog = true }
+            .refreshRepositoryClick=${() => appState.openRepository() }
+          >
           </restic-browser-app-header>
           <restic-browser-error-message 
               type=${appState.repoError ? "error" : "info"} 
@@ -108,7 +110,9 @@ export class ResticBrowserApp extends MobxLitElement {
     return html`
       <vaadin-vertical-layout id="layout">
         <restic-browser-app-header id="header" 
-          .openRepositoryClick=${() => this._showLocationDialog = true }>
+          .openRepositoryClick=${() => this._showLocationDialog = true }
+          .refreshRepositoryClick=${() => appState.openRepository() }
+        >
         </restic-browser-app-header>
         <vaadin-split-layout id="split" orientation="vertical" theme="small">
         <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
