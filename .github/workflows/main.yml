@@ -1,15 +1,33 @@
 name: Build Matrix
 
 on:
+  # run for all pull requests that should go into the master
   pull_request:
     branches:
     - master
-  # allows to run the workflow manually from the actions tab
+  # run when a new semantic version tag got pushed (a release)
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+(-[a-z]+)?'
+  # allow to run the workflow manually from the actions tab
   workflow_dispatch:
       
 jobs:
+  variables: 
+    outputs:
+      ref_name: ${{ steps.var.outputs.ref_name}}
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: Setting Global Variables
+        uses: actions/github-script@v6
+        id: var
+        with:
+          script: |
+            core.setOutput('ref_name', '${{ github.ref_name }}'.toLowerCase().replaceAll(/[/\\*?]/g, '_').trim());
+
   build:
     name: ${{ matrix.config.name }}
+    needs: [variables]
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
@@ -17,7 +35,6 @@ jobs:
         config:
         - {
             name: "Windows", 
-            artifact: "Windows.tar.gz",
             executable_name: "Restic-Browser.exe",
             os: windows-2022,
             build_tags: "production,desktop",
@@ -25,15 +42,13 @@ jobs:
           }
         - {
             name: "Ubuntu", 
-            artifact: "Linux.tar.gz",
-            executable_name: "restic-browser",
+            executable_name: "Restic-Browser",
             os: ubuntu-20.04,
             build_tags: "production,desktop",
             build_platform: "linux/amd64",
           }
         - {
             name: "macOS", 
-            artifact: "macOS.tar.gz",
             executable_name: "restic-browser.app",
             os: macos-11,
             build_tags: "production,desktop",
@@ -41,7 +56,6 @@ jobs:
           }
 
     steps:
-
     - name: Setup Go 
       uses: actions/setup-go@v3
       with:
@@ -114,17 +128,31 @@ jobs:
         primary-bundle-id: com.wails.restic-browser
         product-path: ./build/bin/${{ matrix.config.executable_name }}
         verbose: false
-    
-    - name: Archive
-      uses: thedoctor0/zip-release@main
-      with:
-        type: tar
-        directory: build
-        path: bin
-        filename: ${{ matrix.config.artifact }}
 
-    - name: Upload
+    - name: Upload Artifact (Windows)
+      if: ${{ matrix.config.name == 'Windows' }}
       uses: actions/upload-artifact@v3
       with:
-        path: build/${{ matrix.config.artifact }}
-        name: ${{ matrix.config.artifact }}
+        name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-windows"
+        path: ./build/bin/*.exe
+        if-no-files-found: error
+        
+    - name: Prepare Upload Artifact (Linux)
+      if: ${{ matrix.config.name == 'Ubuntu' }}
+      run: cd ./build/bin && tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
+    
+    - name: Upload Artifact (Linux)
+      if: ${{ matrix.config.name == 'Ubuntu' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-linux"
+        path: ./build/bin/*.tar
+        if-no-files-found: error
+
+    - name: Upload Artifact (macOS)
+      if: ${{ matrix.config.name == 'macOS' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-macOS"
+        path: ./build/bin/*.app
+        if-no-files-found: error
