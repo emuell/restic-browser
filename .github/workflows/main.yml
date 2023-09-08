@@ -121,10 +121,11 @@ jobs:
         MACOS_NOTARY_USER: ${{ secrets.MACOS_NOTARY_USER }}
         MACOS_NOTARY_PASS: ${{ secrets.MACOS_NOTARY_PASS }}
       if: ${{ matrix.config.name == 'macOS' && env.MACOS_NOTARY_USER != null && env.MACOS_NOTARY_USER != null }}
-      uses: devbotsxyz/xcode-notarize@v1
+      uses: lando/notarize-action@v2
       with:
         appstore-connect-username: ${{ secrets.MACOS_NOTARY_USER }}
         appstore-connect-password: ${{ secrets.MACOS_NOTARY_PASS }}
+        appstore-connect-team-id: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }} 
         primary-bundle-id: com.wails.restic-browser
         product-path: ./build/bin/${{ matrix.config.executable_name }}
         verbose: false
