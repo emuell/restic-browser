@@ -48,7 +48,7 @@ The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab
 - Install [restic](https://github.com/restic/restic/releases/) and *make sure it is included in your $PATH*.
 
 #### Windows:
-- Windows 10 or later with [WebView2 Runtime](https://developer.microsoft.com/de-de/microsoft-edge/webview2/)
+- Windows 10 or later with [WebView2 Runtime](https://developer.microsoft.com/de-de/microsoft-edge/webview2/#download-section)
 #### MacOS:
 - macOS 10.14 or later
 #### Linux:
