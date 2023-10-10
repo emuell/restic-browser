@@ -1,7 +1,7 @@
 {
   "name": "restic-frontend",
   "private": true,
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "dist/app.es.js",
   "exports": {
     ".": "./dist/app.es.js"
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "typescript": "^4.5.4",
-    "vite": "^2.9.13"
+    "vite": "^2.9.16"
   },
   "vaadin": {
     "disableUsageStatistics": true
