@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -13,14 +14,19 @@ var assets embed.FS
 
 func main() {
 	// parse command line args
-	resticPath := flag.String("restic", "", "Optional path to the restic binary");
-	flag.Parse()
-	
+	var commandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	resticPath := commandLine.String("restic", "", "Optional path to the restic binary")
+	err := commandLine.Parse(os.Args[1:])
+	if err != nil {
+		print(err)
+		return
+	}
+
 	// Create an instance of the restic app
 	app := NewResticBrowser(resticPath)
 
 	// Create wails application with options and bind the app to the frontend
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:            "Restic Browser",
 		Width:            1024,
 		Height:           768,
