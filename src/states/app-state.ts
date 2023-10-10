@@ -1,9 +1,9 @@
 import * as mobx from 'mobx';
 
 import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, RestoreFile }
-  from '../../wailsjs/go/main/ResticBrowserApp';
+  from '../backend/app';
 
-import { restic } from '../../wailsjs/go/models';
+import { restic } from '../backend/models';
 
 import { Location } from './location';
 
@@ -25,10 +25,10 @@ class AppState {
   // repository content 
   @mobx.observable
   selectedSnapshotID: string = "";
-  
+
   @mobx.observable
   snapShots: restic.Snapshot[] = [];
-  
+
   // loading status 
   @mobx.observable
   isLoadingSnapshots: number = 0;
@@ -68,29 +68,29 @@ class AppState {
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;
-        if (! result.find((s) => s.short_id === this.selectedSnapshotID)) {
+        if (!result.find((s) => s.short_id === this.selectedSnapshotID)) {
           this.selectedSnapshotID = "";
           if (result.length) {
             this.selectedSnapshotID = result[0].id;
           }
         }
         this._filesCache.clear();
-        --this.isLoadingSnapshots; 
+        --this.isLoadingSnapshots;
       }))
       .catch(mobx.action((err) => {
         this.repoError = err.message || String(err);
         this.snapShots = [];
         this.selectedSnapshotID = "";
-        --this.isLoadingSnapshots; 
+        --this.isLoadingSnapshots;
       }));
   }
-  
+
   // select a new snapshot
   @mobx.action
   setNewSnapshotId(id: string): void {
     if (id && this.snapShots.findIndex((s) => s.id === id) !== -1) {
       this.selectedSnapshotID = id;
-    } 
+    }
     else {
       this.selectedSnapshotID = "";
     }
@@ -100,14 +100,14 @@ class AppState {
   @mobx.action
   fetchFiles(rootPath: string): Promise<restic.File[]> {
     const selectedSnapshotID = this.selectedSnapshotID;
-    if (! selectedSnapshotID) {
+    if (!selectedSnapshotID) {
       return Promise.reject(new Error("No snapshot selected"));
     }
     // do we got cached files for this snapshot and path?
     const cachedFiles = this._getCachedFiles(selectedSnapshotID, rootPath);
     if (cachedFiles) {
       return Promise.resolve(cachedFiles)
-    } 
+    }
     // else fetch new ones and cache them
     ++this.isLoadingFiles;
     return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
@@ -125,9 +125,9 @@ class AppState {
   // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
   async openFile(file: restic.File): Promise<void> {
-    
-    this.pendingFileDumps.push({file, mode: "open"});
-    
+
+    this.pendingFileDumps.push({ file, mode: "open" });
+
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
         item => item.file.path === file.path && item.mode === "open");
@@ -137,7 +137,7 @@ class AppState {
     });
 
     return DumpFileToTemp(this.selectedSnapshotID, file)
-      .then((path) => { 
+      .then((path) => {
         removePendingFile();
         OpenFileOrUrl(path)
           .catch(err => {
@@ -154,9 +154,9 @@ class AppState {
   // files will be restored as they are, folders will be restored as zip files
   @mobx.action
   dumpFile(file: restic.File): Promise<string> {
-    
-    this.pendingFileDumps.push({file, mode: "restore"});
-    
+
+    this.pendingFileDumps.push({ file, mode: "restore" });
+
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
         item => item.file.path === file.path && item.mode === "restore");
@@ -164,9 +164,9 @@ class AppState {
         this.pendingFileDumps.splice(index, 1);
       }
     });
-    
+
     return DumpFile(this.selectedSnapshotID, file)
-      .then((path) => { 
+      .then((path) => {
         removePendingFile();
         return path;
       })
@@ -179,9 +179,9 @@ class AppState {
   // restore specified snapshot file to a custom target directory
   @mobx.action
   restoreFile(file: restic.File): Promise<string> {
-    
-    this.pendingFileDumps.push({file, mode: "restore"});
-    
+
+    this.pendingFileDumps.push({ file, mode: "restore" });
+
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
         item => item.file.path === file.path && item.mode === "restore");
@@ -189,9 +189,9 @@ class AppState {
         this.pendingFileDumps.splice(index, 1);
       }
     });
-    
+
     return RestoreFile(this.selectedSnapshotID, file)
-      .then((path) => { 
+      .then((path) => {
         removePendingFile();
         return path;
       })
@@ -219,7 +219,7 @@ class AppState {
     const currentTime = Date.now();
     if (this._filesCache.size > AppState.MAX_CACHED_FILE_ENTRIES) {
       // remove oldest cache entry
-      let oldestTime = currentTime; 
+      let oldestTime = currentTime;
       let oldestKey = "";
       for (const [key, value] of Array.from(this._filesCache)) {
         if (value.lastAccessTime < oldestTime) {
@@ -230,8 +230,8 @@ class AppState {
       this._filesCache.delete(oldestKey)
     }
     // add new entry
-    this._filesCache.set(AppState._cachedFilesKey(snapShotId, path), { 
-      files: files, lastAccessTime: currentTime 
+    this._filesCache.set(AppState._cachedFilesKey(snapShotId, path), {
+      files: files, lastAccessTime: currentTime
     });
   }
 

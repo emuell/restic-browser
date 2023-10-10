@@ -6,7 +6,7 @@ import * as mobx from 'mobx';
 import { appState } from '../states/app-state';
 import { locationInfos, RepositoryType, Location } from '../states/location';
 
-import { SelectLocalRepo, ReadPasswordFromFile } from '../../wailsjs/go/main/ResticBrowserApp';
+import { SelectLocalRepo, SelectAndReadPasswordFromFile } from '../backend/app';
 
 import { Notification } from '@vaadin/notification';
 
@@ -63,7 +63,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   }
 
   private _readRepositoryPasswordFile() {
-    ReadPasswordFromFile()
+    SelectAndReadPasswordFromFile()
       .then(mobx.action((password) => {
           this._location.password = password;
       }))

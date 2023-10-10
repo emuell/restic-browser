@@ -1,22 +1,19 @@
 {
-  "name": "restic-frontend",
+  "name": "restic-explorer",
   "private": true,
-  "version": "0.2.6",
-  "main": "dist/app.es.js",
-  "exports": {
-    ".": "./dist/app.es.js"
-  },
-  "types": "types/app.d.ts",
+  "version": "0.2.5",
+  "type": "module",
   "files": [
-    "dist",
-    "types"
+    "dist"
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "tauri": "tauri"
   },
   "dependencies": {
-    "@adobe/lit-mobx": "^2.0.0",
+    "@adobe/lit-mobx": "^2.2.0",
+    "@tauri-apps/api": "^1.4.0",
     "@vaadin/button": "^23.1.1",
     "@vaadin/dialog": "^23.1.2",
     "@vaadin/grid": "^23.1.2",
@@ -28,13 +25,14 @@
     "@vaadin/split-layout": "^23.1.1",
     "@vaadin/text-field": "^23.1.2",
     "@vaadin/vertical-layout": "^23.1.1",
-    "lit": "^2.2.6",
+    "lit": "^2.8.0",
     "mobx": "^6.6.1",
     "pretty-bytes": "^6.0.0"
   },
   "devDependencies": {
-    "typescript": "^4.5.4",
-    "vite": "^2.9.16"
+    "@tauri-apps/cli": "^1.4.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.0"
   },
   "vaadin": {
     "disableUsageStatistics": true

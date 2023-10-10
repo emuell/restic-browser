@@ -4,7 +4,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
-import { restic } from '../../wailsjs/go/models';
+import { restic } from '../backend/models';
 
 import { 
   Grid, GridActiveItemChangedEvent, GridCellFocusEvent, GridColumn, GridItemModel 

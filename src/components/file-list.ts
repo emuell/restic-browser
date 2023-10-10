@@ -10,8 +10,8 @@ import {
 
 import { Notification } from '@vaadin/notification';
 
-import { restic } from '../../wailsjs/go/models';
-import { OpenFileOrUrl } from '../../wailsjs/go/main/ResticBrowserApp';
+import { restic } from '../backend/models';
+import { OpenFileOrUrl } from '../backend/app';
 
 import { appState } from '../states/app-state';
 

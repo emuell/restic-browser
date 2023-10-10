@@ -1,26 +1,52 @@
 {
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build debug",
+      "label": "ui:dev",
       "type": "shell",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "command": "wails",
+      "isBackground": true,
+      "command": "npm",
       "args": [
-        "build",
-        "-debug"
+        "run",
+        "dev"
       ]
     },
     {
-      "label": "build",
+      "label": "ui:build",
       "type": "shell",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "command": "wails",
+      "command": "npm",
       "args": [
+        "run",
+        "build"
+      ]
+    },
+    {
+      "label": "tauri:dev",
+      "type": "shell",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "command": "npm",
+      "args": [
+        "run",
+        "tauri",
+        "dev"
+      ]
+    },
+    {
+      "label": "tauri:build",
+      "type": "shell",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "command": "npm",
+      "args": [
+        "run",
+        "tauri",
         "build"
       ]
     }
