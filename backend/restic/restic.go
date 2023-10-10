@@ -76,13 +76,25 @@ func resticVersionNumber(resticProgram *program.Program) ([3]int, error) {
 }
 
 // NewRestic creates a new Restic struct
-func NewRestic() (restic *Restic, err error) {
-
-	// Find restic executable in PATH
-	programName := ResticProgramName()
-	resticProgram := program.Find(programName, "Restic")
-	if resticProgram == nil {
-		return nil, fmt.Errorf("unable to find '%s'", programName)
+func NewRestic(resticPath* string) (restic *Restic, err error) {
+	// Get restic from args or find restic executable in PATH
+	var resticProgram *program.Program;
+	if resticPath != nil && len(*resticPath) > 0 {
+		_, err := os.Stat(*resticPath)
+		if err != nil {
+			return nil, err
+		}
+		resticProgram = &program.Program{
+			Name:     "Restic",
+			Filename: filepath.Base(*resticPath),
+			Path:     *resticPath,
+		}
+	} else {
+		programName := ResticProgramName()
+		resticProgram = program.Find(programName, "Restic")
+		if resticProgram == nil {
+			return nil, fmt.Errorf("unable to find '%s' in $PATH", programName)
+		}
 	}
 
 	// Get the version

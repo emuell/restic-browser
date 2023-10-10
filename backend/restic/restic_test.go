@@ -52,7 +52,7 @@ func TestResticRepoPath(t *testing.T) {
 
 // test if restic program can be resolved and if it can be launched to query version info
 func TestResticProgram(t *testing.T) {
-	restic, err := NewRestic()
+	restic, err := NewRestic(nil)
 	if err != nil {
 		t.Fatal("failed to resolve restic binary", err)
 	}
@@ -66,7 +66,7 @@ func TestResticProgram(t *testing.T) {
 // test opening repo and fetching snapshots
 func TestResticSnapshots(t *testing.T) {
 	repoPath := getTestRepoPath()
-	restic, err := NewRestic()
+	restic, err := NewRestic(nil)
 	if err != nil {
 		t.Fatal("failed to resolve restic binary", err)
 	}
@@ -98,7 +98,7 @@ func TestResticSnapshots(t *testing.T) {
 // test opening repo and fetching files
 func TestResticFiles(t *testing.T) {
 	repoPath := getTestRepoPath()
-	restic, err := NewRestic()
+	restic, err := NewRestic(nil)
 	if err != nil {
 		t.Fatal("failed to resolve restic binary", err)
 	}
@@ -138,7 +138,7 @@ func TestResticFiles(t *testing.T) {
 
 func TestResticFileDump(t *testing.T) {
 	repoPath := getTestRepoPath()
-	restic, err := NewRestic()
+	restic, err := NewRestic(nil)
 	if err != nil {
 		t.Fatal("failed to resolve restic binary", err)
 	}

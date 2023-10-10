@@ -27,8 +27,8 @@ type ResticBrowserApp struct {
 	snapshots   map[string]*restic.Snapshot
 }
 
-func NewResticBrowser() *ResticBrowserApp {
-	program, err := restic.NewRestic()
+func NewResticBrowser(resticPath *string) *ResticBrowserApp {
+	program, err := restic.NewRestic(resticPath)
 	if err != nil {
 		// continue without a valid restic instance
 		fmt.Print(err.Error() + "\n")
@@ -91,7 +91,7 @@ func (r *ResticBrowserApp) DomReady(ctx context.Context) {
 	// warn about missing restic program: this is the first time we can show a dialog
 	if r.restic == nil {
 		message := fmt.Sprintf(
-			"Failed to find a restic program in your $PATH: %s\n\n", r.resticError.Error()) +
+			"Failed to find restic program: %s\n\n", r.resticError.Error()) +
 			"Please select your installed restic binary manually in the following dialog."
 		r.showWarning("Restic Binary Missing", message)
 		selectFileOptions := runtime.OpenDialogOptions{
