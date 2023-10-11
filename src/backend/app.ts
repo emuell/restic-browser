@@ -1,38 +1,38 @@
 import { invoke } from '@tauri-apps/api';
 import { restic } from './models';
 
-export function DefaultRepoLocation(): Promise<restic.Location> {
-    return invoke<restic.Location>("default_repo_location");
-}
+export namespace resticApp {
 
-export function SelectLocalRepo(): Promise<string> {
-    return invoke<string>("select_local_repo");
-}
+    export function defaultRepoLocation(): Promise<restic.Location> {
+        return invoke<restic.Location>("default_repo_location");
+    }
 
-export function SelectAndReadPasswordFromFile(): Promise<string> {
-    return invoke<string>("read_password_from_file");
-}
+    export function openFileOrUrl(arg1: string): Promise<void> {
+        return invoke<void>("open_file_or_url", { arg1 });
+    }
 
-export function OpenFileOrUrl(arg1: string): Promise<void> {
-    return invoke<void>("open_file_or_url", { arg1 });
-}
+    export function openRepository(location: restic.Location): Promise<void> {
+        return invoke<void>("open_repository", { location });
+    }
 
-export function OpenRepo(arg1: restic.Location): Promise<Array<restic.Snapshot>> {
-    return invoke<Array<restic.Snapshot>>("open_repo", { arg1 });
-}
+    export function getSnapshots(): Promise<Array<restic.Snapshot>> {
+        return invoke<Array<restic.Snapshot>>("get_snapshots", { location });
+    }
 
-export function GetFilesForPath(arg1: string, arg2: string): Promise<Array<restic.File>> {
-    return invoke<Array<restic.File>>("get_file_for_path", { arg1, arg2 });
-}
+    export function getFiles(snapshotId: string, path: string): Promise<Array<restic.File>> {
+        return invoke<Array<restic.File>>("get_files", { snapshotId, path });
+    }
 
-export function DumpFile(arg1: string, arg2: any): Promise<string> {
-    return invoke<string>("dump_file", { arg1, arg2 });
-}
+    export function dumpFile(snapshotId: string, file: restic.File): Promise<string> {
+        return invoke<string>("dump_file", { snapshotId, path: file });
+    }
 
-export function DumpFileToTemp(arg1: string, arg2: any): Promise<string> {
-    return invoke<string>("dump_file_to_temp", { arg1, arg2 });
-}
+    export function dumpFileToTemp(snapshotId: string, file: restic.File): Promise<string> {
+        return invoke<string>("dump_file_to_temp", { snapshotId, path: file });
+    }
 
-export function RestoreFile(arg1: string, arg2: any): Promise<string> {
-    return invoke<string>("restore_file", { arg1, arg2 });
+    export function restoreFile(snapshotId: string, file: restic.File): Promise<string> {
+        return invoke<string>("restore_file", { snapshotId, path: file });
+    }
+
 }

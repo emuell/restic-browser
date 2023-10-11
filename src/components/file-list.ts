@@ -11,7 +11,7 @@ import {
 import { Notification } from '@vaadin/notification';
 
 import { restic } from '../backend/models';
-import { OpenFileOrUrl } from '../backend/app';
+import { resticApp } from '../backend/app';
 
 import { appState } from '../states/app-state';
 
@@ -95,7 +95,7 @@ export class ResticBrowserFileList extends MobxLitElement {
               Successfully dumped '${file.name}' to 
                 <a href=${path} @click=${(e: Event) => { 
                     e.preventDefault()
-                    OpenFileOrUrl(path)
+                    resticApp.openFileOrUrl(path)
                       .catch(_err => { 
                         // ignore 
                       })
@@ -128,7 +128,7 @@ export class ResticBrowserFileList extends MobxLitElement {
               Successfully restored '${file.name}' to 
                 <a href=${path} @click=${(e: Event) => { 
                     e.preventDefault()
-                    OpenFileOrUrl(path)
+                    resticApp.openFileOrUrl(path)
                       .catch(_err => { 
                         // ignore 
                       })

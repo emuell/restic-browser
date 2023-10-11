@@ -1,9 +1,7 @@
 import * as mobx from 'mobx';
 
-import { DefaultRepoLocation, DumpFile, DumpFileToTemp, GetFilesForPath, OpenFileOrUrl, OpenRepo, RestoreFile }
-  from '../backend/app';
-
 import { restic } from '../backend/models';
+import { resticApp } from '../backend/app';
 
 import { Location } from './location';
 
@@ -45,7 +43,7 @@ class AppState {
     mobx.makeObservable(this);
 
     // fetch and open default repository location, if set
-    DefaultRepoLocation()
+    resticApp.defaultRepoLocation()
       .then(location => {
         // set location from default
         this.repoLocation.setFromResticLocation(location);
@@ -64,7 +62,8 @@ class AppState {
   openRepository(): void {
     ++this.isLoadingSnapshots;
     this.repoError = "";
-    OpenRepo(restic.Location.createFrom(this.repoLocation))
+    resticApp.openRepository(new restic.Location(this.repoLocation))
+      .then(() => resticApp.getSnapshots())
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;
@@ -110,7 +109,7 @@ class AppState {
     }
     // else fetch new ones and cache them
     ++this.isLoadingFiles;
-    return GetFilesForPath(this.selectedSnapshotID, rootPath || "/")
+    return resticApp.getFiles(this.selectedSnapshotID, rootPath || "/")
       .then(mobx.action((files) => {
         --this.isLoadingFiles;
         this._addCachedFiles(selectedSnapshotID, rootPath, files);
@@ -136,10 +135,10 @@ class AppState {
       }
     });
 
-    return DumpFileToTemp(this.selectedSnapshotID, file)
+    return resticApp.dumpFileToTemp(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
-        OpenFileOrUrl(path)
+        resticApp.openFileOrUrl(path)
           .catch(err => {
             throw err;
           })
@@ -165,7 +164,7 @@ class AppState {
       }
     });
 
-    return DumpFile(this.selectedSnapshotID, file)
+    return resticApp.dumpFile(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
         return path;
@@ -190,7 +189,7 @@ class AppState {
       }
     });
 
-    return RestoreFile(this.selectedSnapshotID, file)
+    return resticApp.restoreFile(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
         return path;

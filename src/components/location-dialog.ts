@@ -6,9 +6,10 @@ import * as mobx from 'mobx';
 import { appState } from '../states/app-state';
 import { locationInfos, RepositoryType, Location } from '../states/location';
 
-import { SelectLocalRepo, SelectAndReadPasswordFromFile } from '../backend/app';
-
 import { Notification } from '@vaadin/notification';
+
+import { open } from '@tauri-apps/api/dialog';
+import { fs } from '@tauri-apps/api';
 
 import '@vaadin/dialog';
 import '@vaadin/password-field';
@@ -19,18 +20,18 @@ import '@vaadin/select';
 import '@vaadin/notification';
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Modal dialog to set appState.repoLocation 
 
 @customElement('restic-browser-location-dialog')
 export class ResticBrowserLocationDialog extends MobxLitElement {
-  
+
   @property()
   onClose!: () => void;
 
   @property()
   onCancel!: () => void;
- 
+
   @state()
   _handledClose: boolean = false;
 
@@ -48,30 +49,61 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   }
 
   private _browseLocalRepositoryPath() {
-    SelectLocalRepo()
-      .then(mobx.action((directory) => {
-        if (directory.length) {
-          this._location.path = directory;
+    open({
+      directory: true,
+      multiple: false,
+      title: "Please select the root folder of a restic repository"
+    })
+      .then((directory) => {
+        if (Array.isArray(directory)) {
+          if (directory.length > 0) {
+            directory = directory[0];
+          } else {
+            directory = null;
+          }
         }
-      }))
+        if (directory != null) {
+          mobx.action((directory: string) => {
+            this._location.path = directory;
+          })(directory);
+        }
+      })
       .catch((err) => {
-        Notification.show(`Invalid repository: '${err.message || err}'`, {
+        Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
           position: 'bottom-center',
           theme: "error"
-        }); 
+        });
       });
   }
 
   private _readRepositoryPasswordFile() {
-    SelectAndReadPasswordFromFile()
-      .then(mobx.action((password) => {
-          this._location.password = password;
+    open({ multiple: false, title: "Select file to read password from", directory: false })
+      .then(mobx.action((file) => {
+        if (Array.isArray(file)) {
+          if (file.length > 0) {
+            file = file[0];
+          } else {
+            file = null;
+          }
+        }
+        if (file != null) {
+          fs.readTextFile(file).then(contents => {
+            mobx.action((contents: string) => {
+              this._location.password = contents;
+            })(contents);
+          }).catch(err => {
+            Notification.show(`Failed to read password file: '${err.message || err}'`, {
+              position: 'bottom-center',
+              theme: "error"
+            });
+          });
+        }
       }))
       .catch((err) => {
-        Notification.show(`Invalid password file: '${err.message || err}'`, {
+        Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
           position: 'bottom-center',
           theme: "error"
-        }); 
+        });
       });
   }
 
