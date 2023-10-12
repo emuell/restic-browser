@@ -11,6 +11,10 @@ export namespace resticApp {
         return invoke<void>("open_file_or_url", { path });
     }
 
+    export function verifyResticPath(): Promise<void> {
+        return invoke<void>("verify_restic_path");
+    }
+
     export function openRepository(location: restic.Location): Promise<void> {
         return invoke<void>("open_repository", { location });
     }

@@ -2,6 +2,13 @@ use std::{collections::HashMap, fs, process::Command};
 
 // -------------------------------------------------------------------------------------------------
 
+#[cfg(target_os = "windows")]
+pub static RESTIC_EXECTUABLE_NAME: &str = "restic.exe";
+#[cfg(not(target_os = "windows"))]
+pub static RESTIC_EXECTUABLE_NAME: &str = "restic";
+
+// -------------------------------------------------------------------------------------------------
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 pub struct EnvValue {
     pub name: String,

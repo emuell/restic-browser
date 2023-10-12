@@ -42,8 +42,9 @@ class AppState {
   constructor() {
     mobx.makeObservable(this);
 
-    // fetch and open default repository location, if set
-    resticApp.defaultRepoLocation()
+    // verify restic program, then fetch and open default repository location, if set
+    resticApp.verifyResticPath()
+      .then(() => resticApp.defaultRepoLocation())
       .then(location => {
         // set location from default
         this.repoLocation.setFromResticLocation(location);

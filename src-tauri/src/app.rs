@@ -1,12 +1,13 @@
 use std::{collections::HashMap, env, fs, path, sync::RwLock};
 
 use anyhow::anyhow;
-use tauri::api::dialog::blocking::{ask, FileDialogBuilder};
+use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
 use crate::restic::*;
 
 // -------------------------------------------------------------------------------------------------
 
+// internal app state 
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
     restic: ResticCommand,
@@ -22,36 +23,76 @@ impl AppState {
             snapshot_cache: HashMap::default(),
         }
     }
-}
 
-pub struct SharedAppState(pub RwLock<AppState>);
-
-impl SharedAppState {
-    // unwrap and return a copy of the current app state
-    fn get(&self) -> Result<AppState, String> {
-        let state = self
-            .0
-            .try_read()
-            .map_err(|err| format!("Failed to query app state: {err}"))?;
-        if state.restic.path.is_empty() {
-            return Err("No restic binary set".to_string());
+    pub fn verify_restic_path(&self) -> Result<(), String> {
+        if self.restic.path.is_empty() {
+            return Err("No restic executable set".to_string());
         }
-        if state.location.path.is_empty() {
+        if self.restic.version == [0, 0, 0] {
+            return Err(format!(
+                "Failed to query restic version. Is '{}' a valid restic application?",
+                self.restic.path
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn verify_location(&self) -> Result<(), String> {
+        if self.location.path.is_empty() {
             return Err("No repository set".to_string());
         }
+        Ok(())
+    }
+
+    pub fn verify_snapshot(&self, snapshot_id: &str) -> Result<(), String> {
+        self.snapshot_cache
+            .get(snapshot_id)
+            .ok_or(format!("Can't resolve snapshot with id {snapshot_id}"))?;
+        Ok(())
+    }
+}
+
+// send + sync app state as passed to taury
+pub struct SharedAppState {
+   state: RwLock<AppState>
+}
+
+impl SharedAppState {
+    // create a new shared app state from an "unshared" app state
+    pub fn new(app_state: AppState) -> Self {
+        Self { state: RwLock::new(app_state) }
+    }
+
+    // return a copy of the current app state
+    fn get(&self) -> Result<AppState, String> {
+        let state = self
+            .state
+            .try_read()
+            .map_err(|err| format!("Failed to query app state: {err}"))?;
         Ok(state.clone())
     }
 
+    // update restic property in the shared app state
+    fn update_restic(&self, restic: ResticCommand) -> Result<(), String> {
+        self.state
+            .try_write()
+            .map_err(|err| format!("Failed to query app state: {err}"))?
+            .restic = restic;
+        Ok(())
+    }
+
+    // update location property in the shared app state
     fn update_location(&self, location: Location) -> Result<(), String> {
-        self.0
+        self.state
             .try_write()
             .map_err(|err| format!("Failed to query app state: {err}"))?
             .location = location;
         Ok(())
     }
 
+    // update snapshot_cache property in the shared app state
     fn update_snapshot_cache(&self, snapshots: HashMap<String, Snapshot>) -> Result<(), String> {
-        self.0
+        self.state
             .try_write()
             .map_err(|err| format!("Failed to query app state: {err}"))?
             .snapshot_cache = snapshots;
@@ -137,6 +178,7 @@ fn default_repo_password() -> anyhow::Result<String> {
 
 #[tauri::command]
 pub fn default_repo_location() -> Result<Location, String> {
+    // read default location from env
     let mut location = Location {
         path: default_repo().unwrap_or_default(),
         password: default_repo_password().unwrap_or_default(),
@@ -175,18 +217,57 @@ pub fn open_file_or_url(path: String) -> Result<(), String> {
     open::that(path).map_err(|err| err.to_string())
 }
 
+// -------------------------------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn verify_restic_path(
+    app_state: tauri::State<SharedAppState>,
+    _app_window: tauri::Window,
+) -> Result<(), String> {
+    // verify that restic binary is set
+    let state = app_state.get()?;
+    if state.restic.path.is_empty() {
+        // aks user to reolve restic path
+        MessageDialogBuilder::new(
+            "Restic Binary Missing",
+            "Failed to find restic program in your $PATH\n
+Please select your installed restic binary manually in the following dialog.",
+        )
+        .show();
+        let restic_path = FileDialogBuilder::new()
+            // freezes on Windows .set_parent(&app_window)
+            .set_title("Locate restic program")
+            .set_file_name(RESTIC_EXECTUABLE_NAME)
+            .pick_file();
+        log::warn!(
+            "Got restic binary path {}",
+            restic_path.clone().unwrap_or_default().display()
+        );
+        if let Some(restic_path) = restic_path {
+            app_state.update_restic(ResticCommand::new(restic_path.to_string_lossy().as_ref()))?;
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn open_repository(
     location: Location,
     app_state: tauri::State<SharedAppState>,
 ) -> Result<(), String> {
+    // unwrap app state
+    let state = app_state.get()?;
+    state.verify_restic_path()?;
+    // update location in app state
     app_state.update_location(location)
 }
 
 #[tauri::command(async)]
-pub fn get_snapshots(app_state: tauri::State<'_, SharedAppState>) -> Result<Vec<Snapshot>, String> {
+pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snapshot>, String> {
     // unwrap app state
     let state = app_state.get()?;
+    state.verify_restic_path()?;
+    state.verify_location()?;
     // run command
     let command_output = state
         .restic
@@ -208,10 +289,13 @@ pub fn get_snapshots(app_state: tauri::State<'_, SharedAppState>) -> Result<Vec<
 pub fn get_files(
     snapshot_id: String,
     path: String,
-    app_state: tauri::State<'_, SharedAppState>,
+    app_state: tauri::State<SharedAppState>,
 ) -> Result<Vec<File>, String> {
     // unwrap app state
     let state = app_state.get()?;
+    state.verify_restic_path()?;
+    state.verify_location()?;
+    state.verify_snapshot(&snapshot_id)?;
     // run command
     let command_output = state
         .restic
@@ -233,16 +317,15 @@ pub fn get_files(
 pub fn dump_file(
     snapshot_id: String,
     file: File,
-    app_state: tauri::State<'_, SharedAppState>,
+    app_state: tauri::State<SharedAppState>,
     app_window: tauri::Window,
 ) -> Result<String, String> {
     // unwrap app state
     let state = app_state.get()?;
-    state
-        .snapshot_cache
-        .get(&snapshot_id)
-        .ok_or(format!("Can't resolve snapshot with id {snapshot_id}"))?;
-    // ask for target dir
+    state.verify_restic_path()?;
+    state.verify_location()?;
+    state.verify_snapshot(&snapshot_id)?;
+    // set target dir
     let folder = FileDialogBuilder::new()
         .set_title("Please select a target directory")
         .set_parent(&app_window)
@@ -277,6 +360,7 @@ Are you sure that you want to overwrite the existing file?",
         fs::remove_file(target_file_name.clone())
             .map_err(|err| format!("Failed to remove target file: {err}"))?;
     }
+    // run dump command
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
     state
@@ -294,15 +378,15 @@ Are you sure that you want to overwrite the existing file?",
 pub fn dump_file_to_temp(
     snapshot_id: String,
     file: File,
-    app_state: tauri::State<'_, SharedAppState>,
+    app_state: tauri::State<SharedAppState>,
     _app_window: tauri::Window,
 ) -> Result<String, String> {
     // unwrap app state
     let state = app_state.get()?;
-    state
-        .snapshot_cache
-        .get(&snapshot_id)
-        .ok_or(format!("Can't resolve snapshot with id {snapshot_id}"))?;
+    state.verify_restic_path()?;
+    state.verify_location()?;
+    state.verify_snapshot(&snapshot_id)?;
+    // set target file name
     let target_folder = env::temp_dir();
     let target_file_name = if file.type_ == "dir" {
         path::Path::new(&target_folder).join(file.name + ".zip")
@@ -311,6 +395,7 @@ pub fn dump_file_to_temp(
     };
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
+    // run dump command
     state
         .restic
         .run_redirected(
@@ -326,16 +411,15 @@ pub fn dump_file_to_temp(
 pub fn restore_file(
     snapshot_id: String,
     file: File,
-    app_state: tauri::State<'_, SharedAppState>,
+    app_state: tauri::State<SharedAppState>,
     app_window: tauri::Window,
 ) -> Result<String, String> {
     // unwrap app state
     let state = app_state.get()?;
-    state
-        .snapshot_cache
-        .get(&snapshot_id)
-        .ok_or(format!("Can't resolve snapshot with id {snapshot_id}"))?;
-    // ask for target dir
+    state.verify_restic_path()?;
+    state.verify_location()?;
+    state.verify_snapshot(&snapshot_id)?;
+    // set target dir
     let folder = FileDialogBuilder::new()
         .set_title("Please select a target directory")
         .set_parent(&app_window)
