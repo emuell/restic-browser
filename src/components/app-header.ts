@@ -42,6 +42,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
       color: var(--lumo-tint-50pct);
       margin-top: 4px;
       margin-right: 12px;
+      overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }

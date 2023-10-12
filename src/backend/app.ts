@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api';
-import { restic } from './models';
+import { restic } from './restic';
 
 export namespace resticApp {
 

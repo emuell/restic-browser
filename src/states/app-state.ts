@@ -1,6 +1,6 @@
 import * as mobx from 'mobx';
 
-import { restic } from '../backend/models';
+import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
 
 import { Location } from './location';

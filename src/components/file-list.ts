@@ -10,7 +10,7 @@ import {
 
 import { Notification } from '@vaadin/notification';
 
-import { restic } from '../backend/models';
+import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
 
 import { appState } from '../states/app-state';

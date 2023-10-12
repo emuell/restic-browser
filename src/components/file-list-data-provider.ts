@@ -2,7 +2,7 @@ import {
   GridDataProviderCallback, GridDataProviderParams, GridSorterDefinition 
 } from "@vaadin/grid";
 
-import { restic } from "../backend/models";
+import { restic } from "../backend/restic";
 
 // -------------------------------------------------------------------------------------------------
 
