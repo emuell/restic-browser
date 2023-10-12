@@ -1,5 +1,8 @@
 use std::{collections::HashMap, fs, process::Command};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 // -------------------------------------------------------------------------------------------------
 
 #[cfg(target_os = "windows")]
@@ -79,7 +82,7 @@ impl ResticCommand {
     // run a restic command for the given location with the given args
     pub fn run(&self, location: Location, args: Vec<&str>) -> Result<String, String> {
         let envs = Self::environment_values(location);
-        let output = Command::new(&self.path)
+        let output = Self::new_command(&self.path)
             .envs(envs)
             .args(args)
             .output()
@@ -102,7 +105,7 @@ impl ResticCommand {
         file: fs::File,
     ) -> Result<(), String> {
         let envs = Self::environment_values(location);
-        let output = Command::new(&self.path)
+        let output = Self::new_command(&self.path)
             .envs(envs)
             .args(args)
             .stdout(std::process::Stdio::from(file))
@@ -115,12 +118,20 @@ impl ResticCommand {
             Err(stderr.to_string())
         }
     }
-    
+
+    // create new Command and configure it to hide command window on Windows 
+    fn new_command(program: &str) -> Command {
+        let mut command = Command::new(program);
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        command
+    }
+
     // run restic command to query its version
     fn query_version(path: &str) -> [i32; 3] {
         // get version from restic binary
         let mut version = [0, 0, 0];
-        match Command::new(path).arg("version").output() {
+        match Self::new_command(path).arg("version").output() {
             Ok(output) => {
                 // "restic x.y.z some other info"
                 let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
