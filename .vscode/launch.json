@@ -10,6 +10,10 @@
       "type": "lldb",
       "request": "launch",
       "name": "Tauri Development Debug",
+      "env": {
+        "RESTIC_REPOSITORY": "${workspaceFolder}/src-tauri/test/test-repo",
+        "RESTIC_PASSWORD": "test-repo-pass"
+      },
       "cargo": {
         "args": [
           "build",
