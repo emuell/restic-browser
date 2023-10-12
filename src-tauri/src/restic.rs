@@ -1,4 +1,4 @@
-use std::{collections::HashMap, process::Command};
+use std::{collections::HashMap, fs, process::Command};
 
 // -------------------------------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ pub struct Snapshot {
 #[derive(Debug, Default, Clone)]
 pub struct ResticCommand {
     pub version: [i32; 3], // major, minor, rev
-    pub path: String, // path to the restic executable
+    pub path: String,      // path to the restic executable
 }
 
 impl ResticCommand {
@@ -86,6 +86,29 @@ impl ResticCommand {
         }
     }
 
+    // run a restic command for the given location with the given args and redirect
+    // stdout to the given target file
+    pub fn run_redirected(
+        &self,
+        location: Location,
+        args: Vec<&str>,
+        file: fs::File,
+    ) -> Result<(), String> {
+        let envs = Self::environment_values(location);
+        let output = Command::new(&self.path)
+            .envs(envs)
+            .args(args)
+            .stdout(std::process::Stdio::from(file))
+            .output()
+            .map_err(|err| err.to_string())?;
+        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(stderr.to_string())
+        }
+    }
+    
     // run restic command to query its version
     fn query_version(path: &str) -> [i32; 3] {
         // get version from restic binary

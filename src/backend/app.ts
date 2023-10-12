@@ -7,8 +7,8 @@ export namespace resticApp {
         return invoke<restic.Location>("default_repo_location");
     }
 
-    export function openFileOrUrl(arg1: string): Promise<void> {
-        return invoke<void>("open_file_or_url", { arg1 });
+    export function openFileOrUrl(path: string): Promise<void> {
+        return invoke<void>("open_file_or_url", { path });
     }
 
     export function openRepository(location: restic.Location): Promise<void> {
@@ -24,15 +24,15 @@ export namespace resticApp {
     }
 
     export function dumpFile(snapshotId: string, file: restic.File): Promise<string> {
-        return invoke<string>("dump_file", { snapshotId, path: file });
+        return invoke<string>("dump_file", { snapshotId, file });
     }
 
     export function dumpFileToTemp(snapshotId: string, file: restic.File): Promise<string> {
-        return invoke<string>("dump_file_to_temp", { snapshotId, path: file });
+        return invoke<string>("dump_file_to_temp", { snapshotId, file });
     }
 
     export function restoreFile(snapshotId: string, file: restic.File): Promise<string> {
-        return invoke<string>("restore_file", { snapshotId, path: file });
+        return invoke<string>("restore_file", { snapshotId, file });
     }
 
 }
