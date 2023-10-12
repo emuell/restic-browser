@@ -63,6 +63,7 @@ fn main() {
             log::info!("Starting application...");
             Ok(())
         })
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             app::default_repo_location,
             app::open_file_or_url,
