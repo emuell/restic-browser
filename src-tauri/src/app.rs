@@ -28,7 +28,13 @@ impl AppState {
         if self.restic.path.is_empty() {
             return Err("No restic executable set".to_string());
         }
-        if self.restic.version == [0, 0, 0] {
+        else if ! path::Path::new(&self.restic.path).exists() {
+            return Err(format!(
+                "Restic executable '{}' does not exist or can not be accessed.",
+                self.restic.path
+            ));
+        }
+        else if self.restic.version == [0, 0, 0] {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
                 self.restic.path

@@ -42,17 +42,24 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     // initialize
     CombinedLogger::init(loggers).unwrap_or_else(|err| eprintln!("Failed to create logger: {err}"));
 
-    // find restic in path and create new app state 
-    let app_state;
-    if let Ok(restic_path) = which("restic") {
-        app_state = app::AppState::new(restic_path.to_str().unwrap());
-        log::info!("Found restic binary at {}", restic_path.to_string_lossy());
-        eprintln!();
-    } else {
-        log::warn!("Failed to resolve restic binary");
-        app_state = app::AppState::default();
+    // get restic from args or find restic in path
+    let mut restic_path = "".to_owned();
+    if let Ok(matches) = app.get_cli_matches() {
+        if let Some(arg) = matches.args.get("restic") {
+            restic_path = arg.value.as_str().unwrap_or("").to_string();
+            log::info!("Got restic as arg {}", restic_path);
+        }
     }
-    app.manage(app::SharedAppState::new(app_state));
+    if restic_path.is_empty() {
+        if let Ok(restic) = which("restic") {
+            restic_path = restic.to_string_lossy().to_string();
+            log::info!("Found restic binary at {}", restic_path);
+        } else {
+            log::warn!("Failed to resolve restic binary");
+        }
+    }
+    // create new app state
+    app.manage(app::SharedAppState::new(app::AppState::new(&restic_path)));
 
     log::info!("Starting application...");
     Ok(())

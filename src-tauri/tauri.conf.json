@@ -56,6 +56,16 @@
         "timestampUrl": ""
       }
     },
+    "cli": {
+      "args": [
+        {
+          "name": "restic",
+          "short": "r",
+          "takesValue": true,
+          "multiple": false
+        }
+      ]
+    },
     "security": {
       "csp": null
     },
@@ -66,9 +76,10 @@
       {
         "fullscreen": false,
         "height": 600,
+        "width": 800,
         "resizable": true,
         "title": "Restic Browser",
-        "width": 800
+        "visible": false
       }
     ]
   }
