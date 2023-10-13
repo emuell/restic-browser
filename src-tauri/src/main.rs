@@ -6,6 +6,7 @@ use std::{env, fs, path, process};
 use anyhow::anyhow;
 use simplelog::*;
 use tauri::Manager;
+use tauri_plugin_window_state::StateFlags;
 use which::which;
 
 use crate::restic::{Location, ResticCommand};
@@ -98,6 +99,16 @@ fn finalize_app(app: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>>
 
 // -------------------------------------------------------------------------------------------------
 
+#[tauri::command]
+fn show_app(app_window: tauri::Window) -> Result<(), String> {
+    // app is initially hidden until this is called to avoid screen flickering
+    // see src/hooks.ts, which invokes this on DOMContentLoaded
+    app_window.show().map_err(|err| err.to_string())?;
+    Ok(())
+}
+
+// -------------------------------------------------------------------------------------------------
+
 fn main() {
     // create new app
     tauri::Builder::default()
@@ -110,8 +121,14 @@ fn main() {
                 });
             }
         })
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                // don't restore visibility: window is initially hidden - see show_window
+                .with_state_flags(StateFlags::all() & StateFlags::VISIBLE.complement())
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
+            show_app,
             app::default_repo_location,
             app::open_file_or_url,
             app::verify_restic_path,

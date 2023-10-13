@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api';
+
 // workaround for vaadin with vite
 // see https://github.com/vaadin/vaadin-lumo-styles/issues/105
 const oldDefine = customElements.define;
@@ -16,15 +18,15 @@ customElements.define = function(name: string, constructor: CustomElementConstru
 };
 
 // disable webview context menu
-(() => {
-  if (window.location.hostname !== 'localhost') {
-    return;
-  }
-  document.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      return false;
-    }, { capture: true }
-  );
-})();
+document.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    return false;
+  }, { capture: true }
+);
+
+// make window visible as soon as we got some content to show
+document.addEventListener("DOMContentLoaded", () => {
+  invoke<void>("show_app");
+});
 
 export { }
