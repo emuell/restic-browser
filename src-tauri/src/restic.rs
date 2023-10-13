@@ -84,7 +84,7 @@ impl ResticCommand {
         let envs = Self::environment_values(location);
         let output = Self::new_command(&self.path)
             .envs(envs)
-            .args(args)
+            .args(args.clone())
             .output()
             .map_err(|err| err.to_string())?;
         let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
@@ -92,6 +92,12 @@ impl ResticCommand {
         if output.status.success() {
             Ok(stdout.to_string())
         } else {
+            log::warn!(
+                "Restic '{:?}' command failed with status {}:\n{}",
+                args,
+                output.status,
+                stderr
+            );
             Err(stderr.to_string())
         }
     }
@@ -107,7 +113,7 @@ impl ResticCommand {
         let envs = Self::environment_values(location);
         let output = Self::new_command(&self.path)
             .envs(envs)
-            .args(args)
+            .args(args.clone())
             .stdout(std::process::Stdio::from(file))
             .output()
             .map_err(|err| err.to_string())?;
@@ -115,11 +121,17 @@ impl ResticCommand {
         if output.status.success() {
             Ok(())
         } else {
+            log::warn!(
+                "Restic '{:?}' command failed with status {}:\n{}",
+                args,
+                output.status,
+                stderr
+            );
             Err(stderr.to_string())
         }
     }
 
-    // create new Command and configure it to hide command window on Windows 
+    // create new Command and configure it to hide command window on Windows
     fn new_command(program: &str) -> Command {
         #[allow(unused_mut)]
         let mut command = Command::new(program);
@@ -134,16 +146,21 @@ impl ResticCommand {
         let mut version = [0, 0, 0];
         match Self::new_command(path).arg("version").output() {
             Ok(output) => {
-                // "restic x.y.z some other info"
-                let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
-                let mut name_version = stdout.split(' ');
-                if let Some(version_str) = name_version.nth(1) {
-                    let mut splits = version_str
-                        .split('.')
-                        .map(|str| str.parse::<i32>().unwrap_or(0));
-                    version[0] = splits.next().unwrap_or(0);
-                    version[1] = splits.next().unwrap_or(0);
-                    version[2] = splits.next().unwrap_or(0);
+                if output.status.success() {
+                    // "restic x.y.z some other info"
+                    let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
+                    let mut name_version = stdout.split(' ');
+                    if let Some(version_str) = name_version.nth(1) {
+                        let mut splits = version_str
+                            .split('.')
+                            .map(|str| str.parse::<i32>().unwrap_or(0));
+                        version[0] = splits.next().unwrap_or(0);
+                        version[1] = splits.next().unwrap_or(0);
+                        version[2] = splits.next().unwrap_or(0);
+                    }
+                } else {
+                    let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
+                    log::warn!("Failed to read version info from restic binary: {}", stderr);
                 }
             }
             Err(err) => {

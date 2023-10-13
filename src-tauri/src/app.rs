@@ -253,8 +253,8 @@ Please select your installed restic binary manually in the following dialog.",
             .set_title("Locate restic program")
             .set_file_name(RESTIC_EXECTUABLE_NAME)
             .pick_file();
-        log::warn!(
-            "Got restic binary path {}",
+        log::info!(
+            "Got restic binary path '{}' from user",
             restic_path.clone().unwrap_or_default().display()
         );
         if let Some(restic_path) = restic_path {
@@ -269,6 +269,7 @@ pub fn open_repository(
     location: Location,
     app_state: tauri::State<SharedAppState>,
 ) -> Result<(), String> {
+    log::info!("Opening repository: '{}'...", location.path);
     // unwrap app state
     let state = app_state.get()?;
     state.verify_restic_path()?;
@@ -283,6 +284,7 @@ pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snap
     state.verify_restic_path()?;
     state.verify_location()?;
     // run command
+    log::info!("Fetching snapshots from repository...");
     let command_output = state
         .restic
         .run(state.location, vec!["snapshots", "--json"])
@@ -311,6 +313,11 @@ pub fn get_files(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // run command
+    log::info!(
+        "Fetching files from snapshot '{}' at path '{}'...",
+        snapshot_id,
+        path
+    );
     let command_output = state
         .restic
         .run(state.location, vec!["ls", &snapshot_id, "--json", &path])
@@ -350,9 +357,9 @@ pub fn dump_file(
     }
     let target_folder = folder.unwrap();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(&target_folder).join(file.name + ".zip")
+        path::Path::new(&target_folder).join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(&target_folder).join(file.name)
+        path::Path::new(&target_folder).join(file.name.clone())
     };
     // confirm overwriting
     if target_file_name.exists() {
@@ -375,6 +382,11 @@ Are you sure that you want to overwrite the existing file?",
             .map_err(|err| format!("Failed to remove target file: {err}"))?;
     }
     // run dump command
+    log::info!(
+        "Dumping file '{}' from snapshot '{}'...",
+        file.name,
+        snapshot_id
+    );
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
     state
@@ -403,13 +415,18 @@ pub fn dump_file_to_temp(
     // set target file name
     let target_folder = state.temp_dir();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(target_folder).join(file.name + ".zip")
+        path::Path::new(target_folder).join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(target_folder).join(file.name)
+        path::Path::new(target_folder).join(file.name.clone())
     };
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
     // run dump command
+    log::info!(
+        "Previewing file '{}' from snapshot '{}'...",
+        file.name,
+        snapshot_id
+    );
     state
         .restic
         .run_redirected(
@@ -443,7 +460,7 @@ pub fn restore_file(
         return Ok("".to_string());
     }
     let target_folder = folder.unwrap();
-    let target_file_name = path::Path::new(&target_folder).join(file.name);
+    let target_file_name = path::Path::new(&target_folder).join(file.name.clone());
     if target_file_name.exists() {
         // confirm overwriting
         let confirmed = ask(
@@ -463,6 +480,11 @@ Are you sure that you want to overwrite the existing file(s)?",
         }
     }
     // run restore command
+    log::warn!(
+        "Restoring file '{}' from snapshot '{}'...",
+        file.name,
+        snapshot_id
+    );
     state
         .restic
         .run(
