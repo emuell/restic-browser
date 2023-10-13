@@ -13,15 +13,23 @@ pub struct AppState {
     restic: ResticCommand,
     location: Location,
     snapshot_ids: HashSet<String>,
+    temp_dir: String,
 }
 
 impl AppState {
-    pub fn new(restic_path: &str) -> Self {
+    pub fn new(restic: ResticCommand, location: Location, temp_dir: &str) -> Self {
+        let snapshot_ids = HashSet::default();
+        let temp_dir = temp_dir.to_owned();
         Self {
-            restic: ResticCommand::new(restic_path),
-            location: Location::default(),
-            snapshot_ids: HashSet::default(),
+            restic,
+            location,
+            snapshot_ids,
+            temp_dir,
         }
+    }
+
+    pub fn temp_dir(&self) -> &str {
+        &self.temp_dir
     }
 
     pub fn verify_restic_path(&self) -> Result<(), String> {
@@ -70,7 +78,7 @@ impl SharedAppState {
     }
 
     // return a copy of the current app state
-    fn get(&self) -> Result<AppState, String> {
+    pub fn get(&self) -> Result<AppState, String> {
         let state = self
             .state
             .try_read()
@@ -393,11 +401,11 @@ pub fn dump_file_to_temp(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // set target file name
-    let target_folder = env::temp_dir();
+    let target_folder = state.temp_dir();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(&target_folder).join(file.name + ".zip")
+        path::Path::new(target_folder).join(file.name + ".zip")
     } else {
-        path::Path::new(&target_folder).join(file.name)
+        path::Path::new(target_folder).join(file.name)
     };
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
