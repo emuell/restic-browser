@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, fs, path, sync::RwLock};
+use std::{collections::HashSet, env, fs, path, sync::RwLock};
 
 use anyhow::anyhow;
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
@@ -7,12 +7,12 @@ use crate::restic::*;
 
 // -------------------------------------------------------------------------------------------------
 
-// internal app state 
+// internal app state
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
     restic: ResticCommand,
     location: Location,
-    snapshot_cache: HashMap<String, Snapshot>,
+    snapshot_ids: HashSet<String>,
 }
 
 impl AppState {
@@ -20,21 +20,19 @@ impl AppState {
         Self {
             restic: ResticCommand::new(restic_path),
             location: Location::default(),
-            snapshot_cache: HashMap::default(),
+            snapshot_ids: HashSet::default(),
         }
     }
 
     pub fn verify_restic_path(&self) -> Result<(), String> {
         if self.restic.path.is_empty() {
             return Err("No restic executable set".to_string());
-        }
-        else if ! path::Path::new(&self.restic.path).exists() {
+        } else if !path::Path::new(&self.restic.path).exists() {
             return Err(format!(
                 "Restic executable '{}' does not exist or can not be accessed.",
                 self.restic.path
             ));
-        }
-        else if self.restic.version == [0, 0, 0] {
+        } else if self.restic.version == [0, 0, 0] {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
                 self.restic.path
@@ -51,7 +49,7 @@ impl AppState {
     }
 
     pub fn verify_snapshot(&self, snapshot_id: &str) -> Result<(), String> {
-        self.snapshot_cache
+        self.snapshot_ids
             .get(snapshot_id)
             .ok_or(format!("Can't resolve snapshot with id {snapshot_id}"))?;
         Ok(())
@@ -60,13 +58,15 @@ impl AppState {
 
 // send + sync app state as passed to taury
 pub struct SharedAppState {
-   state: RwLock<AppState>
+    state: RwLock<AppState>,
 }
 
 impl SharedAppState {
     // create a new shared app state from an "unshared" app state
     pub fn new(app_state: AppState) -> Self {
-        Self { state: RwLock::new(app_state) }
+        Self {
+            state: RwLock::new(app_state),
+        }
     }
 
     // return a copy of the current app state
@@ -96,12 +96,12 @@ impl SharedAppState {
         Ok(())
     }
 
-    // update snapshot_cache property in the shared app state
-    fn update_snapshot_cache(&self, snapshots: HashMap<String, Snapshot>) -> Result<(), String> {
+    // update snapshot_ids property in the shared app state
+    fn update_snapshot_ids(&self, snapshot_ids: HashSet<String>) -> Result<(), String> {
         self.state
             .try_write()
             .map_err(|err| format!("Failed to query app state: {err}"))?
-            .snapshot_cache = snapshots;
+            .snapshot_ids = snapshot_ids;
         Ok(())
     }
 }
@@ -282,11 +282,11 @@ pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snap
     let snapshots =
         serde_json::from_str::<Vec<Snapshot>>(&command_output).map_err(|err| err.to_string())?;
     // update snapshot cache
-    let mut snapshot_cache = HashMap::new();
+    let mut snapshot_ids = HashSet::new();
     snapshots.iter().for_each(|v| {
-        snapshot_cache.insert(v.id.clone(), v.clone());
+        snapshot_ids.insert(v.id.clone());
     });
-    app_state.update_snapshot_cache(snapshot_cache)?;
+    app_state.update_snapshot_ids(snapshot_ids)?;
     // return snapshots
     Ok(snapshots)
 }
