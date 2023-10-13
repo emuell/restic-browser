@@ -13,6 +13,18 @@ customElements.define = function(name: string, constructor: CustomElementConstru
       }
       throw error;
   }
-}
+};
+
+// disable webview context menu
+(() => {
+  if (window.location.hostname !== 'localhost') {
+    return;
+  }
+  document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      return false;
+    }, { capture: true }
+  );
+})();
 
 export { }
