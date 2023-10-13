@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/emuell/restic-browser"
 default-run = "restic-browser"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.67"
 
 [build-dependencies]
 tauri-build = { version = "^1.5", features = [] }
