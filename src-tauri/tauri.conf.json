@@ -28,6 +28,7 @@
     },
     "bundle": {
       "active": true,
+      "targets": ["app"],
       "category": "DeveloperTool",
       "copyright": "",
       "deb": {
@@ -49,7 +50,6 @@
       },
       "resources": [],
       "shortDescription": "",
-      "targets": "all",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
