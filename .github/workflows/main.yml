@@ -53,8 +53,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Rust Setup
+      - name: Rust Setup (Windows & Linux)
         uses: dtolnay/rust-toolchain@stable
+        if: ${{ matrix.config.name != 'macOS' }}
+
+      - name: Rust Setup (macOS)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: "aarch64-apple-darwin, x86_64-apple-darwin"
+        if: ${{ matrix.config.name == 'macOS' }}
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
@@ -74,8 +81,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build (Windows & Linux)
         run: npm run tauri build
+        if: ${{ matrix.config.name != 'macOS' }}
+
+      - name: Build (macOS)
+        run: npm run tauri build -- --target universal-apple-darwin
+        if: ${{ matrix.config.name == 'macOS' }}
 
       - name: Code Sign (Windows)
         env:
@@ -93,7 +105,7 @@ jobs:
           MACOS_CODE_CERT_DATA: ${{ secrets.MACOS_CODE_CERT_DATA }}
           MACOS_CODE_CERT_PASS: ${{ secrets.MACOS_CODE_CERT_PASS }}
           MACOS_CODE_CERT_TEAM_ID: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
-          MACOS_EXECUTABLE_PATH: ./src-tauri/target/release/bundle/macos/${{ matrix.config.executable_name }}
+          MACOS_EXECUTABLE_PATH: ./src-tauri/target/universal-apple-darwin/release/bundle/macos/${{ matrix.config.executable_name }}
         if: ${{ matrix.config.name == 'macOS' && env.MACOS_CODE_CERT_DATA != null && env.MACOS_CODE_CERT_PASS != null && env.MACOS_CODE_CERT_TEAM_ID != null }}
         run: |
           echo $MACOS_CODE_CERT_DATA | base64 --decode > certificate.p12
@@ -102,7 +114,7 @@ jobs:
           security unlock-keychain -p $MACOS_CODE_CERT_PASS build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CODE_CERT_PASS -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CODE_CERT_PASS build.keychain
-          /usr/bin/codesign --force -s $MACOS_CODE_CERT_TEAM_ID --deep --options=runtime "$MACOS_EXECUTABLE_PATH"
+          /usr/bin/codesign --force -s $MACOS_CODE_CERT_TEAM_ID --entitlements ./src-tauri/entitlements.plist --deep --options=runtime "$MACOS_EXECUTABLE_PATH"
 
       - name: Notarize (macOS)
         env:
@@ -114,8 +126,8 @@ jobs:
           appstore-connect-username: ${{ secrets.MACOS_NOTARY_USER }}
           appstore-connect-password: ${{ secrets.MACOS_NOTARY_PASS }}
           appstore-connect-team-id: ${{ secrets.MACOS_CODE_CERT_TEAM_ID }}
-          primary-bundle-id: com.wails.restic-browser
-          product-path: ./src-tauri/target/release/bundle/macos/${{ matrix.config.executable_name }}
+          primary-bundle-id: org.restic.browser
+          product-path: ./src-tauri/target/universal-apple-darwin/release/bundle/macos/${{ matrix.config.executable_name }}
           verbose: false
 
       - name: Upload Artifact (Windows)
@@ -138,10 +150,14 @@ jobs:
           path: ./src-tauri/target/release/*.tar
           if-no-files-found: error
 
+      - name: Prepare Upload Artifact (macOS)
+        if: ${{ matrix.config.name == 'macOS' }}
+        run: cd ./src-tauri/target/universal-apple-darwin/release/bundle/macos && tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
+
       - name: Upload Artifact (macOS)
         if: ${{ matrix.config.name == 'macOS' }}
         uses: actions/upload-artifact@v3
         with:
           name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-macOS"
-          path: ./src-tauri/target/release/bundle/macos/*.app
+          path: ./src-tauri/target/universal-apple-darwin/release/bundle/macos/*.tar
           if-no-files-found: error
