@@ -1,7 +1,7 @@
 {
-  "name": "restic-explorer",
+  "name": "restic-browser",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.0-beta.0",
   "type": "module",
   "files": [
     "dist"
