@@ -233,23 +233,24 @@ pub fn open_file_or_url(path: String) -> Result<(), String> {
 
 // -------------------------------------------------------------------------------------------------
 
-#[tauri::command]
+#[tauri::command(async)] // NB: async! not on main thread, else the dialogs may freeze
 pub fn verify_restic_path(
     app_state: tauri::State<SharedAppState>,
-    _app_window: tauri::Window,
+    app_window: tauri::Window,
 ) -> Result<(), String> {
     // verify that restic binary is set
     let state = app_state.get()?;
     if state.restic.path.is_empty() {
-        // aks user to reolve restic path
+        // aks user to resolve restic path
         MessageDialogBuilder::new(
             "Restic Binary Missing",
             "Failed to find restic program in your $PATH\n
 Please select your installed restic binary manually in the following dialog.",
         )
+        .parent(&app_window)
         .show();
         let restic_path = FileDialogBuilder::new()
-            // freezes on Windows .set_parent(&app_window)
+            .set_parent(&app_window)
             .set_title("Locate restic program")
             .set_file_name(RESTIC_EXECTUABLE_NAME)
             .pick_file();
