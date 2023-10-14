@@ -7,7 +7,10 @@ use anyhow::anyhow;
 use simplelog::*;
 use tauri::Manager;
 use tauri_plugin_window_state::StateFlags;
+
 use which::which;
+#[cfg(target_os = "macos")]
+use which::which_in;
 
 use crate::restic::{Location, ResticCommand};
 
@@ -61,7 +64,22 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         if let Ok(restic) = which("restic") {
             restic_path = restic.to_string_lossy().to_string();
             log::info!("Found restic binary in PATH at '{}'", restic_path);
-        } else {
+        }
+        #[cfg(target_os = "macos")]
+        {
+            if let Ok(restic) = which_in(
+                "restic",
+                Some(format!(
+                    "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
+                    env::var("HOME").unwrap_or("$HOME".to_string())
+                )),
+                "/",
+            ) {
+                restic_path = restic.to_string_lossy().to_string();
+                log::info!("Found restic binary in common PATH at '{}'", restic_path);
+            }
+        }
+        if restic_path.is_empty() {
             log::warn!("Failed to resolve restic binary");
         }
     }
