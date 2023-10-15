@@ -1,0 +1,86 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:5173",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "Restic-Browser",
+    "version": "0.3.0-beta.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": true,
+      "dialog": {
+        "all": true
+      },
+      "fs": {
+        "all": true
+      },
+      "path": {
+        "all": false
+      },
+      "shell": {
+        "sidecar": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": ["app"],
+      "category": "DeveloperTool",
+      "copyright": "",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [],
+      "icon": [
+        "icons/icon.png",
+        "icons/icon.ico"
+      ],
+      "identifier": "org.restic.browser",
+      "longDescription": "",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [],
+      "shortDescription": "",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "cli": {
+      "args": [
+        {
+          "name": "restic",
+          "short": "r",
+          "takesValue": true,
+          "multiple": false
+        }
+      ]
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 600,
+        "width": 800,
+        "resizable": true,
+        "title": "Restic Browser",
+        "visible": false
+      }
+    ]
+  }
+}

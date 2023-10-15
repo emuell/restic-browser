@@ -1,26 +1,46 @@
 {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Restic-Browser (GO)",
-      "type": "go",
+      // NB: when lldb fails on windows, try:
+      // https://github.com/vadimcn/vscode-lldb/issues/410#issuecomment-1171351380
+      "type": "lldb",
       "request": "launch",
-      "mode": "exec",
-      "preLaunchTask": "build debug",
-      "cwd": "${workspaceFolder}",
+      "name": "Tauri Development Debug",
       "env": {
-        "RESTIC_REPOSITORY": "${workspaceFolder}/backend/restic/test-repo",
+        "RESTIC_REPOSITORY": "${workspaceFolder}/src-tauri/test/test-repo",
         "RESTIC_PASSWORD": "test-repo-pass"
       },
-      "linux": {
-        "program": "${workspaceFolder}/build/bin/Restic-Browser",
+      "cargo": {
+        "args": [
+          "build",
+          "--manifest-path=./src-tauri/Cargo.toml",
+          "--no-default-features"
+        ],
+        "problemMatcher": [
+          "$rustc"
+        ]
       },
-      "osx": {
-        "program": "${workspaceFolder}/build/bin/restic-browser.app/Contents/MacOS/restic-browser",
-      },
-      "windows": {
-        "program": "${workspaceFolder}/build/bin/Restic-Browser.exe",
-      }
+      "preLaunchTask": "ui:dev"
     },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Tauri Production Debug",
+      "cargo": {
+        "args": [
+          "build",
+          "--release",
+          "--manifest-path=./src-tauri/Cargo.toml"
+        ],
+        "problemMatcher": [
+          "$rustc"
+        ]
+      },
+      "preLaunchTask": "ui:build"
+    }
   ]
 }
