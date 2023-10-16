@@ -1,6 +1,5 @@
-use std::{collections::HashSet, env, fs, path, sync::RwLock};
+use std::{collections::HashSet, fs, path, sync::RwLock};
 
-use anyhow::anyhow;
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
 use crate::restic::*;
@@ -116,119 +115,16 @@ impl SharedAppState {
 
 // -------------------------------------------------------------------------------------------------
 
-struct LocationInfo<'a> {
-    prefix: &'a str,
-    credentials: Vec<&'a str>,
-}
-
-fn location_infos() -> Vec<LocationInfo<'static>> {
-    vec![
-        LocationInfo {
-            prefix: "bs",
-            credentials: vec![],
-        },
-        LocationInfo {
-            prefix: "sftp",
-            credentials: vec![],
-        },
-        LocationInfo {
-            prefix: "rest",
-            credentials: vec![],
-        },
-        LocationInfo {
-            prefix: "rclone",
-            credentials: vec![],
-        },
-        LocationInfo {
-            prefix: "s3",
-            credentials: vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        },
-        LocationInfo {
-            prefix: "b2",
-            credentials: vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"],
-        },
-        LocationInfo {
-            prefix: "azure",
-            credentials: vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
-        },
-    ]
-}
-
-// defaultRepo determines the default restic repository location from the environment.
-fn default_repo() -> anyhow::Result<String> {
-    if let Ok(repository_file) = env::var("RESTIC_REPOSITORY_FILE") {
-        let content = fs::read_to_string(repository_file.clone());
-        if let Ok(content) = content {
-            return Ok(content.trim().replace('\n', ""));
-        } else {
-            return Err(anyhow!("{repository_file} does not exist"));
-        }
-    }
-    if let Ok(repository) = env::var("RESTIC_REPOSITORY") {
-        Ok(repository)
-    } else {
-        Err(anyhow!("No repository set"))
-    }
-}
-
-// defaultRepoPassword determines the default restic repository password from the environment.
-fn default_repo_password() -> anyhow::Result<String> {
-    if let Ok(password_file) = env::var("RESTIC_PASSWORD_FILE") {
-        let content = fs::read_to_string(password_file.clone());
-        if let Ok(content) = content {
-            return Ok(content.trim().replace('\n', ""));
-        } else {
-            return Err(anyhow!("{password_file} does not exist"));
-        }
-    }
-    if let Ok(repository) = env::var("RESTIC_PASSWORD") {
-        Ok(repository)
-    } else {
-        Err(anyhow!("No repository password set"))
-    }
+#[tauri::command]
+pub fn open_file_or_url(path: String) -> Result<(), String> {
+    open::that(path).map_err(|err| err.to_string())
 }
 
 // -------------------------------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn default_repo_location() -> Result<Location, String> {
-    // read default location from env
-    let mut location = Location {
-        path: default_repo().unwrap_or_default(),
-        password: default_repo_password().unwrap_or_default(),
-        credentials: vec![],
-        prefix: "".to_string(),
-    };
-    if location.path.is_empty() {
-        // skip reading other location info when no repo is present
-        return Ok(location);
-    }
-    location.prefix = "".to_string();
-    for location_info in location_infos() {
-        if location
-            .path
-            .starts_with(&(location_info.prefix.to_string() + ":"))
-        {
-            location.prefix = location_info.prefix.to_string();
-            location.path =
-                location
-                    .path
-                    .replacen(&(location_info.prefix.to_string() + ":"), "", 1);
-            for credential in location_info.credentials {
-                location.credentials.push(EnvValue {
-                    name: credential.to_string(),
-                    value: env::var(credential).unwrap_or_default(),
-                })
-            }
-            break;
-        }
-    }
-    Ok(location)
-}
-
-#[tauri::command]
-pub fn open_file_or_url(path: String) -> Result<(), String> {
-    open::that(path).map_err(|err| err.to_string())
+pub fn default_repo_location(app_state: tauri::State<SharedAppState>) -> Result<Location, String> {
+    Ok(app_state.get()?.location)
 }
 
 // -------------------------------------------------------------------------------------------------
