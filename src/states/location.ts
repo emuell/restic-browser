@@ -46,6 +46,9 @@ export class Location {
   @mobx.observable
   password: string = "";
 
+  @mobx.observable
+  insecureTls: boolean = false;
+
   constructor() {
     mobx.makeObservable(this);
 
@@ -88,6 +91,7 @@ export class Location {
     this.path = "";
     this.credentials = [];
     this.password = "";
+    this.insecureTls = false;
   }
 
   // set location properties from some other Location
@@ -98,6 +102,7 @@ export class Location {
     this.path = other.path;
     this.credentials = Array.from(other.credentials);
     this.password = other.password;
+    this.insecureTls = other.insecureTls;
   }
 
   // set location properties from a restic.Location
@@ -113,6 +118,7 @@ export class Location {
     this.type = locationInfo.type;
     this.path = location.path;
     this.password = location.password;
+    this.insecureTls = location.insecureTls;
     this._setPrefixFromType();
     this._setCredentialsFromType();
     // set all required credentials as well, if they are valid

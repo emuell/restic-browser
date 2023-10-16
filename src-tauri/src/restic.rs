@@ -63,6 +63,8 @@ pub struct Location {
     pub prefix: String,
     pub path: String,
     pub credentials: Vec<EnvValue>,
+    #[serde(rename = "insecureTls")]
+    pub insecure_tls: bool,
     pub password: String,
 }
 
@@ -104,11 +106,16 @@ impl Location {
                 .cloned()
                 .unwrap_or_default()
         };
+
+        // get insecure_tls option, when set
+        let insecure_tls = args.contains_key("insecure-tls");
+        // build basic location
         let mut location = Location {
             path,
             password,
             credentials: vec![],
             prefix: "".to_string(),
+            insecure_tls,
         };
         if location.path.is_empty() {
             // skip reading other location info when no repo is present
@@ -210,7 +217,8 @@ impl ResticCommand {
 
     // run a restic command for the given location with the given args
     pub fn run(&self, location: Location, args: Vec<&str>) -> Result<String, String> {
-        let envs = Self::environment_values(location);
+        let args = Self::args(args, &location);
+        let envs = Self::environment_values(&location);
         let output = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
@@ -239,7 +247,8 @@ impl ResticCommand {
         args: Vec<&str>,
         file: fs::File,
     ) -> Result<(), String> {
-        let envs = Self::environment_values(location);
+        let args = Self::args(args, &location);
+        let envs = Self::environment_values(&location);
         let output = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
@@ -290,23 +299,34 @@ impl ResticCommand {
         version
     }
 
+    // create restic specific args for the given base args and location
+    fn args<'a>(args: Vec<&'a str>, location: &Location) -> Vec<&'a str> {
+        if location.insecure_tls {
+            let mut args = args.clone();
+            args.push("--insecure-tls");
+            args
+        } else {
+            args
+        }
+    }
+
     // create restic specific environment variables for the given location
-    fn environment_values(location: Location) -> HashMap<String, String> {
+    fn environment_values(location: &Location) -> HashMap<String, String> {
         let mut envs = HashMap::new();
         if !location.path.is_empty() {
             if !location.prefix.is_empty() {
                 envs.insert(
                     "RESTIC_REPOSITORY".to_string(),
-                    location.prefix + ":" + &location.path,
+                    location.prefix.clone() + ":" + &location.path,
                 );
             } else {
-                envs.insert("RESTIC_REPOSITORY".to_string(), location.path);
+                envs.insert("RESTIC_REPOSITORY".to_string(), location.path.clone());
             }
         }
         if !location.password.is_empty() {
-            envs.insert("RESTIC_PASSWORD".to_string(), location.password);
+            envs.insert("RESTIC_PASSWORD".to_string(), location.password.clone());
         }
-        for credential in location.credentials {
+        for credential in location.credentials.clone() {
             envs.insert(credential.name, credential.value);
         }
         envs

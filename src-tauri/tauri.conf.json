@@ -90,6 +90,11 @@
           "name": "password-command",
           "takesValue": true,
           "longDescription": "shell command to obtain the repository password from (default: $RESTIC_PASSWORD_COMMAND)"
+        },
+        {
+          "name": "insecure-tls",
+          "takesValue": false,
+          "longDescription": "skip TLS certificate verification when connecting to the repo (insecure)"
         }
       ]
     },
