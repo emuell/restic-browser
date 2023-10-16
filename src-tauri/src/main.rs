@@ -52,13 +52,14 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     // get restic from args or find restic in path
     let mut restic_path = "".to_owned();
-    if let Ok(matches) = app.get_cli_matches() {
-        if let Some(arg) = matches.args.get("restic") {
+    match app.get_cli_matches() {
+        Ok(matches) => if let Some(arg) = matches.args.get("restic") {
             restic_path = arg.value.as_str().unwrap_or("").to_string();
             if !restic_path.is_empty() {
                 log::info!("Got restic as arg {}", restic_path);
             }
-        }
+        },
+        Err(err) => log::error!("{}", err.to_string())
     }
     if restic_path.is_empty() {
         if let Ok(restic) = which("restic") {
