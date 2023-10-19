@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{env, fs, path, process};
+use std::{collections::HashMap, env, fs, path, process};
 
 use anyhow::anyhow;
 use simplelog::*;
@@ -52,13 +52,14 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     // get restic from args or find restic in path
     let mut restic_path = "".to_owned();
-    if let Ok(matches) = app.get_cli_matches() {
-        if let Some(arg) = matches.args.get("restic") {
+    match app.get_cli_matches() {
+        Ok(matches) => if let Some(arg) = matches.args.get("restic") {
             restic_path = arg.value.as_str().unwrap_or("").to_string();
             if !restic_path.is_empty() {
                 log::info!("Got restic as arg {}", restic_path);
             }
-        }
+        },
+        Err(err) => log::error!("{}", err.to_string())
     }
     if restic_path.is_empty() {
         if let Ok(restic) = which("restic") {
@@ -84,6 +85,23 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         }
     }
 
+    // get default restic location from args or env
+    let mut location;
+    if let Ok(matches) = app.get_cli_matches() {
+        location = Location::new_from_args(
+            matches
+                .args
+                .into_iter()
+                .map(|(k, v)| (k, v.value.as_str().unwrap_or("").to_string()))
+                .collect::<HashMap<_, _>>(),
+        );
+        if location.path.is_empty() {
+            location = Location::new_from_env();
+        }
+    } else {
+        location = Location::new_from_env();
+    }
+
     // create temp dir for previews
     let mut temp_dir = path::Path::new(&env::temp_dir())
         .join(app.package_info().name.clone() + "_" + &process::id().to_string());
@@ -97,7 +115,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     // create new app state
     app.manage(app::SharedAppState::new(app::AppState::new(
         ResticCommand::new(&restic_path),
-        Location::default(),
+        location,
         temp_dir.to_string_lossy().as_ref(),
     )));
 
@@ -129,7 +147,7 @@ fn show_app(app_window: tauri::Window) -> Result<(), String> {
 
 fn main() {
     // create new app
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .setup(initialize_app)
         .on_window_event(|event| {
             if let tauri::WindowEvent::Destroyed = event.event() {
@@ -157,6 +175,28 @@ fn main() {
             app::dump_file_to_temp,
             app::restore_file
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    // show argument help / version only
+    let mut do_run = true;
+    if let Ok(matches) = app.get_cli_matches() {
+        if let Some(arg) = matches.args.get("help") {
+            print!("{}", arg.value.as_str().unwrap());
+            do_run = false;
+        } else if matches.args.get("version").is_some() {
+            let package = app.config().package.clone();
+            println!(
+                "{} v{}",
+                package.product_name.unwrap_or("Restic Browser".to_string()),
+                package.version.unwrap_or("[Unknown version]".to_string())
+            );
+            do_run = false;
+        }
+    }
+
+    // run the app
+    if do_run {
+        app.run(|_, _| {});
+    }
 }

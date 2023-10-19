@@ -2886,6 +2886,7 @@ dependencies = [
  "open 5.0.0",
  "serde",
  "serde_json",
+ "shlex",
  "simplelog",
  "tauri",
  "tauri-build",
@@ -3223,6 +3224,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "shlex"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7cee0529a6d40f580e7a5e6c495c8fbfe21b7b52795ed4bb5e62cdf92bc6380"
 
 [[package]]
 name = "signal-hook-registry"

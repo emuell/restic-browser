@@ -28,7 +28,9 @@
     },
     "bundle": {
       "active": true,
-      "targets": ["app"],
+      "targets": [
+        "app"
+      ],
       "category": "DeveloperTool",
       "copyright": "",
       "deb": {
@@ -60,9 +62,39 @@
       "args": [
         {
           "name": "restic",
+          "takesValue": true,
+          "longDescription": "ABS path to the restic executable that should be used. (default: find in $PATH)"
+        },
+        {
+          "name": "repo",
           "short": "r",
           "takesValue": true,
-          "multiple": false
+          "longDescription": "repository to show or restore from (default: $RESTIC_REPOSITORY)"
+        },
+        {
+          "name": "repository-file",
+          "takesValue": true,
+          "longDescription": "file to read the repository location from (default: $RESTIC_REPOSITORY_FILE)"
+        },
+        {
+          "name": "password",
+          "takesValue": true,
+          "longDescription": "password for the repository - NOT RECOMMENDED - USE password-file/command instead. (default: $RESTIC_PASSWORD)"
+        },
+        {
+          "name": "password-file",
+          "takesValue": true,
+          "longDescription": "file to read the repository password from (default: $RESTIC_PASSWORD_FILE)"
+        },
+        {
+          "name": "password-command",
+          "takesValue": true,
+          "longDescription": "shell command to obtain the repository password from (default: $RESTIC_PASSWORD_COMMAND)"
+        },
+        {
+          "name": "insecure-tls",
+          "takesValue": false,
+          "longDescription": "skip TLS certificate verification when connecting to the repo (insecure)"
         }
       ]
     },

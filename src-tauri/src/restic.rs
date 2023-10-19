@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fs, process::Command};
+use std::{collections::HashMap, env, fs, process::Command};
+
+use shlex::Shlex;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -12,6 +14,17 @@ pub static RESTIC_EXECTUABLE_NAME: &str = "restic";
 
 // -------------------------------------------------------------------------------------------------
 
+// create new Command and configure it to hide command window on Windows
+fn new_command(program: &str) -> Command {
+    #[allow(unused_mut)]
+    let mut command = Command::new(program);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    command
+}
+
+// -------------------------------------------------------------------------------------------------
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 pub struct EnvValue {
     pub name: String,
@@ -19,11 +32,134 @@ pub struct EnvValue {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+pub struct LocationInfo {
+    pub prefix: String,
+    pub credentials: Vec<String>,
+}
+
+impl LocationInfo {
+    pub fn new(prefix: &str, credentials: Vec<&str>) -> LocationInfo {
+        LocationInfo {
+            prefix: prefix.to_string(),
+            credentials: credentials.iter().map(|c| c.to_string()).collect(),
+        }
+    }
+}
+
+pub fn location_infos() -> Vec<LocationInfo> {
+    vec![
+        LocationInfo::new("bs", vec![]),
+        LocationInfo::new("sftp", vec![]),
+        LocationInfo::new("rest", vec![]),
+        LocationInfo::new("rclone", vec![]),
+        LocationInfo::new("s3", vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]),
+        LocationInfo::new("b2", vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"]),
+        LocationInfo::new("azure", vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"]),
+    ]
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 pub struct Location {
     pub prefix: String,
     pub path: String,
     pub credentials: Vec<EnvValue>,
+    #[serde(rename = "insecureTls")]
+    pub insecure_tls: bool,
     pub password: String,
+}
+
+impl Location {
+    // create a new Location from the given set of optional restic arguments
+    // see tauri.conf.json for the expected args
+    pub fn new_from_args(args: HashMap<String, String>) -> Location {
+        // filter out empty args
+        let mut args = args.clone();
+        args.retain(|_, v| !v.is_empty());
+        // get repo from file or directly
+        let path = if let Some(repository_file) = args.get("repository-file") {
+            let content = fs::read_to_string(repository_file).unwrap_or(String::new());
+            content.trim_end().to_string()
+        } else {
+            args.get("repository")
+                .or(args.get("repo"))
+                .cloned()
+                .unwrap_or_default()
+        };
+        // get password from file, command or directly
+        let password = if let Some(password_file) = args.get("password-file") {
+            let content = fs::read_to_string(password_file).unwrap_or(String::new());
+            content.trim_end().to_string()
+        } else if let Some(password_command) = args.get("password-command") {
+            let mut program_and_args = Shlex::new(password_command);
+            if let Ok(output) = new_command(&program_and_args.by_ref().nth(0).unwrap_or_default())
+                .args(program_and_args.by_ref().collect::<Vec<_>>())
+                .output()
+            {
+                let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
+                stdout.trim_end().to_string()
+            } else {
+                "".to_string()
+            }
+        } else {
+            args.get("password")
+                .or(args.get("pass"))
+                .cloned()
+                .unwrap_or_default()
+        };
+
+        // get insecure_tls option, when set
+        let insecure_tls = args.contains_key("insecure-tls");
+        // build basic location
+        let mut location = Location {
+            path,
+            password,
+            credentials: vec![],
+            prefix: "".to_string(),
+            insecure_tls,
+        };
+        if location.path.is_empty() {
+            // skip reading other location info when no repo is present
+            return location;
+        }
+        // set prefix from path and fill in credentials from env
+        location.prefix = "".to_string();
+        for location_info in location_infos() {
+            if location
+                .path
+                .starts_with(&(location_info.prefix.to_string() + ":"))
+            {
+                location.prefix = location_info.prefix.to_string();
+                location.path =
+                    location
+                        .path
+                        .replacen(&(location_info.prefix.to_string() + ":"), "", 1);
+                for credential in location_info.credentials {
+                    location.credentials.push(EnvValue {
+                        name: credential.to_string(),
+                        value: env::var(credential).unwrap_or_default(),
+                    })
+                }
+                break;
+            }
+        }
+        location
+    }
+
+    // create a new Location from restic specific environemnt values.
+    pub fn new_from_env() -> Location {
+        Self::new_from_args(
+            [
+                ("repository", "RESTIC_REPOSITORY"),
+                ("repository-file", "RESTIC_REPOSITORY_FILE"),
+                ("password", "RESTIC_PASSWORD"),
+                ("password-file", "RESTIC_PASSWORD_FILE"),
+                ("password-command", "RESTIC_PASSWORD_COMMAND"),
+            ]
+            .into_iter()
+            .map(|(k, v)| (String::from(k), env::var(v).unwrap_or(String::new())))
+            .collect::<HashMap<_, _>>(),
+        )
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
@@ -81,8 +217,9 @@ impl ResticCommand {
 
     // run a restic command for the given location with the given args
     pub fn run(&self, location: Location, args: Vec<&str>) -> Result<String, String> {
-        let envs = Self::environment_values(location);
-        let output = Self::new_command(&self.path)
+        let args = Self::args(args, &location);
+        let envs = Self::environment_values(&location);
+        let output = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
             .output()
@@ -110,8 +247,9 @@ impl ResticCommand {
         args: Vec<&str>,
         file: fs::File,
     ) -> Result<(), String> {
-        let envs = Self::environment_values(location);
-        let output = Self::new_command(&self.path)
+        let args = Self::args(args, &location);
+        let envs = Self::environment_values(&location);
+        let output = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
             .stdout(std::process::Stdio::from(file))
@@ -131,20 +269,11 @@ impl ResticCommand {
         }
     }
 
-    // create new Command and configure it to hide command window on Windows
-    fn new_command(program: &str) -> Command {
-        #[allow(unused_mut)]
-        let mut command = Command::new(program);
-        #[cfg(target_os = "windows")]
-        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        command
-    }
-
     // run restic command to query its version
     fn query_version(path: &str) -> [i32; 3] {
         // get version from restic binary
         let mut version = [0, 0, 0];
-        match Self::new_command(path).arg("version").output() {
+        match new_command(path).arg("version").output() {
             Ok(output) => {
                 if output.status.success() {
                     // "restic x.y.z some other info"
@@ -170,23 +299,34 @@ impl ResticCommand {
         version
     }
 
+    // create restic specific args for the given base args and location
+    fn args<'a>(args: Vec<&'a str>, location: &Location) -> Vec<&'a str> {
+        if location.insecure_tls {
+            let mut args = args.clone();
+            args.push("--insecure-tls");
+            args
+        } else {
+            args
+        }
+    }
+
     // create restic specific environment variables for the given location
-    fn environment_values(location: Location) -> HashMap<String, String> {
+    fn environment_values(location: &Location) -> HashMap<String, String> {
         let mut envs = HashMap::new();
         if !location.path.is_empty() {
             if !location.prefix.is_empty() {
                 envs.insert(
                     "RESTIC_REPOSITORY".to_string(),
-                    location.prefix + ":" + &location.path,
+                    location.prefix.clone() + ":" + &location.path,
                 );
             } else {
-                envs.insert("RESTIC_REPOSITORY".to_string(), location.path);
+                envs.insert("RESTIC_REPOSITORY".to_string(), location.path.clone());
             }
         }
         if !location.password.is_empty() {
-            envs.insert("RESTIC_PASSWORD".to_string(), location.password);
+            envs.insert("RESTIC_PASSWORD".to_string(), location.password.clone());
         }
-        for credential in location.credentials {
+        for credential in location.credentials.clone() {
             envs.insert(credential.name, credential.value);
         }
         envs

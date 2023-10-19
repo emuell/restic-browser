@@ -43,13 +43,15 @@ export namespace restic {
     path: string;
     credentials: EnvValue[];
     password: string;
-
+    insecureTls: boolean;
+  
     constructor(source: any = {}) {
       if ('string' === typeof source) source = JSON.parse(source);
       this.prefix = source["prefix"];
       this.path = source["path"];
       this.credentials = this.convertValues(source["credentials"], EnvValue);
       this.password = source["password"];
+      this.insecureTls = source["insecureTls"];
     }
 
     convertValues(a: any, classs: any, asMap: boolean = false): any {

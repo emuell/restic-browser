@@ -12,6 +12,7 @@ export default defineConfig({
   // env variables
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
+    chunkSizeWarningLimit: 1024,
     // Tauri uses Chromium on Windows and WebKit on macOS and Linux
     target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
     // don't minify for debug builds
