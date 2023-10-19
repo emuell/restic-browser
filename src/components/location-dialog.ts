@@ -177,7 +177,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
       ${this._location.type !== "local"
        ? html`<vaadin-form-item style="margin-top: 10.5px;">
-                <vaadin-checkbox id="checkbox" label="Insecure TSL (skip TLS certificate verifications)"
+                <vaadin-checkbox id="checkbox" label="Insecure TLS (skip TLS certificate verifications)"
                   .checked=${this._location.insecureTls}
                   @change=${mobx.action((event: CustomEvent) => {
                     this._location.insecureTls = (event.target as HTMLInputElement).value == "checked";
