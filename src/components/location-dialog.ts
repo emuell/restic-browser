@@ -4,7 +4,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
-import { locationInfos, RepositoryType, Location } from '../states/location';
+import { Location } from '../states/location';
 
 import { Notification } from '@vaadin/notification';
 
@@ -120,15 +120,16 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   }
 
   render() {
-    const locationInfo = locationInfos.find(v => v.type === this._location.type);
+    const locationTypes = appState.supportedLocationTypes;
+    const locationInfo = locationTypes.find(v => v.type === this._location.type);
     const dialogLayout = html`
       <vaadin-vertical-layout style="align-items: stretch; width: 24rem; max-width: 100%;">
         <vaadin-select
           label="Type"
-          .items=${locationInfos.map(v => { return { label: v.displayName, value: v.type }})}
+          .items=${locationTypes.map(v => { return { label: v.displayName, value: v.type }})}
           .value=${this._location.type}
           @change=${mobx.action((event: CustomEvent) => {
-            this._location.type = (event.target as HTMLInputElement).value as RepositoryType;
+            this._location.type = (event.target as HTMLInputElement).value;
           })}
         ></vaadin-select>
         <vaadin-horizontal-layout style="width: 24rem">

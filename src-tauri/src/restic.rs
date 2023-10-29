@@ -25,37 +25,75 @@ fn new_command(program: &str) -> Command {
 
 // -------------------------------------------------------------------------------------------------
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
-pub struct EnvValue {
-    pub name: String,
-    pub value: String,
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum LocationType {
+    Local,
+    SFtp,
+    Rest,
+    RClone,
+    AmazonS3,
+    Backblaze,
+    MSAzure,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
-pub struct LocationInfo {
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct LocationTypeInfo {
+    #[serde(rename = "type")]
+    pub location_type: LocationType,
     pub prefix: String,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
     pub credentials: Vec<String>,
 }
 
-impl LocationInfo {
-    pub fn new(prefix: &str, credentials: Vec<&str>) -> LocationInfo {
-        LocationInfo {
+impl LocationTypeInfo {
+    pub fn new(
+        location_type: LocationType,
+        prefix: &str,
+        display_name: &str,
+        credentials: Vec<&str>,
+    ) -> LocationTypeInfo {
+        LocationTypeInfo {
+            location_type,
             prefix: prefix.to_string(),
+            display_name: display_name.to_string(),
             credentials: credentials.iter().map(|c| c.to_string()).collect(),
         }
     }
 }
 
-pub fn location_infos() -> Vec<LocationInfo> {
+pub fn supported_location_types() -> Vec<LocationTypeInfo> {
     vec![
-        LocationInfo::new("bs", vec![]),
-        LocationInfo::new("sftp", vec![]),
-        LocationInfo::new("rest", vec![]),
-        LocationInfo::new("rclone", vec![]),
-        LocationInfo::new("s3", vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]),
-        LocationInfo::new("b2", vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"]),
-        LocationInfo::new("azure", vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"]),
+        LocationTypeInfo::new(LocationType::Local, "", "Local Path", vec![]),
+        LocationTypeInfo::new(LocationType::SFtp, "sftp", "SFTP", vec![]),
+        LocationTypeInfo::new(LocationType::Rest, "rest", "REST Server", vec![]),
+        LocationTypeInfo::new(LocationType::RClone, "rclone", "RCLONE", vec![]),
+        LocationTypeInfo::new(
+            LocationType::AmazonS3,
+            "s3",
+            "Amazon S3",
+            vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+        ),
+        LocationTypeInfo::new(
+            LocationType::Backblaze,
+            "b2",
+            "Backblaze B2",
+            vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"],
+        ),
+        LocationTypeInfo::new(
+            LocationType::MSAzure,
+            "azure",
+            "Azure Blob Storage",
+            vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
+        ),
     ]
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+pub struct EnvValue {
+    pub name: String,
+    pub value: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
@@ -123,7 +161,7 @@ impl Location {
         }
         // set prefix from path and fill in credentials from env
         location.prefix = "".to_string();
-        for location_info in location_infos() {
+        for location_info in supported_location_types() {
             if location
                 .path
                 .starts_with(&(location_info.prefix.to_string() + ":"))
