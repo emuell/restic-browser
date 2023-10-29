@@ -3,6 +3,10 @@ import { restic } from './restic';
 
 export namespace resticApp {
 
+    export function supportedRepoLocationTypes(): Promise<restic.RepositoryLocationType[]> {
+        return invoke<restic.RepositoryLocationType[]>("supported_repo_location_types");
+    }
+
     export function defaultRepoLocation(): Promise<restic.Location> {
         return invoke<restic.Location>("default_repo_location");
     }

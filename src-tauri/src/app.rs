@@ -123,6 +123,14 @@ pub fn open_file_or_url(path: String) -> Result<(), String> {
 // -------------------------------------------------------------------------------------------------
 
 #[tauri::command]
+pub fn supported_repo_location_types() -> Result<Vec<LocationTypeInfo>, String> {
+    Ok(supported_location_types())
+}
+
+
+// -------------------------------------------------------------------------------------------------
+
+#[tauri::command]
 pub fn default_repo_location(app_state: tauri::State<SharedAppState>) -> Result<Location, String> {
     Ok(app_state.get()?.location)
 }

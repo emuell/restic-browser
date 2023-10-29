@@ -165,6 +165,7 @@ fn main() {
         )
         .invoke_handler(tauri::generate_handler![
             show_app,
+            app::supported_repo_location_types,
             app::default_repo_location,
             app::open_file_or_url,
             app::verify_restic_path,

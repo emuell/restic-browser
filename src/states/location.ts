@@ -1,27 +1,7 @@
 import * as mobx from 'mobx';
 
 import { restic } from '../backend/restic';
-
-// -------------------------------------------------------------------------------------------------
-
-export type RepositoryType = "local" | "sftp" | "rest" | "rclone" | "amazons3" | "backblaze" | "msazure";
-
-export interface LocationInfo {
-  type: RepositoryType;
-  prefix: string;
-  displayName: string;
-  credentials: string[];
-}
-
-export const locationInfos: LocationInfo[] = [
-  { type: "local", prefix: "", displayName: "Local Path", credentials: [] },
-  { type: "sftp", prefix: "sftp", displayName: "SFTP", credentials: [] },
-  { type: "rest", prefix: "rest", displayName: "REST Server", credentials: [] },
-  { type: "rclone", prefix: "rclone", displayName: "RCLONE", credentials: [] },
-  { type: "amazons3", prefix: "s3", displayName: "Amazon S3", credentials: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"] },
-  { type: "backblaze", prefix: "b2", displayName: "Backblaze B2", credentials: ["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"] },
-  { type: "msazure", prefix: "azure", displayName: "Azure Blob Storage", credentials: ["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"] },
-];
+import { appState } from './app-state';
 
 // -------------------------------------------------------------------------------------------------
 
@@ -32,7 +12,7 @@ export const locationInfos: LocationInfo[] = [
 export class Location {
 
   @mobx.observable
-  type: RepositoryType = "local";
+  type: string = "local";
 
   @mobx.observable
   prefix: string = "";
@@ -80,7 +60,7 @@ export class Location {
         // silently ignore regex errors here
       }
     }
-    return repositoryName; 
+    return repositoryName;
   }
 
   // reset all location properties 
@@ -109,7 +89,7 @@ export class Location {
   @mobx.action
   setFromResticLocation(location: restic.Location): void {
     // find matching location type 
-    const locationInfo = locationInfos.find(v => v.prefix === location.prefix);
+    const locationInfo = appState.supportedLocationTypes.find(v => v.prefix === location.prefix);
     if (! locationInfo) {
       console.warn("Unexpected/unsupported location prefix: '%s'", location.prefix)
       return;
@@ -134,14 +114,14 @@ export class Location {
   // set prefix from the current location type
   @mobx.action
   private _setPrefixFromType(): void {
-    const locationInfo = locationInfos.find(v => v.type === this.type);
+    const locationInfo = appState.supportedLocationTypes.find(v => v.type === this.type);
     this.prefix = locationInfo?.prefix || "";
   }
 
   // set credentials from the current location type
   @mobx.action
   private _setCredentialsFromType(): void {
-    const locationInfo = locationInfos.find(v => v.type === this.type);
+    const locationInfo = appState.supportedLocationTypes.find(v => v.type === this.type);
     const reqiredCredentials = locationInfo?.credentials || [];
     if (this.credentials.map(v => v.name).toString() !== reqiredCredentials.toString()) {
       this.credentials = reqiredCredentials.map((v) => { return { name: v, value: "" }; })

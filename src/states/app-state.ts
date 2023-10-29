@@ -38,13 +38,24 @@ class AppState {
   @mobx.observable
   pendingFileDumps: { file: restic.File, mode: "open" | "restore" }[] = [];
 
+  // repository location types supported by the backend
+  @mobx.observable
+  supportedLocationTypes: restic.RepositoryLocationType[] = [];
+
   // initialize app state
   constructor() {
     mobx.makeObservable(this);
 
-    // verify restic program, then fetch and open default repository location, if set
+    // verify restic program, fetch supported location types and finally 
+    // fetch and open default repository location, if one is set
     resticApp.verifyResticPath()
-      .then(() => resticApp.defaultRepoLocation())
+      .then(() => {
+        return resticApp.supportedRepoLocationTypes();
+      })
+      .then((locationTypes) => {
+        this.supportedLocationTypes = locationTypes;
+        return resticApp.defaultRepoLocation();
+      })
       .then(location => {
         // set location from default
         this.repoLocation.setFromResticLocation(location);
