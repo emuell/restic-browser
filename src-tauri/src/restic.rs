@@ -33,8 +33,9 @@ pub enum LocationType {
     Rest,
     RClone,
     AmazonS3,
-    Backblaze,
     MSAzure,
+    Backblaze,
+    GoogleCloudStorage,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -76,16 +77,22 @@ pub fn supported_location_types() -> Vec<LocationTypeInfo> {
             vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         ),
         LocationTypeInfo::new(
+            LocationType::MSAzure,
+            "azure",
+            "Azure Blob Storage",
+            vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
+        ),
+        LocationTypeInfo::new(
             LocationType::Backblaze,
             "b2",
             "Backblaze B2",
             vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"],
         ),
         LocationTypeInfo::new(
-            LocationType::MSAzure,
-            "azure",
-            "Azure Blob Storage",
-            vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
+            LocationType::GoogleCloudStorage,
+            "gs",
+            "Google Cloud Storage",
+            vec!["GOOGLE_ACCESS_TOKEN"],
         ),
     ]
 }
