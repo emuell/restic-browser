@@ -89,7 +89,7 @@ impl SharedAppState {
     fn update_restic(&self, restic: ResticCommand) -> Result<(), String> {
         self.state
             .try_write()
-            .map_err(|err| format!("Failed to query app state: {err}"))?
+            .map_err(|err| format!("Failed to update app state: {err}"))?
             .restic = restic;
         Ok(())
     }
@@ -98,7 +98,7 @@ impl SharedAppState {
     fn update_location(&self, location: Location) -> Result<(), String> {
         self.state
             .try_write()
-            .map_err(|err| format!("Failed to query app state: {err}"))?
+            .map_err(|err| format!("Failed to update app state: {err}"))?
             .location = location;
         Ok(())
     }
@@ -107,7 +107,7 @@ impl SharedAppState {
     fn update_snapshot_ids(&self, snapshot_ids: HashSet<String>) -> Result<(), String> {
         self.state
             .try_write()
-            .map_err(|err| format!("Failed to query app state: {err}"))?
+            .map_err(|err| format!("Failed to update app state: {err}"))?
             .snapshot_ids = snapshot_ids;
         Ok(())
     }
@@ -385,7 +385,7 @@ Are you sure that you want to overwrite the existing file(s)?",
         }
     }
     // run restore command
-    log::warn!(
+    log::info!(
         "Restoring file '{}' from snapshot '{}'...",
         file.name,
         snapshot_id
