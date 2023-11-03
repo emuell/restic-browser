@@ -1,224 +1,371 @@
-import { html, nothing, render } from 'lit'
+import { CSSResultGroup, css, html, render } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
 import { appState } from '../states/app-state';
 import { Location } from '../states/location';
+import { LocationPreset } from '../states/location-preset';
+import { ResticBrowserLocationProperties } from './location-properties';
 
+import { dialogFooterRenderer } from '@vaadin/dialog/lit';
 import { Notification } from '@vaadin/notification';
 
-import { open } from '@tauri-apps/api/dialog';
-import { fs } from '@tauri-apps/api';
-
 import '@vaadin/dialog';
-import '@vaadin/password-field';
-import '@vaadin/item';
-import '@vaadin/list-box';
-import '@vaadin/checkbox';
+import '@vaadin/horizontal-layout';
 import '@vaadin/button';
-import '@vaadin/select';
 import '@vaadin/notification';
+
+import './location-properties';
+import './location-presets';
+import './location-save-preset-dialog';
+import './location-password-dialog';
 
 // -------------------------------------------------------------------------------------------------
 
-// Modal dialog to set appState.repoLocation 
+/**
+ * Modal dialog to manage location presets and to set appState.repoLocation.
+ */
 
 @customElement('restic-browser-location-dialog')
 export class ResticBrowserLocationDialog extends MobxLitElement {
 
+  // called when the dialog's 'Okay' button was invoked.
   @property()
   onClose!: () => void;
 
+  // called when the dialog's 'Cancel' button was invoked or the dialog got cancelled.
   @property()
   onCancel!: () => void;
 
+  // when true, show save preset dialog instead of main dialog
   @state()
-  _handledClose: boolean = false;
+  private _showSavePresetDialog: boolean = false;
+  // when true, show get password dialog instead of main dialog
+  @state()
+  private _showPasswordDialog: boolean = false;
 
-  @mobx.observable
-  _location: Location = new Location();
+  // when true, enter preset editing mode
+  @state()
+  private _editingPreset: boolean = false;
+  
+  // location state before opening Save Preset dialog
+  private _newPresetLocation: Location = new Location();
+  // location state when we got opened
+  private _initialLocation: Location = new Location();
+
+  // when true, cancel or okay hooks have been called, else dialog shut down otherwise
+  private _handledClose: boolean = false;
+
+  // render root of the dialog content, used to resolve it's components
+  private _dialogContentRoot: HTMLElement | undefined = undefined;
 
   constructor() {
     super();
-    mobx.makeObservable(this);
-    // initialize from app state
-    this._location.setFromOtherLocation(appState.repoLocation);
-    // bind this to callbacks
-    this._browseLocalRepositoryPath = this._browseLocalRepositoryPath.bind(this);
-    this._readRepositoryPasswordFile = this._readRepositoryPasswordFile.bind(this);
+
+    // memorize actual location to restore it on cancel
+    this._initialLocation.setFromOtherLocation(appState.repoLocation);
+
+    // bind this to all callbacks
+    this._handleMainDialogCancel = this._handleMainDialogCancel.bind(this);
+    this._handleMainDialogClose = this._handleMainDialogClose.bind(this);
+    
+    this._handlePresetDoubleClick = this._handlePresetDoubleClick.bind(this);
+
+    this._handleShowSavePresetDialog = this._handleShowSavePresetDialog.bind(this);
+    this._handleSavePresetDialogClose = this._handleSavePresetDialogClose.bind(this);
+    this._handleSavePresetDialogCancel = this._handleSavePresetDialogCancel.bind(this);
+
+    this._handleShowPasswordDialog = this._handleShowPasswordDialog.bind(this);
+    this._handlePasswordDialogClose = this._handlePasswordDialogClose.bind(this);
+    this._handlePasswordDialogCancel = this._handlePasswordDialogCancel.bind(this);
+
+    this._handleStartEditingPreset = this._handleStartEditingPreset.bind(this);
+    this._handleFinishEditingPreset = this._handleFinishEditingPreset.bind(this);
+    this._handleCancelEditingPreset = this._handleCancelEditingPreset.bind(this);
   }
 
-  private _browseLocalRepositoryPath() {
-    open({
-      directory: true,
-      multiple: false,
-      title: "Please select the root folder of a restic repository"
-    })
-      .then((directory) => {
-        if (Array.isArray(directory)) {
-          if (directory.length > 0) {
-            directory = directory[0];
-          } else {
-            directory = null;
-          }
-        }
-        if (directory != null) {
-          mobx.action((directory: string) => {
-            this._location.path = directory;
-          })(directory);
-        }
-      })
-      .catch((err) => {
-        Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
-          position: 'bottom-center',
-          theme: "error"
-        });
-      });
-  }
+  static dialogStyles: CSSResultGroup = css`
+    #dialogContent { }
+    #locationPresets {
+      margin-right: 1rem; 
+    }
+    #locationProperties { }
+    #locationPropertyButtons {
+      margin-top: 1rem
+    }
+  `;
 
-  private _readRepositoryPasswordFile() {
-    open({ multiple: false, title: "Select file to read password from", directory: false })
-      .then(mobx.action((file) => {
-        if (Array.isArray(file)) {
-          if (file.length > 0) {
-            file = file[0];
-          } else {
-            file = null;
-          }
-        }
-        if (file != null) {
-          fs.readTextFile(file).then(contents => {
-            mobx.action((contents: string) => {
-              this._location.password = contents;
-            })(contents);
-          }).catch(err => {
-            Notification.show(`Failed to read password file: '${err.message || err}'`, {
-              position: 'bottom-center',
-              theme: "error"
-            });
-          });
-        }
-      }))
-      .catch((err) => {
-        Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
-          position: 'bottom-center',
-          theme: "error"
-        });
-      });
-  }
-
-  private _handleClose() {
-    appState.repoLocation.setFromOtherLocation(this._location);
-    this._handledClose = true; 
-    this.onClose();
-  }
-  
-  private _handleCancel() {
-    this._handledClose = true; 
-    this.onCancel();
-  }
+  static footerStyles: CSSResultGroup = css`
+    #footerContent { }
+  `;
 
   render() {
-    const locationTypes = appState.supportedLocationTypes;
-    const locationInfo = locationTypes.find(v => v.type === this._location.type);
+    // save preset dialog
+    if (this._showSavePresetDialog) {
+      return html`
+        <restic-browser-location-save-preset-dialog 
+          .onClose=${this._handleSavePresetDialogClose} 
+          .onCancel=${this._handleSavePresetDialogCancel}
+        >
+        </restic-browser-location-save-preset-dialog>
+      `;
+    }
+
+    // get repository password dialog
+    if (this._showPasswordDialog) {
+      return html`
+        <restic-browser-location-password-dialog 
+          .onClose=${this._handlePasswordDialogClose} 
+          .onCancel=${this._handlePasswordDialogCancel}
+        >
+        </restic-browser-location-password-dialog>
+      `;
+    }
+
+    // main dialog
+    const newLocationPresetSelected = 
+      (appState.selectedLocationPreset == appState.locationPresets[0]);
+
+    let propertyButtons;
+    if (newLocationPresetSelected) {
+      propertyButtons = html`
+        <vaadin-horizontal-layout id="locationPropertyButtons">
+          <vaadin-button 
+            theme="primary"
+            @click=${this._handleShowSavePresetDialog}
+          > Save as new Preset
+          </vaadin-button>
+        </vaadin-horizontal-layout>
+      `;
+    } else if (! this._editingPreset) {
+      propertyButtons = html`
+        <vaadin-horizontal-layout id="locationPropertyButtons">
+          <vaadin-button theme="primary" 
+            @click=${this._handleStartEditingPreset}
+          > Edit
+          </vaadin-button>
+        </vaadin-horizontal-layout>
+      `;
+    } else {
+      propertyButtons = html`
+          <vaadin-horizontal-layout id="locationPropertyButtons">
+            <vaadin-button 
+              theme="primary" 
+              @click=${this._handleFinishEditingPreset}
+            > Save
+            </vaadin-button>
+            <div style="width: 4px"></div>
+            <vaadin-button 
+              @click=${this._handleCancelEditingPreset}
+            > Cancel
+            </vaadin-button>
+          </vaadin-horizontal-layout>
+        `; 
+    }
+
     const dialogLayout = html`
-      <vaadin-vertical-layout style="align-items: stretch; width: 24rem; max-width: 100%;">
-        <vaadin-select
-          label="Type"
-          .items=${locationTypes.map(v => { return { label: v.displayName, value: v.type }})}
-          .value=${this._location.type}
-          @change=${mobx.action((event: CustomEvent) => {
-            this._location.type = (event.target as HTMLInputElement).value;
-          })}
-        ></vaadin-select>
-        <vaadin-horizontal-layout style="width: 24rem">
-          <vaadin-text-field style="width: 100%; margin-right: 4px;" 
-            label=${this._location.type === "local" 
-              ? "Path" : (["sftp", "rest"].includes(this._location.type)) ? "URL" : "Bucket"}
-            required
-            value=${this._location.path}
-            @change=${mobx.action((event: CustomEvent) => {
-              this._location.path = (event.target as HTMLInputElement).value; 
-            })}>
-            <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
-            </div>
-          </vaadin-text-field>
-            ${this._location.type === "local"
-              ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: 35.5px;" 
-                        @click=${this._browseLocalRepositoryPath}>Browse</vaadin-button>` 
-              : nothing
-            }
-          </vaadin-text-field>
-        </vaadin-horizontal-layout>
-        ${this._location.credentials.map((value) => html`
-          <vaadin-password-field 
-            label=${value.name}
-            required
-            value=${value.value}
-            @change=${mobx.action((event: CustomEvent) => {
-              value.value = (event.target as HTMLInputElement).value; 
-            })}>
-          </vaadin-password-field>
-        `)}
-        <vaadin-horizontal-layout style="width: 24rem">
-          <vaadin-password-field
-            style="width: 100%; margin-right: 4px;"
-            label="Repository Password"
-            required
-            value=${this._location.password}
-            @change=${mobx.action((event: CustomEvent) => {
-              this._location.password = (event.target as HTMLInputElement).value;
-            })}
+      <style>${ResticBrowserLocationDialog.dialogStyles}</style>
+      <vaadin-horizontal-layout id="dialogContent">
+        <restic-browser-location-presets 
+          id="locationPresets"
+          .onDoubleClick=${this._handlePresetDoubleClick}
+        ></restic-browser-location-presets>
+        <vaadin-vertical-layout>
+          <restic-browser-location-properties 
+            id="locationProperties"
+            .allowEditing=${newLocationPresetSelected || this._editingPreset}
           >
-          </vaadin-password-field>
-          <vaadin-button theme="primary" style="width: 4rem; margin-top: 35.5px;" 
-            @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>
-        </vaadin-horizontal-layout>
-
-      ${this._location.type !== "local"
-       ? html`<vaadin-form-item style="margin-top: 10.5px;">
-                <vaadin-checkbox id="checkbox" label="Insecure TLS (skip TLS certificate verifications)"
-                  .checked=${this._location.insecureTls}
-                  @change=${mobx.action((event: CustomEvent) => {
-                    this._location.insecureTls = (event.target as HTMLInputElement).value == "checked";
-                  })}></vaadin-checkbox>`
-        : nothing
-      }
-
-      </vaadin-vertical-layout>
+          </restic-browser-location-properties> 
+          ${propertyButtons}
+        </vaadin-vertical-layout>
+      </vaadin-horizontal-layout>
     `;
 
     const footerLayout = html`
-      <vaadin-button @click=${() => { 
-          this._handleCancel();
-        }}>
-        Cancel 
-      </vaadin-button>
-      <vaadin-button theme="primary" @click=${() => { 
-          this._handleClose();
-      }}>
-        Okay
-      </vaadin-button>
+      <style>${ResticBrowserLocationDialog.footerStyles}</style>
+      <vaadin-horizontal-layout id="footerContent">
+        <div style="flex-grow: 1"></div>
+        <vaadin-button 
+          @click=${this._handleMainDialogCancel}
+        > Cancel 
+        </vaadin-button>
+        <div style="width: 4px"></div>
+        <vaadin-button 
+          theme="primary" 
+          .disabled=${this._editingPreset && !newLocationPresetSelected} 
+          @click=${this._handleMainDialogClose}
+        > Okay
+        </vaadin-button>
+      </vaadin-horizontal-layout">
     `;
 
     return html`
       <vaadin-dialog
         header-title="Open Repository"
         .opened=${true}
+        .noCloseOnOutsideClick=${true}
         @opened-changed=${(event: CustomEvent) => {
-          if (! event.detail.value && ! this._handledClose) {
-            this._handleCancel();
-          } 
+          if (! event.detail.value && ! this._handledClose && 
+              ! this._showSavePresetDialog && ! this._showPasswordDialog) {
+            this._handleMainDialogCancel();
+          }
         }}
-        .footerRenderer=${(root: HTMLElement) => {
-          render(footerLayout, root);
-        }}
+        ${dialogFooterRenderer(() => footerLayout, [])}
         .renderer=${(root: HTMLElement) => {
+          this._dialogContentRoot = root;
           render(dialogLayout, root);
         }}
       ></vaadin-dialog>
     `;
+  }
+
+  private get _locationProperties(): ResticBrowserLocationProperties | undefined {
+    if (this._dialogContentRoot) {
+      return this._dialogContentRoot.querySelector(
+        "#locationProperties") as ResticBrowserLocationProperties;
+    } else {
+      return undefined;
+    }
+  }
+
+  private _handleMainDialogClose() {
+    // set appState's location from properties component
+    let locationProperties = this._locationProperties;
+    if (locationProperties) {
+      appState.repoLocation.setFromOtherLocation(locationProperties.location);
+    } 
+    else {
+      console.error("Failed to fetch location properties component")
+    }
+    // ask for repo password?
+    mobx.action(() => {
+      appState.repoPassword = "";
+    })();
+    if (appState.repoLocation.path && !appState.repoLocation.password) {
+      this._handleShowPasswordDialog();
+      return;
+    }
+    // reset state and clone
+    this._handledClose = true;
+    this._editingPreset = false;
+    this.onClose();
+  }
+
+  private _handleMainDialogCancel() {
+    // restore location to initial state
+    mobx.action(() => {
+      appState.selectedLocationPreset = appState.locationPresets[0];
+      appState.selectedLocationPreset.location.setFromOtherLocation(this._initialLocation);      
+    })();
+    // reset state and clone
+    this._handledClose = true;
+    this._editingPreset = false;
+    this.onCancel();
+  }
+
+  private _handlePresetDoubleClick(preset: LocationPreset) {
+   // set appState's location from properties component
+    mobx.action(() => {
+      appState.repoLocation.setFromOtherLocation(preset.location);
+    })();
+    // ask for repo password?
+    mobx.action(() => {
+      appState.repoPassword = "";
+    })();
+    if (appState.repoLocation.path && !appState.repoLocation.password) {
+      this._handleShowPasswordDialog();
+      return;
+    }
+    // reset state and clone
+    this._handledClose = true;
+    this._editingPreset = false;
+    this.onClose(); 
+  }
+
+  private _handleShowSavePresetDialog() {
+    // memorize location state from the properties before closing the main dialog
+    let locationProperties = this._locationProperties;
+    if (locationProperties) {
+      this._newPresetLocation.setFromOtherLocation(locationProperties.location);
+    }
+    else {
+      console.error("Failed to fetch location properties component")
+    }
+    // open preset save dialog
+    this._showSavePresetDialog = true;
+  }
+
+  private _handleSavePresetDialogClose(presetName: string, savePasswords: boolean): boolean {
+    if (presetName) {
+      // create new location preset from the properties 
+      appState.addLocationPreset(this._newPresetLocation, presetName, savePasswords);
+      // close save preset dialog
+      this._showSavePresetDialog = false;
+      this._editingPreset = false;
+      return true;
+    } 
+    else {
+      Notification.show('No preset name set', {
+          position: 'middle',
+          theme: "info",
+          duration: 2000
+        });
+      return false;
+    }
+  }
+
+  private _handleSavePresetDialogCancel() {
+    // close save preset dialog
+    this._showSavePresetDialog = false;
+    this._editingPreset = false;
+  }
+
+  private _handleShowPasswordDialog() {
+    this._showPasswordDialog = true;
+  }
+
+  private _handlePasswordDialogClose(password: string) {
+    // set repo password
+    mobx.action(() => {
+      appState.repoPassword = password;
+    })();
+    // reset state and clone
+    this._showPasswordDialog = false;
+    this._handledClose = true;
+    this._editingPreset = false;
+    this.onClose();
+  }
+
+  private _handlePasswordDialogCancel() {
+    // reset repo password
+    mobx.action(() => {
+      appState.repoPassword = "";
+    })();
+    this._showPasswordDialog = false;
+  }
+
+  private _handleStartEditingPreset() {
+    // start editing
+    this._editingPreset = true;
+  }
+
+  private _handleFinishEditingPreset() {
+    // set appState's location from properties
+    let locationProperties = this._locationProperties;
+    if (locationProperties) {
+      appState.repoLocation.setFromOtherLocation(locationProperties.location);
+    }
+    else {
+      console.error("Failed to fetch location properties component")
+    }
+    // stop editing
+    this._editingPreset = false;
+  }
+
+  private _handleCancelEditingPreset() {
+    // stop editing
+    this._editingPreset = false;
   }
 }
 
