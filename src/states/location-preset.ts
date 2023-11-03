@@ -1,5 +1,6 @@
 import * as mobx from 'mobx';
 
+import { restic } from '../backend/restic';
 import { Location } from './location';
 
 // -------------------------------------------------------------------------------------------------
@@ -19,6 +20,22 @@ export class LocationPreset {
 
   constructor() {
     mobx.makeObservable(this);
+  }
+
+  // assign from JSON
+  fromJSON(json: any) {
+    const name = (json["name"] as string) || "Untitled Preset";
+    const location = new restic.Location(json["location"]);
+    this.name = name;
+    this.location.setFromResticLocation(location);    
+  }
+
+  // convert to JSON
+  toJSON(): any {
+    return { 
+      "name": this.name, 
+      "location": new restic.Location(this.location) 
+    };
   }
 
   // reset all location properties 

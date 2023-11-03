@@ -91,8 +91,7 @@ export class Location {
     // find matching location type 
     const locationInfo = appState.supportedLocationTypes.find(v => v.prefix === location.prefix);
     if (! locationInfo) {
-      console.warn("Unexpected/unsupported location prefix: '%s'", location.prefix)
-      return;
+      throw Error(`Unexpected/unsupported location prefix: '${location.prefix}'`);
     }
     // apply repository path and password
     this.type = locationInfo.type;
@@ -102,9 +101,9 @@ export class Location {
     this._setPrefixFromType();
     this._setCredentialsFromType();
     // set all required credentials as well, if they are valid
-    for (const c of locationInfo.credentials) {
-      const defaultValue = location.credentials.find(v => v.name === c)
-      const locationValue = this.credentials.find(v => v.name === c)
+    for (const credential of locationInfo.credentials) {
+      const defaultValue = location.credentials.find(v => v.name === credential)
+      const locationValue = this.credentials.find(v => v.name === credential)
       if (defaultValue && locationValue) {
         locationValue.value = defaultValue.value;
       }

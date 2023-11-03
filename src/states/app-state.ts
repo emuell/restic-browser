@@ -1,4 +1,5 @@
 import * as mobx from 'mobx';
+import { writeTextFile, BaseDirectory, readTextFile, exists } from '@tauri-apps/api/fs';
 
 import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
@@ -16,15 +17,15 @@ class AppState {
 
   // location presets
   @mobx.observable
-  locationPresets: LocationPreset[] = [ new LocationPreset() ];
+  locationPresets: LocationPreset[] = [new LocationPreset()];
   @mobx.observable
   selectedLocationPreset: LocationPreset = this.locationPresets[0];
 
   // active location shortcut
   @mobx.computed
-  get repoLocation(): Location { 
+  get repoLocation(): Location {
     return this.selectedLocationPreset.location;
-  } 
+  }
   // additional repo password, set for locations which have no password saved
   @mobx.observable
   repoPassword: string = "";
@@ -57,26 +58,37 @@ class AppState {
   constructor() {
     mobx.makeObservable(this);
 
-    // verify restic program, fetch supported location types and finally 
-    // fetch and open default repository location, if one is set
-    resticApp.verifyResticPath()
-      .then(() => {
-        return resticApp.supportedRepoLocationTypes();
-      })
-      .then((locationTypes) => {
-        this.supportedLocationTypes = locationTypes;
-        return resticApp.defaultRepoLocation();
-      })
-      .then(location => {
-        // set location from default
-        this.repoLocation.setFromResticLocation(location);
-        // try opening the repository
+    // initialize from backend and external state
+    (async () => {
+      // verify restic binary path in backend (this is fatal)
+      await resticApp.verifyResticPath();
+
+      // fetch supported location types from backend (this is fatal)
+      this.supportedLocationTypes = await resticApp.supportedRepoLocationTypes();
+
+      // fetch default location from env or arguments, and open this location
+      try {
+        this.repoLocation.setFromResticLocation(await resticApp.defaultRepoLocation());
         if (this.repoLocation.path) {
           this.openRepository();
         }
-      })
+      }
+      catch (err: any) {
+        console.error("Failed to fetch default location: '%s'", err.message || String(err))
+      }
+
+      // auto-load location presets from config dir
+      try {
+        await this._autoLoadPresets();
+      }
+      catch (err: any) {
+        console.warn("Failed to load location presets file: '%s'", err.message || String(err))
+      }
+      // auto-save location presets to config dir on changes
+      this._autoSavePresets();
+    })()
       .catch(err => {
-        console.warn("Failed to fetch default repo location: '%s'", err.message || String(err))
+        console.error("Failed to initialize appState: '%s'", err.message || String(err))
       });
   }
 
@@ -112,7 +124,7 @@ class AppState {
     this.repoError = "";
     let location = new restic.Location(this.repoLocation);
     if (!location.password && this.repoPassword) {
-      location.password = this.repoPassword;      
+      location.password = this.repoPassword;
     }
     resticApp.openRepository(location)
       .then(() => resticApp.getSnapshots())
@@ -254,6 +266,18 @@ class AppState {
 
   // --- private helper functions
 
+  // maximum size of the files cache
+  static readonly MAX_CACHED_FILE_ENTRIES = 50;
+
+  // file cache for \function fetchFiles 
+  private _filesCache = new Map<string, { files: restic.File[], lastAccessTime: number }>();
+
+  // construct a key for the filesList cache 
+  private static _cachedFilesKey(snapShotId: string, path: string): string {
+    const normalizedPath = !path ? "/" : path.replace(/\\/g, "/");
+    return snapShotId + ":" + normalizedPath;
+  }
+
   // get cached files for the given snapshot and path. 
   // returns undefined when no cached files are present. 
   private _getCachedFiles(snapShotId: string, path: string): restic.File[] | undefined {
@@ -286,17 +310,37 @@ class AppState {
     });
   }
 
-  // maximum size of the files cache
-  static readonly MAX_CACHED_FILE_ENTRIES = 50;
-
-  // construct a key for the filesList cache 
-  private static _cachedFilesKey(snapShotId: string, path: string): string {
-    const normalizedPath = !path ? "/" : path.replace(/\\/g, "/");
-    return snapShotId + ":" + normalizedPath;
+  // load presets from config file 
+  private async _autoLoadPresets() {
+    if (await exists('presets.json', { dir: BaseDirectory.AppConfig })) {
+      const presetsObject = JSON.parse(
+        await readTextFile('presets.json', { dir: BaseDirectory.AppConfig }));
+      if (!Array.isArray(presetsObject)) {
+        throw "Content is not an array";
+      }
+      // NB: keep first entry: it is used as new location template
+      mobx.runInAction(() =>
+        this.locationPresets.push(...presetsObject.map((presetObject) => {
+          const newPreset = new LocationPreset();
+          newPreset.fromJSON(presetObject);
+          return newPreset;
+        })));
+    }
   }
 
-  // file cache for \function fetchFiles 
-  private _filesCache = new Map<string, { files: restic.File[], lastAccessTime: number }>();
+  // save presets to config file 
+  private _autoSavePresets() {
+    // auto-save location presets to config dir
+    mobx.reaction(
+      // skip first entry: it is used as new location template
+      () => JSON.stringify(this.locationPresets.slice(1)),
+      (contents) => {
+        writeTextFile('presets.json', contents, { dir: BaseDirectory.AppConfig })
+          .catch(err => {
+            console.error("Failed to save location presets: '%s'", err.message || String(err))
+          });
+      }, { delay: 500 });
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
