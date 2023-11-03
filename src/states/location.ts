@@ -6,7 +6,7 @@ import { appState } from './app-state';
 // -------------------------------------------------------------------------------------------------
 
 /*!
- * Describes and manages an observable restic repository location 
+ * Represents an observable restic repository location. 
  */
 
 export class Location {
@@ -76,12 +76,12 @@ export class Location {
 
   // set location properties from some other Location
   @mobx.action
-  setFromOtherLocation(other: Location): void {
+  setFromOtherLocation(other: Location, copyPasswords: boolean = true): void {
     this.type = other.type;
     this.prefix = other.prefix;
     this.path = other.path;
     this.credentials = Array.from(other.credentials);
-    this.password = other.password;
+    this.password = copyPasswords ? other.password : "";
     this.insecureTls = other.insecureTls;
   }
 

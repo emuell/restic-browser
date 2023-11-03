@@ -4,6 +4,7 @@ import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
 
 import { Location } from './location';
+import { LocationPreset } from './location-preset';
 
 // -------------------------------------------------------------------------------------------------
 
@@ -13,19 +14,29 @@ import { Location } from './location';
 
 class AppState {
 
-  // repository setup
+  // location presets
   @mobx.observable
-  repoLocation: Location = new Location();
+  locationPresets: LocationPreset[] = [ new LocationPreset() ];
+  @mobx.observable
+  selectedLocationPreset: LocationPreset = this.locationPresets[0];
 
+  // active location shortcut
+  @mobx.computed
+  get repoLocation(): Location { 
+    return this.selectedLocationPreset.location;
+  } 
+  // additional repo password, set for locations which have no password saved
+  @mobx.observable
+  repoPassword: string = "";
+  // human readable error string, if any, set after opening the location
   @mobx.observable
   repoError: string = "";
 
-  // repository content 
-  @mobx.observable
-  selectedSnapshotID: string = "";
-
+  // snapshots 
   @mobx.observable
   snapShots: restic.Snapshot[] = [];
+  @mobx.observable
+  selectedSnapshotID: string = "";
 
   // loading status 
   @mobx.observable
@@ -69,12 +80,41 @@ class AppState {
       });
   }
 
+  // add a new location preset from the given location with the given name
+  @mobx.action
+  addLocationPreset(location: Location, displayName: string, savePasswords: boolean) {
+    let newPreset = new LocationPreset();
+    newPreset.name = displayName;
+    newPreset.location.setFromOtherLocation(location, savePasswords);
+    this.locationPresets.push(newPreset);
+    this.selectedLocationPreset = newPreset;
+  }
+
+  // remove given location preset
+  @mobx.action
+  removeLocationPreset(index: number) {
+    if (index != 0) {
+      let deletingSelected = (this.selectedLocationPreset === this.locationPresets[index]);
+      this.locationPresets.splice(index, 1);
+      if (deletingSelected) {
+        this.selectedLocationPreset = this.locationPresets[0];
+      }
+    }
+    else {
+      console.error("Trying to delete the first location preset");
+    }
+  }
+
   // open a new repository and populate snapshots
   @mobx.action
   openRepository(): void {
     ++this.isLoadingSnapshots;
     this.repoError = "";
-    resticApp.openRepository(new restic.Location(this.repoLocation))
+    let location = new restic.Location(this.repoLocation);
+    if (!location.password && this.repoPassword) {
+      location.password = this.repoPassword;      
+    }
+    resticApp.openRepository(location)
       .then(() => resticApp.getSnapshots())
       .then(mobx.action((result) => {
         this.repoError = "";
