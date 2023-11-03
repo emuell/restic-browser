@@ -74,8 +74,8 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   private _activeItemChanged(e: GridActiveItemChangedEvent<restic.Snapshot>) {
     const item = e.detail.value;
-    // don't deselect selected itesm
-    if (item) {
+    // don't deselect selected items and ensure it's a valid snapshot
+    if (item && appState.snapShots.includes(item)) {
       this._selectedItems = [item];
       appState.setNewSnapshotId(item.id);
     }
@@ -83,9 +83,10 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   private _cellFocusChanged(event: GridCellFocusEvent<restic.Snapshot>) {
     // auto-select rows on cell focus navigation
-    if (event.detail.context?.item) {
-      this._selectedItems = [event.detail.context.item];
-      appState.setNewSnapshotId(event.detail.context.item.id);
+    const item = event.detail.context?.item;
+    if (item && appState.snapShots.includes(item)) {
+      this._selectedItems = [item];
+      appState.setNewSnapshotId(item.id);
     }
   }
   
