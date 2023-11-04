@@ -153,8 +153,8 @@ class AppState {
         this.snapShots = result;
         if (!result.find((s) => s.short_id === this.selectedSnapshotID)) {
           this.selectedSnapshotID = "";
-          if (result.length) {
-            this.selectedSnapshotID = result[0].id;
+          if (result.length) { // select most recent
+            this.selectedSnapshotID = result[result.length - 1].id;
           }
         }
         this._filesCache.clear();
