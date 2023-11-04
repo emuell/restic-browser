@@ -92,6 +92,14 @@ class AppState {
       });
   }
 
+  // select a new location preset
+  @mobx.action
+  setSelectedLocationPreset(locationPreset: LocationPreset): void {
+    console.assert(this.locationPresets.includes(locationPreset), 
+      "Trying to select an invalid location preset");
+    this.selectedLocationPreset = locationPreset;
+  }
+
   // add a new location preset from the given location with the given name
   @mobx.action
   addLocationPreset(location: Location, displayName: string, savePasswords: boolean) {
@@ -117,7 +125,19 @@ class AppState {
     }
   }
 
-  // open a new repository and populate snapshots
+  // set new repository location state without opening it
+  @mobx.action
+  setRepositoryLocation(location: Location): void {
+    this.repoLocation.setFromOtherLocation(location);
+  }
+
+  // set new repository password, which is used then the location does not contain one (e.g. in presets)
+  @mobx.action
+  setRepositoryPassword(password: string): void {
+    this.repoPassword = password;
+  }
+
+  // open the current repository and populate snapshots
   @mobx.action
   openRepository(): void {
     ++this.isLoadingSnapshots;

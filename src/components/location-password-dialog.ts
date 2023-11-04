@@ -53,7 +53,7 @@ export class ResticBrowserLocationPasswordDialog extends LitElement {
             this._password = (event.target as HTMLInputElement).value;
             this._handleClose();
           }}
-        ></vaadin-text-field>
+        ></vaadin-password-field>
       </vaadin-vertical-layout>
     `;
 
@@ -67,7 +67,7 @@ export class ResticBrowserLocationPasswordDialog extends LitElement {
         <vaadin-button theme="primary" @click=${this._handleClose}>
           Okay
         </vaadin-button>
-      </vaadin-horizontal-layout">
+      </vaadin-horizontal-layout>
     `;
 
     return html`

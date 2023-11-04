@@ -65,7 +65,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
     // memorize actual location to restore it on cancel
     this._initialLocation.setFromOtherLocation(appState.repoLocation);
-
+    
     // bind this to all callbacks
     this._handleMainDialogCancel = this._handleMainDialogCancel.bind(this);
     this._handleMainDialogClose = this._handleMainDialogClose.bind(this);
@@ -197,7 +197,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
           @click=${this._handleMainDialogClose}
         > Okay
         </vaadin-button>
-      </vaadin-horizontal-layout">
+      </vaadin-horizontal-layout>
     `;
 
     return html`
@@ -239,9 +239,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
       console.error("Failed to fetch location properties component")
     }
     // ask for repo password?
-    mobx.action(() => {
-      appState.repoPassword = "";
-    })();
+    appState.setRepositoryPassword("");
     if (appState.repoLocation.path && !appState.repoLocation.password) {
       this._handleShowPasswordDialog();
       return;
@@ -254,10 +252,11 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handleMainDialogCancel() {
     // restore location to initial state
-    mobx.action(() => {
-      appState.selectedLocationPreset = appState.locationPresets[0];
-      appState.selectedLocationPreset.location.setFromOtherLocation(this._initialLocation);      
-    })();
+    mobx.runInAction(() => {
+      appState.setRepositoryPassword("");
+      appState.setSelectedLocationPreset(appState.locationPresets[0])
+      appState.setRepositoryLocation(this._initialLocation);
+    });
     // reset state and clone
     this._handledClose = true;
     this._editingPreset = false;
@@ -265,14 +264,10 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   }
 
   private _handlePresetDoubleClick(preset: LocationPreset) {
-   // set appState's location from properties component
-    mobx.action(() => {
-      appState.repoLocation.setFromOtherLocation(preset.location);
-    })();
+    // set appState's location from properties component
+    appState.setRepositoryLocation(preset.location);
     // ask for repo password?
-    mobx.action(() => {
-      appState.repoPassword = "";
-    })();
+    appState.setRepositoryPassword("");
     if (appState.repoLocation.path && !appState.repoLocation.password) {
       this._handleShowPasswordDialog();
       return;
@@ -327,9 +322,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handlePasswordDialogClose(password: string) {
     // set repo password
-    mobx.action(() => {
-      appState.repoPassword = password;
-    })();
+    appState.setRepositoryPassword(password)
     // reset state and clone
     this._showPasswordDialog = false;
     this._handledClose = true;
@@ -339,9 +332,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handlePasswordDialogCancel() {
     // reset repo password
-    mobx.action(() => {
-      appState.repoPassword = "";
-    })();
+    appState.setRepositoryPassword("")
     this._showPasswordDialog = false;
   }
 

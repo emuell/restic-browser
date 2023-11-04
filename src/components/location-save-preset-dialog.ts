@@ -71,7 +71,7 @@ export class ResticBrowserLocationSavePresetDialog extends LitElement {
         <vaadin-button theme="primary" @click=${this._handleDialogClose}>
           Okay
         </vaadin-button>
-      </vaadin-horizontal-layout">
+      </vaadin-horizontal-layout>
     `;
 
     return html`

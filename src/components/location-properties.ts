@@ -30,7 +30,7 @@ import '@vaadin/notification';
 export class ResticBrowserLocationProperties extends MobxLitElement {
 
   // when false, all form fields are disabled
-  @property()
+  @property({type: Boolean})
   allowEditing: boolean = true;
 
   // get actual edited state of the location
@@ -129,15 +129,16 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
 
       ${this._location.type !== "local"
         ? html`<vaadin-form-item style="margin-top: 10.5px;">
-                <vaadin-checkbox 
-                  id="checkbox" 
-                  label="Insecure TLS (skip TLS certificate verifications)"
-                  .checked=${this._location.insecureTls}
-                  .disabled=${! this.allowEditing}
-                  @change=${mobx.action((event: CustomEvent) => {
-                    this._location.insecureTls = (event.target as HTMLInputElement).checked;
-                  })}
-                ></vaadin-checkbox>`
+                 <vaadin-checkbox 
+                   id="checkbox" 
+                   label="Insecure TLS (skip TLS certificate verifications)"
+                   .checked=${this._location.insecureTls}
+                   .disabled=${! this.allowEditing}
+                   @change=${mobx.action((event: CustomEvent) => {
+                     this._location.insecureTls = (event.target as HTMLInputElement).checked;
+                   })}
+                 ></vaadin-checkbox>
+               </vaadin-form-item>`
         : nothing
       }
       </vaadin-vertical-layout>

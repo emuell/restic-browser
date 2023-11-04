@@ -63,7 +63,7 @@ export class ResticBrowserLocationPresets extends MobxLitElement {
   
   render() {
     return html`
-      <vaadin-vertical-layout id="layout"">
+      <vaadin-vertical-layout id="layout">
         <vaadin-grid id="grid" 
           theme="no-border no-row-borders compact"
           .items=${appState.locationPresets}
@@ -113,10 +113,8 @@ export class ResticBrowserLocationPresets extends MobxLitElement {
     const item = e.detail.value;
     // don't deselect selected items and make sure it's a valid item
     if (item && appState.locationPresets.includes(item)) {
-      mobx.action(() => {
-        this._selectedItems = [ item ];
-        appState.selectedLocationPreset = item;
-      })();
+      this._selectedItems = [ item ];
+      appState.setSelectedLocationPreset(item);
     }
     // double-click handling
     const doubleClickItem = this._selectedItems.length ?
