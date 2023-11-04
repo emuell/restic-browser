@@ -12,19 +12,12 @@
   },
   "tauri": {
     "allowlist": {
-      "all": true,
       "dialog": {
         "all": true
       },
       "fs": {
         "all": true,
-        "scope": ["$APPDATA/**"]
-      },
-      "path": {
-        "all": false
-      },
-      "shell": {
-        "sidecar": true
+        "scope": ["$APPCONFIG/*"]
       }
     },
     "bundle": {
