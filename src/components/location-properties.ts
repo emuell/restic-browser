@@ -91,7 +91,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
             </div>
           </vaadin-text-field>
             ${this._location.type === "local" && this.allowEditing
-              ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: 35.5px;" 
+              ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
                         @click=${this._browseLocalRepositoryPath}>Browse</vaadin-button>`
               : nothing
             }
@@ -121,7 +121,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           >
           </vaadin-password-field>
           ${this.allowEditing 
-            ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: 35.5px;" 
+            ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
                       @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>`
             : nothing
           }
