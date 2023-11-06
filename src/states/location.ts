@@ -6,7 +6,7 @@ import { appState } from './app-state';
 // -------------------------------------------------------------------------------------------------
 
 /*!
- * Describes and manages an observable restic repository location 
+ * Represents an observable restic repository location. 
  */
 
 export class Location {
@@ -76,12 +76,12 @@ export class Location {
 
   // set location properties from some other Location
   @mobx.action
-  setFromOtherLocation(other: Location): void {
+  setFromOtherLocation(other: Location, copyPasswords: boolean = true): void {
     this.type = other.type;
     this.prefix = other.prefix;
     this.path = other.path;
     this.credentials = Array.from(other.credentials);
-    this.password = other.password;
+    this.password = copyPasswords ? other.password : "";
     this.insecureTls = other.insecureTls;
   }
 
@@ -91,8 +91,7 @@ export class Location {
     // find matching location type 
     const locationInfo = appState.supportedLocationTypes.find(v => v.prefix === location.prefix);
     if (! locationInfo) {
-      console.warn("Unexpected/unsupported location prefix: '%s'", location.prefix)
-      return;
+      throw Error(`Unexpected/unsupported location prefix: '${location.prefix}'`);
     }
     // apply repository path and password
     this.type = locationInfo.type;
@@ -102,9 +101,9 @@ export class Location {
     this._setPrefixFromType();
     this._setCredentialsFromType();
     // set all required credentials as well, if they are valid
-    for (const c of locationInfo.credentials) {
-      const defaultValue = location.credentials.find(v => v.name === c)
-      const locationValue = this.credentials.find(v => v.name === c)
+    for (const credential of locationInfo.credentials) {
+      const defaultValue = location.credentials.find(v => v.name === credential)
+      const locationValue = this.credentials.find(v => v.name === credential)
       if (defaultValue && locationValue) {
         locationValue.value = defaultValue.value;
       }

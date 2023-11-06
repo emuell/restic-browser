@@ -25,7 +25,7 @@ open = { version = "^5.0" }
 shlex = { version = "^1.2" }
 
 #tauri
-tauri = { version = "^1.5", features = [ "cli", "api-all"] }
+tauri = { version = "^1.5", features = [ "fs-all", "dialog-all", "cli"] }
 tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [features]
