@@ -18,12 +18,9 @@ use which::which_in;
 use tauri::Manager;
 use tauri_plugin_window_state::StateFlags;
 
-use crate::{command::*, restic::*};
-
 // -------------------------------------------------------------------------------------------------
 
 mod app;
-mod command;
 mod restic;
 
 // -------------------------------------------------------------------------------------------------
@@ -71,7 +68,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         Err(err) => log::error!("{}", err.to_string()),
     }
     if restic_path.is_none() {
-        if let Ok(restic) = which(RESTIC_EXECTUABLE_NAME) {
+        if let Ok(restic) = which(restic::RESTIC_EXECTUABLE_NAME) {
             restic_path = Some(restic.clone());
             log::info!(
                 "Found restic binary in PATH at '{}'",
@@ -81,7 +78,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         #[cfg(target_os = "macos")]
         if restic_path.is_none() {
             if let Ok(restic) = which_in(
-                RESTIC_EXECTUABLE_NAME,
+                restic::RESTIC_EXECTUABLE_NAME,
                 Some(format!(
                     "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
                     env::var("HOME").unwrap_or("~".to_string())
@@ -103,7 +100,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     // get default restic location from args or env
     let mut location;
     if let Ok(matches) = app.get_cli_matches() {
-        location = Location::new_from_args(
+        location = restic::Location::new_from_args(
             matches
                 .args
                 .into_iter()
@@ -111,10 +108,10 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
                 .collect::<HashMap<_, _>>(),
         );
         if location.path.is_empty() {
-            location = Location::new_from_env();
+            location = restic::Location::new_from_env();
         }
     } else {
-        location = Location::new_from_env();
+        location = restic::Location::new_from_env();
     }
 
     // create temp dir for previews
@@ -129,7 +126,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     // create new app state
     app.manage(app::SharedAppState::new(app::AppState::new(
-        ResticCommand::new(restic_path.unwrap_or(PathBuf::new())),
+        restic::Program::new(restic_path.unwrap_or(PathBuf::new())),
         location,
         temp_dir,
     )));

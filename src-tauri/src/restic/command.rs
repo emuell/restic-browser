@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fs,
     path::PathBuf,
-    process::{Command, Stdio},
+    process::{Command, Output, Stdio},
     sync::RwLock,
 };
 
@@ -24,21 +24,9 @@ const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
 
 // -------------------------------------------------------------------------------------------------
 
-// Create new Command and configure it to hide the CMD window on Windows.
-pub fn new_command(program: &PathBuf) -> Command {
-    #[cfg(target_os = "windows")]
-    use std::os::windows::process::CommandExt;
-
-    #[allow(unused_mut)]
-    let mut command = Command::new(program);
-    #[cfg(target_os = "windows")]
-    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    command
-}
-
 /// Tries to gracefully terminate a process with the provided process ID.
 #[cfg(target_os = "windows")]
-pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
+fn terminate_process_with_id(pid: u32) -> Result<(), String> {
     use windows_sys::Win32::{
         Foundation::{CloseHandle, GetLastError, BOOL, FALSE, HANDLE, WIN32_ERROR},
         System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE},
@@ -68,7 +56,7 @@ pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
+fn terminate_process_with_id(pid: u32) -> Result<(), String> {
     use nix::{
         sys::signal::{self, Signal},
         unistd::Pid,
@@ -80,11 +68,12 @@ pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
 // -------------------------------------------------------------------------------------------------
 
 lazy_static! {
+    /// Currently running restic command processes mapped by command group names.
     static ref RUNNING_RESTIC_COMMANDS: RwLock<HashMap<String, Vec<u32>>> =
         RwLock::new(HashMap::new());
 }
 
-// Kill all running commands from the given command group.
+/// Kill all running commands from the given command group.
 fn terminate_all_commands_in_group(command_group: &str) -> Result<(), String> {
     let running_child_ids = {
         if let Some(child_ids) = RUNNING_RESTIC_COMMANDS
@@ -97,21 +86,24 @@ fn terminate_all_commands_in_group(command_group: &str) -> Result<(), String> {
             vec![]
         }
     };
-    for child_id in running_child_ids {
-        if let Err(err) = terminate_process_with_id(child_id) {
-            log::warn!(
-                "Failed to kill restic command with PID {}: {}",
-                child_id,
-                err
-            );
+    if !running_child_ids.is_empty() {
+        log::debug!(
+            "Terminating {} processes in group '{}'...",
+            running_child_ids.len(),
+            command_group
+        );
+        for child_id in running_child_ids {
+            if let Err(err) = terminate_process_with_id(child_id) {
+                log::warn!("Failed to kill command with PID {}: {}", child_id, err);
+            }
         }
     }
     Ok(())
 }
 
-// Register the given child it with a command group.
+/// Register the given child it with a command group.
 fn add_command_to_group(command_group: &str, child_id: u32) -> Result<(), String> {
-    log::info!("Starting new process with PID {}", child_id);
+    log::debug!("Process in group '{command_group}' with PID '{child_id}' started...");
     let mut running_child_ids = RUNNING_RESTIC_COMMANDS
         .write()
         .map_err(|err| err.to_string())?;
@@ -125,7 +117,7 @@ fn add_command_to_group(command_group: &str, child_id: u32) -> Result<(), String
 
 // Unregister the given child from a command group.
 fn remove_command_from_group(command_group: &str, child_id: u32) -> Result<(), String> {
-    log::info!("Starting new process with PID {}", child_id);
+    log::debug!("Process in group '{command_group}' with PID '{child_id}' finished");
     let mut running_child_ids = RUNNING_RESTIC_COMMANDS
         .write()
         .map_err(|err| err.to_string())?;
@@ -137,17 +129,32 @@ fn remove_command_from_group(command_group: &str, child_id: u32) -> Result<(), S
 
 // -------------------------------------------------------------------------------------------------
 
+/// Create new Command and configure it to hide the CMD window on Windows.
+pub fn new_command(program: &PathBuf) -> Command {
+    #[cfg(target_os = "windows")]
+    use std::os::windows::process::CommandExt;
+
+    #[allow(unused_mut)]
+    let mut command = Command::new(program);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    command
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Restic command executable wrapper.
 #[derive(Debug, Default, Clone)]
-pub struct ResticCommand {
+pub struct Program {
     pub version: [i32; 3], // major, minor, rev
     pub path: PathBuf,     // path to the restic executable
 }
 
-impl ResticCommand {
-    /// Create a new Restic command with the given path.
+impl Program {
+    /// Create a new Restic program with the given path.
     pub fn new(path: PathBuf) -> Self {
         Self {
-            version: Self::query_version(&path),
+            version: Self::version(&path),
             path,
         }
     }
@@ -170,7 +177,7 @@ impl ResticCommand {
         }
         // start a new restic command
         let args = Self::args(args, &location);
-        let envs = Self::environment_values(&location);
+        let envs = Self::envs(&location);
         let child = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
@@ -195,27 +202,11 @@ impl ResticCommand {
         }
         // wait until command finished and collect output
         let output = child.wait_with_output().map_err(|err| err.to_string())?;
-        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
-        let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
         if output.status.success() {
+            let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
             Ok(stdout.to_string())
         } else {
-            #[cfg(target_os = "windows")]
-            if output
-                .status
-                .code()
-                .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
-            {
-                log::warn!("Restic '{:?}' command got aborted...", args);
-                return Err("Command got aborted...".to_string());
-            }
-            log::warn!(
-                "Restic '{:?}' command failed with status {}:\n{}",
-                args,
-                output.status,
-                stderr
-            );
-            Err(stderr.to_string())
+            Err(Self::handle_run_error(args, output))
         }
     }
 
@@ -239,7 +230,7 @@ impl ResticCommand {
         }
         // start a new restic command
         let args = Self::args(args, &location);
-        let envs = Self::environment_values(&location);
+        let envs = Self::envs(&location);
         let child = new_command(&self.path)
             .envs(envs)
             .args(args.clone())
@@ -264,31 +255,52 @@ impl ResticCommand {
         }
         // wait until command finished and collect output
         let output = child.wait_with_output().map_err(|err| err.to_string())?;
-        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
         if output.status.success() {
             Ok(())
         } else {
-            #[cfg(target_os = "windows")]
-            if output
-                .status
-                .code()
-                .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
-            {
-                log::warn!("Restic '{:?}' command got aborted...", args);
-                return Err("Command got aborted...".to_string());
-            }
-            log::warn!(
-                "Restic '{:?}' command failed with status {}:\n{}",
-                args,
-                output.status,
-                stderr
-            );
-            Err(stderr.to_string())
+            Err(Self::handle_run_error(args, output))
         }
     }
 
+    /// Log and return error from a restic run command.
+    fn handle_run_error(args: Vec<&str>, output: Output) -> String {
+        // guess if this is a command which got aborted
+        #[cfg(target_os = "windows")]
+        if output
+            .status
+            .code()
+            .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
+        {
+            log::info!("Restic '{:?}' command got aborted", args);
+            return "Command got aborted".to_string();
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            use nix::libc::SIGTERM;
+            use std::os::unix::process::ExitStatusExt;
+
+            if output
+                .status
+                .signal()
+                .is_some_and(|status| status == SIGTERM)
+            {
+                log::info!("Restic '{:?}' command got aborted", args);
+                return "Command got aborted".to_string();
+            }
+        }
+        // else log and return stderr as it is
+        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
+        log::warn!(
+            "Restic '{:?}' command failed with status {}:\n{}",
+            args,
+            output.status,
+            stderr
+        );
+        stderr.to_string()
+    }
+
     /// Run restic command to query its version number.
-    fn query_version(path: &PathBuf) -> [i32; 3] {
+    fn version(path: &PathBuf) -> [i32; 3] {
         let mut version = [0, 0, 0];
         if !path.exists() {
             return version;
@@ -329,7 +341,7 @@ impl ResticCommand {
     }
 
     // Create restic specific environment variables for the given location
-    fn environment_values(location: &Location) -> HashMap<String, String> {
+    fn envs(location: &Location) -> HashMap<String, String> {
         let mut envs = HashMap::new();
         if !location.path.is_empty() {
             if !location.prefix.is_empty() {
