@@ -18,11 +18,12 @@ use which::which_in;
 use tauri::Manager;
 use tauri_plugin_window_state::StateFlags;
 
-use crate::restic::{Location, ResticCommand};
+use crate::{command::*, restic::*};
 
 // -------------------------------------------------------------------------------------------------
 
 mod app;
+mod command;
 mod restic;
 
 // -------------------------------------------------------------------------------------------------

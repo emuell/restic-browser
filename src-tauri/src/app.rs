@@ -2,7 +2,7 @@ use std::{collections::HashSet, fs, path::PathBuf, sync::RwLock};
 
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
-use crate::restic::*;
+use crate::{command::*, restic::*};
 
 // -------------------------------------------------------------------------------------------------
 

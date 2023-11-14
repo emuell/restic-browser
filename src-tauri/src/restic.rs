@@ -1,27 +1,8 @@
-use std::{collections::HashMap, env, fs, process::Command};
+use std::{collections::HashMap, env, fs};
 
 use shlex::Shlex;
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
-// -------------------------------------------------------------------------------------------------
-
-#[cfg(target_os = "windows")]
-pub static RESTIC_EXECTUABLE_NAME: &str = "restic.exe";
-#[cfg(not(target_os = "windows"))]
-pub static RESTIC_EXECTUABLE_NAME: &str = "restic";
-
-// -------------------------------------------------------------------------------------------------
-
-// create new Command and configure it to hide command window on Windows
-fn new_command(program: &str) -> Command {
-    #[allow(unused_mut)]
-    let mut command = Command::new(program);
-    #[cfg(target_os = "windows")]
-    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    command
-}
+use crate::command::new_command;
 
 // -------------------------------------------------------------------------------------------------
 
@@ -116,10 +97,13 @@ pub struct Location {
 impl Location {
     // create a new Location from the given set of optional restic arguments
     // see tauri.conf.json for the expected args
-    pub fn new_from_args(args: HashMap<String, String>) -> Location {
+    pub fn new_from_args(args: HashMap<String, Option<String>>) -> Location {
         // filter out empty args
-        let mut args = args.clone();
-        args.retain(|_, v| !v.is_empty());
+        let args = args
+            .into_iter()
+            .map(|(k, v)| (k, v.unwrap_or_default()))
+            .filter(|(_, v)| !v.is_empty())
+            .collect::<HashMap<_, _>>();
         // get repo from file or directly
         let path = if let Some(repository_file) = args.get("repository-file") {
             let content = fs::read_to_string(repository_file).unwrap_or(String::new());
@@ -136,9 +120,10 @@ impl Location {
             content.trim_end().to_string()
         } else if let Some(password_command) = args.get("password-command") {
             let mut program_and_args = Shlex::new(password_command);
-            if let Ok(output) = new_command(&program_and_args.by_ref().nth(0).unwrap_or_default())
-                .args(program_and_args.by_ref().collect::<Vec<_>>())
-                .output()
+            if let Ok(output) =
+                new_command(&program_and_args.by_ref().next().unwrap_or_default().into())
+                    .args(program_and_args.by_ref().collect::<Vec<_>>())
+                    .output()
             {
                 let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
                 stdout.trim_end().to_string()
@@ -201,7 +186,7 @@ impl Location {
                 ("password-command", "RESTIC_PASSWORD_COMMAND"),
             ]
             .into_iter()
-            .map(|(k, v)| (String::from(k), env::var(v).unwrap_or(String::new())))
+            .map(|(k, v)| (String::from(k), env::var(v).ok()))
             .collect::<HashMap<_, _>>(),
         )
     }
@@ -243,137 +228,4 @@ pub struct Snapshot {
     pub hostname: String,
     #[serde(default)]
     pub username: String,
-}
-
-// -------------------------------------------------------------------------------------------------
-
-#[derive(Debug, Default, Clone)]
-pub struct ResticCommand {
-    pub version: [i32; 3], // major, minor, rev
-    pub path: String,      // path to the restic executable
-}
-
-impl ResticCommand {
-    pub fn new(path: &str) -> Self {
-        let version = ResticCommand::query_version(path);
-        let path = path.to_string();
-        Self { version, path }
-    }
-
-    // run a restic command for the given location with the given args
-    pub fn run(&self, location: Location, args: Vec<&str>) -> Result<String, String> {
-        let args = Self::args(args, &location);
-        let envs = Self::environment_values(&location);
-        let output = new_command(&self.path)
-            .envs(envs)
-            .args(args.clone())
-            .output()
-            .map_err(|err| err.to_string())?;
-        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
-        let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
-        if output.status.success() {
-            Ok(stdout.to_string())
-        } else {
-            log::warn!(
-                "Restic '{:?}' command failed with status {}:\n{}",
-                args,
-                output.status,
-                stderr
-            );
-            Err(stderr.to_string())
-        }
-    }
-
-    // run a restic command for the given location with the given args and redirect
-    // stdout to the given target file
-    pub fn run_redirected(
-        &self,
-        location: Location,
-        args: Vec<&str>,
-        file: fs::File,
-    ) -> Result<(), String> {
-        let args = Self::args(args, &location);
-        let envs = Self::environment_values(&location);
-        let output = new_command(&self.path)
-            .envs(envs)
-            .args(args.clone())
-            .stdout(std::process::Stdio::from(file))
-            .output()
-            .map_err(|err| err.to_string())?;
-        let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
-        if output.status.success() {
-            Ok(())
-        } else {
-            log::warn!(
-                "Restic '{:?}' command failed with status {}:\n{}",
-                args,
-                output.status,
-                stderr
-            );
-            Err(stderr.to_string())
-        }
-    }
-
-    // run restic command to query its version
-    fn query_version(path: &str) -> [i32; 3] {
-        // get version from restic binary
-        let mut version = [0, 0, 0];
-        match new_command(path).arg("version").output() {
-            Ok(output) => {
-                if output.status.success() {
-                    // "restic x.y.z some other info"
-                    let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
-                    let mut name_version = stdout.split(' ');
-                    if let Some(version_str) = name_version.nth(1) {
-                        let mut splits = version_str
-                            .split('.')
-                            .map(|str| str.parse::<i32>().unwrap_or(0));
-                        version[0] = splits.next().unwrap_or(0);
-                        version[1] = splits.next().unwrap_or(0);
-                        version[2] = splits.next().unwrap_or(0);
-                    }
-                } else {
-                    let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
-                    log::warn!("Failed to read version info from restic binary: {}", stderr);
-                }
-            }
-            Err(err) => {
-                log::warn!("Failed to read version info from restic binary: {err}");
-            }
-        }
-        version
-    }
-
-    // create restic specific args for the given base args and location
-    fn args<'a>(args: Vec<&'a str>, location: &Location) -> Vec<&'a str> {
-        if location.insecure_tls {
-            let mut args = args.clone();
-            args.push("--insecure-tls");
-            args
-        } else {
-            args
-        }
-    }
-
-    // create restic specific environment variables for the given location
-    fn environment_values(location: &Location) -> HashMap<String, String> {
-        let mut envs = HashMap::new();
-        if !location.path.is_empty() {
-            if !location.prefix.is_empty() {
-                envs.insert(
-                    "RESTIC_REPOSITORY".to_string(),
-                    location.prefix.clone() + ":" + &location.path,
-                );
-            } else {
-                envs.insert("RESTIC_REPOSITORY".to_string(), location.path.clone());
-            }
-        }
-        if !location.password.is_empty() {
-            envs.insert("RESTIC_PASSWORD".to_string(), location.password.clone());
-        }
-        for credential in location.credentials.clone() {
-            envs.insert(credential.name, credential.value);
-        }
-        envs
-    }
 }
