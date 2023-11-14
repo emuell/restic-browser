@@ -186,7 +186,11 @@ pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snap
     log::info!("Fetching snapshots from repository...");
     let command_output = state
         .restic
-        .run(state.location, vec!["snapshots", "--json"])
+        .run(
+            state.location,
+            vec!["snapshots", "--json"],
+            "fetch_snapshots",
+        )
         .map_err(|err| err.to_string())?;
     let snapshots =
         serde_json::from_str::<Vec<Snapshot>>(&command_output).map_err(|err| err.to_string())?;
@@ -219,7 +223,11 @@ pub fn get_files(
     );
     let command_output = state
         .restic
-        .run(state.location, vec!["ls", &snapshot_id, "--json", &path])
+        .run(
+            state.location,
+            vec!["ls", &snapshot_id, "--json", &path],
+            "fetch_files",
+        )
         .map_err(|err| err.to_string())?;
     let mut files = vec![];
     for line in command_output.split('\n').skip(1) {
@@ -294,6 +302,7 @@ Are you sure that you want to overwrite the existing file?",
             state.location,
             vec!["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())
@@ -331,6 +340,7 @@ pub fn dump_file_to_temp(
             state.location,
             vec!["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())
@@ -394,6 +404,7 @@ Are you sure that you want to overwrite the existing file(s)?",
                 "--include",
                 &file.path,
             ],
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())

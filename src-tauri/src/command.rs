@@ -3,7 +3,11 @@ use std::{
     fs,
     path::PathBuf,
     process::{Command, Stdio},
+    sync::RwLock,
 };
+
+use lazy_static::lazy_static;
+use scopeguard::defer;
 
 use crate::restic::*;
 
@@ -13,6 +17,10 @@ use crate::restic::*;
 pub static RESTIC_EXECTUABLE_NAME: &str = "restic.exe";
 #[cfg(not(target_os = "windows"))]
 pub static RESTIC_EXECTUABLE_NAME: &str = "restic";
+
+/// Exit code a process gets killed with via kill_process_with_id.
+#[cfg(target_os = "windows")]
+const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
 
 // -------------------------------------------------------------------------------------------------
 
@@ -26,6 +34,105 @@ pub fn new_command(program: &PathBuf) -> Command {
     #[cfg(target_os = "windows")]
     command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     command
+}
+
+/// Tries to gracefully terminate a process with the provided process ID.
+#[cfg(target_os = "windows")]
+pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, GetLastError, BOOL, FALSE, HANDLE, WIN32_ERROR},
+        System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE},
+    };
+    log::info!("Killing process with PID {}", pid);
+
+    unsafe {
+        // Open the process handle with intent to terminate
+        let handle: HANDLE = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+        if handle == 0 {
+            let error: WIN32_ERROR = GetLastError();
+            return Err(format!(
+                "Failed to obtain handle to process {}: {:#x}",
+                pid, error
+            ));
+        }
+        // Terminate the process
+        let result: BOOL = TerminateProcess(handle, COMMAND_TERMINATED_EXIT_CODE);
+        // Close the handle now that its no longer needed
+        CloseHandle(handle);
+        if result == FALSE {
+            let error: WIN32_ERROR = GetLastError();
+            return Err(format!("Failed to terminate process {}: {:#x}", pid, error));
+        }
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn terminate_process_with_id(pid: u32) -> Result<(), String> {
+    use nix::{
+        sys::signal::{self, Signal},
+        unistd::Pid,
+    };
+    log::info!("Killing process with PID {}", pid);
+    signal::kill(Pid::from_raw(pid as i32), Signal::SIGTERM).map_err(|err| err.to_string())
+}
+
+// -------------------------------------------------------------------------------------------------
+
+lazy_static! {
+    static ref RUNNING_RESTIC_COMMANDS: RwLock<HashMap<String, Vec<u32>>> =
+        RwLock::new(HashMap::new());
+}
+
+// Kill all running commands from the given command group.
+fn terminate_all_commands_in_group(command_group: &str) -> Result<(), String> {
+    let running_child_ids = {
+        if let Some(child_ids) = RUNNING_RESTIC_COMMANDS
+            .write()
+            .map_err(|err| err.to_string())?
+            .get_mut(command_group)
+        {
+            std::mem::take(child_ids)
+        } else {
+            vec![]
+        }
+    };
+    for child_id in running_child_ids {
+        if let Err(err) = terminate_process_with_id(child_id) {
+            log::warn!(
+                "Failed to kill restic command with PID {}: {}",
+                child_id,
+                err
+            );
+        }
+    }
+    Ok(())
+}
+
+// Register the given child it with a command group.
+fn add_command_to_group(command_group: &str, child_id: u32) -> Result<(), String> {
+    log::info!("Starting new process with PID {}", child_id);
+    let mut running_child_ids = RUNNING_RESTIC_COMMANDS
+        .write()
+        .map_err(|err| err.to_string())?;
+    if let Some(child_ids) = running_child_ids.get_mut(command_group) {
+        child_ids.push(child_id);
+    } else {
+        running_child_ids.insert(command_group.to_string(), vec![child_id]);
+    }
+    Ok(())
+}
+
+// Unregister the given child from a command group.
+fn remove_command_from_group(command_group: &str, child_id: u32) -> Result<(), String> {
+    log::info!("Starting new process with PID {}", child_id);
+    let mut running_child_ids = RUNNING_RESTIC_COMMANDS
+        .write()
+        .map_err(|err| err.to_string())?;
+    if let Some(commands) = running_child_ids.get_mut(command_group) {
+        commands.retain(|id| *id != child_id);
+    }
+    Ok(())
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -48,11 +155,20 @@ impl ResticCommand {
     /// Run a restic command for the given location with the given args.
     /// when @param command_group is some, all commands in the same group are
     /// killed before starting the new command.
-    pub fn run(
+    pub fn run<C: Into<Option<&'static str>>>(
         &self,
         location: Location,
         args: Vec<&str>,
+        command_group: C,
     ) -> Result<String, String> {
+        // kill all other running restic commands in the same group
+        let command_group = command_group.into();
+        if let Some(command_group) = command_group {
+            if let Err(err) = terminate_all_commands_in_group(command_group) {
+                log::error!("Failed to kill process childs: {err}");
+            }
+        }
+        // start a new restic command
         let args = Self::args(args, &location);
         let envs = Self::environment_values(&location);
         let child = new_command(&self.path)
@@ -62,6 +178,21 @@ impl ResticCommand {
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|err| err.to_string())?;
+        // register child id with command group
+        let child_id = child.id();
+        if let Some(command_group) = command_group {
+            if let Err(err) = add_command_to_group(command_group, child_id) {
+                log::error!("Failed to add process child: {err}");
+            }
+        }
+        // unregister child id with command group
+        defer! {
+            if let Some(command_group) = command_group {
+                if let Err(err) = remove_command_from_group(command_group, child_id) {
+                    log::error!("Failed to remove process child: {err}");
+                }
+            }
+        }
         // wait until command finished and collect output
         let output = child.wait_with_output().map_err(|err| err.to_string())?;
         let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
@@ -69,6 +200,15 @@ impl ResticCommand {
         if output.status.success() {
             Ok(stdout.to_string())
         } else {
+            #[cfg(target_os = "windows")]
+            if output
+                .status
+                .code()
+                .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
+            {
+                log::warn!("Restic '{:?}' command got aborted...", args);
+                return Err("Command got aborted...".to_string());
+            }
             log::warn!(
                 "Restic '{:?}' command failed with status {}:\n{}",
                 args,
@@ -83,12 +223,20 @@ impl ResticCommand {
     /// stdout to the given target file.
     /// when @param command_group is some, all commands in the same group are
     /// killed before starting the new command.
-    pub fn run_redirected(
+    pub fn run_redirected<C: Into<Option<&'static str>>>(
         &self,
         location: Location,
         args: Vec<&str>,
         file: fs::File,
+        command_group: C,
     ) -> Result<(), String> {
+        // kill all other running restic commands in the same group
+        let command_group = command_group.into();
+        if let Some(command_group) = command_group {
+            if let Err(err) = terminate_all_commands_in_group(command_group) {
+                log::error!("Failed to kill process childs: {err}");
+            }
+        }
         // start a new restic command
         let args = Self::args(args, &location);
         let envs = Self::environment_values(&location);
@@ -99,12 +247,36 @@ impl ResticCommand {
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|err| err.to_string())?;
+        // register child id with command group
+        let child_id = child.id();
+        if let Some(command_group) = command_group {
+            if let Err(err) = add_command_to_group(command_group, child_id) {
+                log::error!("Failed to add process child: {err}");
+            }
+        }
+        // unregister child id with command group
+        defer! {
+            if let Some(command_group) = command_group {
+                if let Err(err) = remove_command_from_group(command_group, child_id) {
+                    log::error!("Failed to remove process child: {err}");
+                }
+            }
+        }
         // wait until command finished and collect output
         let output = child.wait_with_output().map_err(|err| err.to_string())?;
         let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
         if output.status.success() {
             Ok(())
         } else {
+            #[cfg(target_os = "windows")]
+            if output
+                .status
+                .code()
+                .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
+            {
+                log::warn!("Restic '{:?}' command got aborted...", args);
+                return Err("Command got aborted...".to_string());
+            }
             log::warn!(
                 "Restic '{:?}' command failed with status {}:\n{}",
                 args,
