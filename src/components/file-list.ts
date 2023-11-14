@@ -49,17 +49,11 @@ export class ResticBrowserFileList extends MobxLitElement {
   private _grid!: Grid<restic.File> | null;
   private _recalculateColumnWidths: boolean = false;
 
+  private _actionDisposers: mobx.IReactionDisposer[] = [];
+
   constructor() {
     super();
     mobx.makeObservable(this);
-
-    // fetch file list on repo path, snapshot or root dir changes
-    mobx.reaction(
-      () => appState.repoLocation.type + ":" + appState.repoLocation.path + ":" + 
-              appState.selectedSnapshotID + ":" + this._rootPath,
-      () => this._fetchFiles(),
-      { fireImmediately: true }
-    );
 
     // bind context for renderers
     this._pathRenderer = this._pathRenderer.bind(this);
@@ -68,6 +62,27 @@ export class ResticBrowserFileList extends MobxLitElement {
     this._cTimeRenderer = this._cTimeRenderer.bind(this);
     this._mTimeRenderer = this._mTimeRenderer.bind(this);
     this._aTimeRenderer = this._aTimeRenderer.bind(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    // fetch file list on repo path, snapshot or root dir changes
+    this._actionDisposers.push(mobx.reaction(
+      () => appState.repoLocation.type + ":" + appState.repoLocation.path + ":" + 
+              appState.selectedSnapshotID + ":" + this._rootPath,
+      () => {
+        this._fetchFiles() 
+      },
+      { fireImmediately: true }
+    ));
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    for (let disposer of this._actionDisposers) {
+      disposer();
+    }
+    this._actionDisposers = [];
   }
 
   @mobx.action
