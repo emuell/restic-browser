@@ -30,18 +30,24 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
   private _grid!: Grid<restic.Snapshot> | null;
   private _recalculateColumnWidths: boolean = false;
 
+  private _actionDisposers: mobx.IReactionDisposer[] = [];
+
   constructor() {
     super();
+    // bind this to renderers
+    this._timeRenderer = this._timeRenderer.bind(this);
+  }
 
+  connectedCallback() {
+    super.connectedCallback();
     // request auto column width update on snapshot changes
-    mobx.reaction(
+    this._actionDisposers.push(mobx.reaction(
       () => appState.snapShots, 
       () => {
         this._recalculateColumnWidths = true;
       }, 
       { fireImmediately: true }
-    );
-   
+    ));
     // sync selection changes with appState
     const updateGridSelectionFromAppState = () => {
       const selectedSnapshot = appState.snapShots.find(v => v.id == appState.selectedSnapshotID);
@@ -49,15 +55,15 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         this._selectedItems = [selectedSnapshot];
       }
     };
-    mobx.reaction(
+    this._actionDisposers.push(mobx.reaction(
       () => appState.selectedSnapshotID, 
       () => {
         // when switching snapshot ids, update the selection in our grid
        updateGridSelectionFromAppState(); 
       }, 
       { fireImmediately: true }
-    );    
-    mobx.reaction(
+    ));    
+    this._actionDisposers.push(mobx.reaction(
       () => appState.isLoadingSnapshots > 0, 
       (isLoading: boolean) => {
         // when loading finished, this is the first time the grid actually is shown
@@ -66,10 +72,15 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         }
       }, 
       { fireImmediately: false }
-    );
-    
-    // bind this to renderers
-    this._timeRenderer = this._timeRenderer.bind(this);
+    ));
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    for (let disposer of this._actionDisposers) {
+      disposer();
+    }
+    this._actionDisposers = [];
   }
 
   private _activeItemChanged(e: GridActiveItemChangedEvent<restic.Snapshot>) {
