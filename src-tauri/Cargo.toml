@@ -15,21 +15,36 @@ tauri-build = { version = "^1.5", features = [] }
 [dependencies]
 
 # common
+lazy_static = { version = "^1.4" }
+scopeguard = { version = "1.2.0" }
 serde_json = "^1.0"
 serde = { version = "^1.0", features = ["derive"] }
-log = { version = "^0.4", features = ["max_level_debug", "release_max_level_info"] }
+log = { version = "^0.4", features = [
+    "max_level_debug",
+    "release_max_level_info",
+] }
 simplelog = { version = "^0.12" }
 anyhow = { version = "^1.0" }
 which = { version = "^4.0" }
 open = { version = "^5.0" }
 shlex = { version = "^1.2" }
 
-#tauri
-tauri = { version = "^1.5", features = [ "fs-all", "dialog-all", "cli"] }
+# tauri
+tauri = { version = "^1.5", features = ["fs-all", "dialog-all", "cli"] }
 tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+
+# windows
+[target.'cfg(target_os = "windows")'.dependencies.windows-sys]
+version = "^0.48"
+features = ["Win32_Foundation", "Win32_System_Threading"]
+
+# posix
+[target.'cfg(not(target_os = "windows"))'.dependencies.nix]
+version = "^0.27"
+features = ["process", "signal"]
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
 # If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
 # DO NOT REMOVE!!
-custom-protocol = [ "tauri/custom-protocol" ]
+custom-protocol = ["tauri/custom-protocol"]

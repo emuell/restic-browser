@@ -1,24 +1,27 @@
-use std::{collections::HashSet, fs, path, sync::RwLock};
+use std::{collections::HashSet, fs, path::PathBuf, sync::RwLock};
 
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
-use crate::restic::*;
+use crate::restic::{self};
 
 // -------------------------------------------------------------------------------------------------
 
-// internal app state
+/// Internal app state.
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
-    restic: ResticCommand,
-    location: Location,
+    restic: restic::Program,
+    location: restic::Location,
     snapshot_ids: HashSet<String>,
-    temp_dir: String,
+    temp_dir: PathBuf,
 }
 
 impl AppState {
-    pub fn new(restic: ResticCommand, location: Location, temp_dir: &str) -> Self {
+    pub fn new(
+        restic: restic::Program,
+        location: restic::Location,
+        temp_dir: PathBuf,
+    ) -> Self {
         let snapshot_ids = HashSet::default();
-        let temp_dir = temp_dir.to_owned();
         Self {
             restic,
             location,
@@ -27,22 +30,22 @@ impl AppState {
         }
     }
 
-    pub fn temp_dir(&self) -> &str {
+    pub fn temp_dir(&self) -> &PathBuf {
         &self.temp_dir
     }
 
     pub fn verify_restic_path(&self) -> Result<(), String> {
-        if self.restic.path.is_empty() {
+        if self.restic.path.as_os_str().is_empty() {
             return Err("No restic executable set".to_string());
-        } else if !path::Path::new(&self.restic.path).exists() {
+        } else if !self.restic.path.exists() {
             return Err(format!(
                 "Restic executable '{}' does not exist or can not be accessed.",
-                self.restic.path
+                self.restic.path.to_string_lossy()
             ));
         } else if self.restic.version == [0, 0, 0] {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
-                self.restic.path
+                self.restic.path.to_string_lossy()
             ));
         }
         Ok(())
@@ -63,20 +66,22 @@ impl AppState {
     }
 }
 
-// send + sync app state as passed to taury
+// -------------------------------------------------------------------------------------------------
+
+/// Send + sync app state, as held and passed by tauri.
 pub struct SharedAppState {
     state: RwLock<AppState>,
 }
 
 impl SharedAppState {
-    // create a new shared app state from an "unshared" app state
+    /// Create a new shared app state from an "unshared" app state.
     pub fn new(app_state: AppState) -> Self {
         Self {
             state: RwLock::new(app_state),
         }
     }
 
-    // return a copy of the current app state
+    /// return a copy of the current app state.
     pub fn get(&self) -> Result<AppState, String> {
         let state = self
             .state
@@ -85,8 +90,8 @@ impl SharedAppState {
         Ok(state.clone())
     }
 
-    // update restic property in the shared app state
-    fn update_restic(&self, restic: ResticCommand) -> Result<(), String> {
+    /// update restic property in the shared app state.
+    fn update_restic(&self, restic: restic::Program) -> Result<(), String> {
         self.state
             .try_write()
             .map_err(|err| format!("Failed to update app state: {err}"))?
@@ -94,8 +99,8 @@ impl SharedAppState {
         Ok(())
     }
 
-    // update location property in the shared app state
-    fn update_location(&self, location: Location) -> Result<(), String> {
+    /// update location property in the shared app state.
+    fn update_location(&self, location: restic::Location) -> Result<(), String> {
         self.state
             .try_write()
             .map_err(|err| format!("Failed to update app state: {err}"))?
@@ -103,7 +108,7 @@ impl SharedAppState {
         Ok(())
     }
 
-    // update snapshot_ids property in the shared app state
+    /// update snapshot_ids property in the shared app state.
     fn update_snapshot_ids(&self, snapshot_ids: HashSet<String>) -> Result<(), String> {
         self.state
             .try_write()
@@ -120,22 +125,17 @@ pub fn open_file_or_url(path: String) -> Result<(), String> {
     open::that(path).map_err(|err| err.to_string())
 }
 
-// -------------------------------------------------------------------------------------------------
-
 #[tauri::command]
-pub fn supported_repo_location_types() -> Result<Vec<LocationTypeInfo>, String> {
-    Ok(supported_location_types())
+pub fn supported_repo_location_types() -> Result<Vec<restic::LocationTypeInfo>, String> {
+    Ok(restic::supported_location_types())
 }
 
-
-// -------------------------------------------------------------------------------------------------
-
 #[tauri::command]
-pub fn default_repo_location(app_state: tauri::State<SharedAppState>) -> Result<Location, String> {
+pub fn default_repo_location(
+    app_state: tauri::State<SharedAppState>,
+) -> Result<restic::Location, String> {
     Ok(app_state.get()?.location)
 }
-
-// -------------------------------------------------------------------------------------------------
 
 #[tauri::command(async)] // NB: async! not on main thread, else the dialogs may freeze
 pub fn verify_restic_path(
@@ -144,7 +144,7 @@ pub fn verify_restic_path(
 ) -> Result<(), String> {
     // verify that restic binary is set
     let state = app_state.get()?;
-    if state.restic.path.is_empty() {
+    if !state.restic.path.exists() {
         // aks user to resolve restic path
         MessageDialogBuilder::new(
             "Restic Binary Missing",
@@ -156,14 +156,14 @@ Please select your installed restic binary manually in the following dialog.",
         let restic_path = FileDialogBuilder::new()
             .set_parent(&app_window)
             .set_title("Locate restic program")
-            .set_file_name(RESTIC_EXECTUABLE_NAME)
+            .set_file_name(restic::RESTIC_EXECTUABLE_NAME)
             .pick_file();
         log::info!(
             "Got restic binary path '{}' from user",
             restic_path.clone().unwrap_or_default().display()
         );
         if let Some(restic_path) = restic_path {
-            app_state.update_restic(ResticCommand::new(restic_path.to_string_lossy().as_ref()))?;
+            app_state.update_restic(restic::Program::new(restic_path))?;
         }
     }
     Ok(())
@@ -171,7 +171,7 @@ Please select your installed restic binary manually in the following dialog.",
 
 #[tauri::command]
 pub fn open_repository(
-    location: Location,
+    location: restic::Location,
     app_state: tauri::State<SharedAppState>,
 ) -> Result<(), String> {
     log::info!("Opening repository: '{}'...", location.path);
@@ -183,7 +183,9 @@ pub fn open_repository(
 }
 
 #[tauri::command(async)]
-pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snapshot>, String> {
+pub fn get_snapshots(
+    app_state: tauri::State<SharedAppState>,
+) -> Result<Vec<restic::Snapshot>, String> {
     // unwrap app state
     let state = app_state.get()?;
     state.verify_restic_path()?;
@@ -192,10 +194,14 @@ pub fn get_snapshots(app_state: tauri::State<SharedAppState>) -> Result<Vec<Snap
     log::info!("Fetching snapshots from repository...");
     let command_output = state
         .restic
-        .run(state.location, vec!["snapshots", "--json"])
+        .run(
+            state.location,
+            vec!["snapshots", "--json"],
+            "fetch_snapshots",
+        )
         .map_err(|err| err.to_string())?;
-    let snapshots =
-        serde_json::from_str::<Vec<Snapshot>>(&command_output).map_err(|err| err.to_string())?;
+    let snapshots = serde_json::from_str::<Vec<restic::Snapshot>>(&command_output)
+        .map_err(|err| err.to_string())?;
     // update snapshot cache
     let mut snapshot_ids = HashSet::new();
     snapshots.iter().for_each(|v| {
@@ -211,7 +217,7 @@ pub fn get_files(
     snapshot_id: String,
     path: String,
     app_state: tauri::State<SharedAppState>,
-) -> Result<Vec<File>, String> {
+) -> Result<Vec<restic::File>, String> {
     // unwrap app state
     let state = app_state.get()?;
     state.verify_restic_path()?;
@@ -225,7 +231,11 @@ pub fn get_files(
     );
     let command_output = state
         .restic
-        .run(state.location, vec!["ls", &snapshot_id, "--json", &path])
+        .run(
+            state.location,
+            vec!["ls", &snapshot_id, "--json", &path],
+            "fetch_files",
+        )
         .map_err(|err| err.to_string())?;
     let mut files = vec![];
     for line in command_output.split('\n').skip(1) {
@@ -233,7 +243,7 @@ pub fn get_files(
             // Skip first/blank/malformed lines
             continue;
         }
-        let file = serde_json::from_str::<File>(line).map_err(|err| err.to_string())?;
+        let file = serde_json::from_str::<restic::File>(line).map_err(|err| err.to_string())?;
         files.push(file);
     }
     Ok(files)
@@ -242,7 +252,7 @@ pub fn get_files(
 #[tauri::command(async)]
 pub fn dump_file(
     snapshot_id: String,
-    file: File,
+    file: restic::File,
     app_state: tauri::State<SharedAppState>,
     app_window: tauri::Window,
 ) -> Result<String, String> {
@@ -262,9 +272,9 @@ pub fn dump_file(
     }
     let target_folder = folder.unwrap();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(&target_folder).join(file.name.clone() + ".zip")
+        target_folder.join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(&target_folder).join(file.name.clone())
+        target_folder.join(file.name.clone())
     };
     // confirm overwriting
     if target_file_name.exists() {
@@ -300,6 +310,7 @@ Are you sure that you want to overwrite the existing file?",
             state.location,
             vec!["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())
@@ -308,7 +319,7 @@ Are you sure that you want to overwrite the existing file?",
 #[tauri::command(async)]
 pub fn dump_file_to_temp(
     snapshot_id: String,
-    file: File,
+    file: restic::File,
     app_state: tauri::State<SharedAppState>,
     _app_window: tauri::Window,
 ) -> Result<String, String> {
@@ -318,11 +329,10 @@ pub fn dump_file_to_temp(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // set target file name
-    let target_folder = state.temp_dir();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(target_folder).join(file.name.clone() + ".zip")
+        state.temp_dir().join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(target_folder).join(file.name.clone())
+        state.temp_dir().join(file.name.clone())
     };
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
@@ -338,6 +348,7 @@ pub fn dump_file_to_temp(
             state.location,
             vec!["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())
@@ -346,7 +357,7 @@ pub fn dump_file_to_temp(
 #[tauri::command(async)]
 pub fn restore_file(
     snapshot_id: String,
-    file: File,
+    file: restic::File,
     app_state: tauri::State<SharedAppState>,
     app_window: tauri::Window,
 ) -> Result<String, String> {
@@ -364,8 +375,7 @@ pub fn restore_file(
         // user cancelled dialog
         return Ok("".to_string());
     }
-    let target_folder = folder.unwrap();
-    let target_file_name = path::Path::new(&target_folder).join(file.name.clone());
+    let target_file_name = folder.unwrap().join(file.name.clone());
     if target_file_name.exists() {
         // confirm overwriting
         let confirmed = ask(
@@ -402,6 +412,7 @@ Are you sure that you want to overwrite the existing file(s)?",
                 "--include",
                 &file.path,
             ],
+            None,
         )
         .map_err(|err| err.to_string())?;
     Ok(target_file_name.to_string_lossy().to_string())

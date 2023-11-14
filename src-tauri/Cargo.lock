@@ -1657,6 +1657,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 
 [[package]]
+name = "nix"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eb04e9c688eff1c89d72b407f168cf79bb9e867a9d3323ed6c01519eb9cc053"
+dependencies = [
+ "bitflags 2.4.0",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2276,8 +2287,11 @@ name = "restic-browser"
 version = "0.3.0-beta.0"
 dependencies = [
  "anyhow",
+ "lazy_static",
  "log",
+ "nix",
  "open",
+ "scopeguard",
  "serde",
  "serde_json",
  "shlex",
@@ -2286,6 +2300,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-window-state",
  "which",
+ "windows-sys",
 ]
 
 [[package]]
