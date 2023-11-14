@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, path, sync::RwLock};
+use std::{collections::HashSet, fs, path::PathBuf, sync::RwLock};
 
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
@@ -12,13 +12,12 @@ pub struct AppState {
     restic: ResticCommand,
     location: Location,
     snapshot_ids: HashSet<String>,
-    temp_dir: String,
+    temp_dir: PathBuf,
 }
 
 impl AppState {
-    pub fn new(restic: ResticCommand, location: Location, temp_dir: &str) -> Self {
+    pub fn new(restic: ResticCommand, location: Location, temp_dir: PathBuf) -> Self {
         let snapshot_ids = HashSet::default();
-        let temp_dir = temp_dir.to_owned();
         Self {
             restic,
             location,
@@ -27,22 +26,22 @@ impl AppState {
         }
     }
 
-    pub fn temp_dir(&self) -> &str {
+    pub fn temp_dir(&self) -> &PathBuf {
         &self.temp_dir
     }
 
     pub fn verify_restic_path(&self) -> Result<(), String> {
-        if self.restic.path.is_empty() {
+        if self.restic.path.as_os_str().is_empty() {
             return Err("No restic executable set".to_string());
-        } else if !path::Path::new(&self.restic.path).exists() {
+        } else if !self.restic.path.exists() {
             return Err(format!(
                 "Restic executable '{}' does not exist or can not be accessed.",
-                self.restic.path
+                self.restic.path.to_string_lossy()
             ));
         } else if self.restic.version == [0, 0, 0] {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
-                self.restic.path
+                self.restic.path.to_string_lossy()
             ));
         }
         Ok(())
@@ -62,6 +61,8 @@ impl AppState {
         Ok(())
     }
 }
+
+// -------------------------------------------------------------------------------------------------
 
 // send + sync app state as passed to taury
 pub struct SharedAppState {
@@ -120,22 +121,15 @@ pub fn open_file_or_url(path: String) -> Result<(), String> {
     open::that(path).map_err(|err| err.to_string())
 }
 
-// -------------------------------------------------------------------------------------------------
-
 #[tauri::command]
 pub fn supported_repo_location_types() -> Result<Vec<LocationTypeInfo>, String> {
     Ok(supported_location_types())
 }
 
-
-// -------------------------------------------------------------------------------------------------
-
 #[tauri::command]
 pub fn default_repo_location(app_state: tauri::State<SharedAppState>) -> Result<Location, String> {
     Ok(app_state.get()?.location)
 }
-
-// -------------------------------------------------------------------------------------------------
 
 #[tauri::command(async)] // NB: async! not on main thread, else the dialogs may freeze
 pub fn verify_restic_path(
@@ -144,7 +138,7 @@ pub fn verify_restic_path(
 ) -> Result<(), String> {
     // verify that restic binary is set
     let state = app_state.get()?;
-    if state.restic.path.is_empty() {
+    if !state.restic.path.exists() {
         // aks user to resolve restic path
         MessageDialogBuilder::new(
             "Restic Binary Missing",
@@ -163,7 +157,7 @@ Please select your installed restic binary manually in the following dialog.",
             restic_path.clone().unwrap_or_default().display()
         );
         if let Some(restic_path) = restic_path {
-            app_state.update_restic(ResticCommand::new(restic_path.to_string_lossy().as_ref()))?;
+            app_state.update_restic(ResticCommand::new(restic_path))?;
         }
     }
     Ok(())
@@ -262,9 +256,9 @@ pub fn dump_file(
     }
     let target_folder = folder.unwrap();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(&target_folder).join(file.name.clone() + ".zip")
+        target_folder.join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(&target_folder).join(file.name.clone())
+        target_folder.join(file.name.clone())
     };
     // confirm overwriting
     if target_file_name.exists() {
@@ -318,11 +312,10 @@ pub fn dump_file_to_temp(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // set target file name
-    let target_folder = state.temp_dir();
     let target_file_name = if file.type_ == "dir" {
-        path::Path::new(target_folder).join(file.name.clone() + ".zip")
+        state.temp_dir().join(file.name.clone() + ".zip")
     } else {
-        path::Path::new(target_folder).join(file.name.clone())
+        state.temp_dir().join(file.name.clone())
     };
     let target_file = fs::File::create(target_file_name.clone())
         .map_err(|err| format!("Failed to create target file: {err}"))?;
@@ -364,8 +357,7 @@ pub fn restore_file(
         // user cancelled dialog
         return Ok("".to_string());
     }
-    let target_folder = folder.unwrap();
-    let target_file_name = path::Path::new(&target_folder).join(file.name.clone());
+    let target_file_name = folder.unwrap().join(file.name.clone());
     if target_file_name.exists() {
         // confirm overwriting
         let confirmed = ask(
