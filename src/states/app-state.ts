@@ -140,21 +140,25 @@ class AppState {
   // open the current repository and populate snapshots
   @mobx.action
   openRepository(): void {
-    ++this.isLoadingSnapshots;
-    this.repoError = "";
     let location = new restic.Location(this.repoLocation);
     if (!location.password && this.repoPassword) {
       location.password = this.repoPassword;
-    }
+    }    
+    ++this.isLoadingSnapshots;
+    this.selectedSnapshotID = "";
+    this.snapShots = [];
+    this.repoError = "";
     resticApp.openRepository(location)
       .then(() => resticApp.getSnapshots())
       .then(mobx.action((result) => {
         this.repoError = "";
         this.snapShots = result;
         if (!result.find((s) => s.short_id === this.selectedSnapshotID)) {
-          this.selectedSnapshotID = "";
           if (result.length) { // select most recent
             this.selectedSnapshotID = result[result.length - 1].id;
+          }
+          else {
+            this.selectedSnapshotID = "";
           }
         }
         this._filesCache.clear();
@@ -171,12 +175,9 @@ class AppState {
   // select a new snapshot
   @mobx.action
   setNewSnapshotId(id: string): void {
-    if (id && this.snapShots.findIndex((s) => s.id === id) !== -1) {
-      this.selectedSnapshotID = id;
-    }
-    else {
-      this.selectedSnapshotID = "";
-    }
+    console.assert(this.snapShots.find((s) => s.id === id) !== undefined, 
+      "Trying to select an invalid snapshot");
+    this.selectedSnapshotID = id;
   }
 
   // fetch files at \param rootPath in the selected snapshot
