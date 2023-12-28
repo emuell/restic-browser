@@ -108,14 +108,12 @@ impl Location {
     fn set_prefix_from_path(&mut self) {
         self.prefix = "".to_string();
         for location_info in supported_location_types() {
-            if self
+            if let Some(stripped_path) = self
                 .path
-                .starts_with(&(location_info.prefix.to_string() + ":"))
+                .strip_prefix(&(location_info.prefix.to_string() + ":"))
             {
                 self.prefix = location_info.prefix.to_string();
-                self.path = self
-                    .path
-                    .replacen(&(location_info.prefix.to_string() + ":"), "", 0);
+                self.path = stripped_path.trim().to_string();
                 for credential in location_info.credentials {
                     self.credentials.push(EnvValue {
                         name: credential.to_string(),
