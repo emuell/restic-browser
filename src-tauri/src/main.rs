@@ -54,14 +54,28 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     // initialize
     CombinedLogger::init(loggers).unwrap_or_else(|err| eprintln!("Failed to create logger: {err}"));
 
+    // common bin directories on macOS
+    #[cfg(target_os = "macos")]
+    let common_path = format!(
+        "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
+        env::var("HOME").unwrap_or("~".into())
+    );
+
     // get restic from args or find restic in path
     let mut restic_path = None;
+    let mut rclone_path = None;
     match app.get_cli_matches() {
         Ok(matches) => {
             if let Some(arg) = matches.args.get("restic") {
                 restic_path = arg.value.as_str().map(PathBuf::from);
                 if let Some(ref path) = restic_path {
                     log::info!("Got restic as arg {}", path.to_string_lossy());
+                }
+            }
+            if let Some(arg) = matches.args.get("rclone") {
+                rclone_path = arg.value.as_str().map(PathBuf::from);
+                if let Some(ref path) = rclone_path {
+                    log::info!("Got rclone as arg {}", path.to_string_lossy());
                 }
             }
         }
@@ -79,11 +93,8 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         if restic_path.is_none() {
             if let Ok(restic) = which_in(
                 restic::RESTIC_EXECTUABLE_NAME,
-                Some(format!(
-                    "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
-                    env::var("HOME").unwrap_or("~".to_string())
-                )),
-                "/",
+                Some(common_path.clone()),
+                env::current_dir().unwrap_or("/".into()),
             ) {
                 restic_path = Some(restic.clone());
                 log::info!(
@@ -94,6 +105,22 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         }
         if restic_path.is_none() {
             log::warn!("Failed to resolve restic binary");
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    // on macOS, try to resolve rclone path in common PATH if it can't be found in path
+    if rclone_path.is_none() && which(restic::RCLONE_EXECTUABLE_NAME).is_err() {
+        if let Ok(rclone) = which_in(
+            restic::RCLONE_EXECTUABLE_NAME,
+            Some(common_path),
+            env::current_dir().unwrap_or("/".into()),
+        ) {
+            rclone_path = Some(rclone.clone());
+            log::info!(
+                "Found rclone binary in common PATH at '{}'",
+                rclone.to_string_lossy()
+            );
         }
     }
 
@@ -126,7 +153,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     // create new app state
     app.manage(app::SharedAppState::new(app::AppState::new(
-        restic::Program::new(restic_path.unwrap_or(PathBuf::new())),
+        restic::Program::new(restic_path.unwrap_or_default(), rclone_path),
         location,
         temp_dir,
     )));

@@ -16,11 +16,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(
-        restic: restic::Program,
-        location: restic::Location,
-        temp_dir: PathBuf,
-    ) -> Self {
+    pub fn new(restic: restic::Program, location: restic::Location, temp_dir: PathBuf) -> Self {
         let snapshot_ids = HashSet::default();
         Self {
             restic,
@@ -35,17 +31,17 @@ impl AppState {
     }
 
     pub fn verify_restic_path(&self) -> Result<(), String> {
-        if self.restic.path.as_os_str().is_empty() {
+        if self.restic.restic_path.as_os_str().is_empty() {
             return Err("No restic executable set".to_string());
-        } else if !self.restic.path.exists() {
+        } else if !self.restic.restic_path.exists() {
             return Err(format!(
                 "Restic executable '{}' does not exist or can not be accessed.",
-                self.restic.path.to_string_lossy()
+                self.restic.restic_path.to_string_lossy()
             ));
         } else if self.restic.version == [0, 0, 0] {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
-                self.restic.path.to_string_lossy()
+                self.restic.restic_path.to_string_lossy()
             ));
         }
         Ok(())
@@ -144,7 +140,7 @@ pub fn verify_restic_path(
 ) -> Result<(), String> {
     // verify that restic binary is set
     let state = app_state.get()?;
-    if !state.restic.path.exists() {
+    if !state.restic.restic_path.exists() {
         // aks user to resolve restic path
         MessageDialogBuilder::new(
             "Restic Binary Missing",
@@ -163,7 +159,7 @@ Please select your installed restic binary manually in the following dialog.",
             restic_path.clone().unwrap_or_default().display()
         );
         if let Some(restic_path) = restic_path {
-            app_state.update_restic(restic::Program::new(restic_path))?;
+            app_state.update_restic(restic::Program::new(restic_path, state.restic.rclone_path))?;
         }
     }
     Ok(())

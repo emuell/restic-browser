@@ -1,5 +1,7 @@
 use std::{
+    borrow::Cow,
     collections::HashMap,
+    ffi::{OsStr, OsString},
     fs,
     path::PathBuf,
     process::{Command, Output, Stdio},
@@ -15,8 +17,15 @@ use crate::restic::*;
 
 #[cfg(target_os = "windows")]
 pub static RESTIC_EXECTUABLE_NAME: &str = "restic.exe";
+#[cfg(target_os = "windows")]
+#[allow(dead_code)]
+pub static RCLONE_EXECTUABLE_NAME: &str = "rclone.exe";
+
 #[cfg(not(target_os = "windows"))]
 pub static RESTIC_EXECTUABLE_NAME: &str = "restic";
+#[cfg(not(target_os = "windows"))]
+#[allow(dead_code)]
+pub static RCLONE_EXECTUABLE_NAME: &str = "rclone";
 
 /// Exit code a process gets killed with via kill_process_with_id.
 #[cfg(target_os = "windows")]
@@ -146,16 +155,18 @@ pub fn new_command(program: &PathBuf) -> Command {
 /// Restic command executable wrapper.
 #[derive(Debug, Default, Clone)]
 pub struct Program {
-    pub version: [i32; 3], // major, minor, rev
-    pub path: PathBuf,     // path to the restic executable
+    pub version: [i32; 3],            // restic version [major, minor, rev]
+    pub restic_path: PathBuf,         // path to the restic executable
+    pub rclone_path: Option<PathBuf>, // optional path to rclone executable
 }
 
 impl Program {
     /// Create a new Restic program with the given path.
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(restic_path: PathBuf, rclone_path: Option<PathBuf>) -> Self {
         Self {
-            version: Self::version(&path),
-            path,
+            version: Self::version(&restic_path),
+            restic_path,
+            rclone_path,
         }
     }
 
@@ -176,9 +187,9 @@ impl Program {
             }
         }
         // start a new restic command
-        let args = Self::args(args, &location);
-        let envs = Self::envs(&location);
-        let child = new_command(&self.path)
+        let args = self.args(args, &location);
+        let envs = self.envs(&location);
+        let child = new_command(&self.restic_path)
             .envs(envs)
             .args(args.clone())
             .stdout(Stdio::piped())
@@ -229,9 +240,9 @@ impl Program {
             }
         }
         // start a new restic command
-        let args = Self::args(args, &location);
-        let envs = Self::envs(&location);
-        let child = new_command(&self.path)
+        let args = self.args(args, &location);
+        let envs = self.envs(&location);
+        let child = new_command(&self.restic_path)
             .envs(envs)
             .args(args.clone())
             .stdout(std::process::Stdio::from(file))
@@ -263,7 +274,7 @@ impl Program {
     }
 
     /// Log and return error from a restic run command.
-    fn handle_run_error(args: Vec<&str>, output: Output) -> String {
+    fn handle_run_error<S: AsRef<OsStr> + std::fmt::Debug>(args: Vec<S>, output: Output) -> String {
         // guess if this is a command which got aborted
         #[cfg(target_os = "windows")]
         if output
@@ -330,18 +341,28 @@ impl Program {
     }
 
     // Create restic specific args for the given base args and location.
-    fn args<'a>(args: Vec<&'a str>, location: &Location) -> Vec<&'a str> {
-        if location.insecure_tls {
-            let mut args = args.clone();
-            args.push("--insecure-tls");
-            args
-        } else {
-            args
+    fn args<'a>(&self, args: Vec<&'a str>, location: &Location) -> Vec<Cow<'a, OsStr>> {
+        let mut args = args
+            .into_iter()
+            .map(|s| Cow::Borrowed(OsStr::new(s)))
+            .collect::<Vec<_>>();
+        if location.prefix.starts_with("rclone") {
+            if let Some(rclone_path) = &self.rclone_path {
+                args.push(Cow::Borrowed(OsStr::new("--option")));
+                args.push(Cow::Owned(OsString::from(format!(
+                    "rclone.program={}",
+                    &rclone_path.to_str().unwrap_or("[invalid path]")
+                ))));
+            }
         }
+        if location.insecure_tls {
+            args.push(Cow::Borrowed(OsStr::new("--insecure-tls")));
+        }
+        args
     }
 
     // Create restic specific environment variables for the given location
-    fn envs(location: &Location) -> HashMap<String, String> {
+    fn envs(&self, location: &Location) -> HashMap<String, String> {
         let mut envs = HashMap::new();
         if !location.path.is_empty() {
             if !location.prefix.is_empty() {

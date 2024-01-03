@@ -60,6 +60,11 @@
           "longDescription": "ABS path to the restic executable that should be used. (default: find in $PATH)"
         },
         {
+          "name": "rclone",
+          "takesValue": true,
+          "longDescription": "ABS path to the rclone executable that should be used for rclone locations. (default: 'rclone')"
+        },
+        {
           "name": "repo",
           "short": "r",
           "takesValue": true,
