@@ -43,6 +43,46 @@ The UI is navigatable via keyboard shortcuts. To change the focus area, hit `Tab
 - `r`: Restore selected file or folder
 
 
+## Arguments
+
+### Usage
+```
+Restic-Browser [OPTIONS]
+```
+
+### Options
+```
+-h, --help
+    Print help information
+
+--insecure-tls
+    skip TLS certificate verification when connecting to the repo (insecure)
+
+--password <password>
+    password for the repository - NOT RECOMMENDED - USE password-file/command instead. (default: $RESTIC_PASSWORD)
+
+--password-command <password-command>
+    shell command to obtain the repository password from (default: $RESTIC_PASSWORD_COMMAND)
+  
+--password-file <password-file>
+    file to read the repository password from (default: $RESTIC_PASSWORD_FILE)
+
+-r, --repo <repo>
+    repository to show or restore from (default: $RESTIC_REPOSITORY)
+
+--rclone <rclone>
+    ABS path to the rclone executable that should be used for rclone locations. (default: 'rclone')
+
+--repository-file <repository-file>
+    file to read the repository location from (default: $RESTIC_REPOSITORY_FILE)
+
+--restic <restic>
+    ABS path to the restic executable that should be used. (default: find in $PATH)
+
+-V, --version
+    Print version information
+```
+
 ## System Requirements
 
 #### All platforms
