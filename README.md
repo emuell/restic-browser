@@ -90,7 +90,7 @@ Restic-Browser [OPTIONS]
   On MacOS, where setting the PATH for desktop applications is a really hard thing to do, the restic executable will also be found if it's in one of the following folders: `/usr/local/bin, /opt/local/bin, /opt/homebrew/bin, ~/bin`.
 
 #### Windows:
-- Windows 10 or later with [WebView2 Runtime](https://developer.microsoft.com/de-de/microsoft-edge/webview2/#download-section)
+- Windows 10 or later with [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/#download-section)
 #### MacOS:
 - macOS 10.13 or later
 #### Linux:
