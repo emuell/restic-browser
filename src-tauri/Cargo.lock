@@ -2284,7 +2284,7 @@ checksum = "56d84fdd47036b038fc80dd333d10b6aab10d5d31f4a366e20014def75328d33"
 
 [[package]]
 name = "restic-browser"
-version = "0.3.0-beta.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "lazy_static",
