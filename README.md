@@ -106,7 +106,7 @@ Restic-Browser [OPTIONS]
 * Make sure [npm](https://nodejs.org/en/download) *Node v18 LTS* is installed.
 * Install [restic](https://github.com/restic/restic/releases/) and make sure it is included in your $PATH. 
   
-Note: installing the tauri CLI via cargo is not necessary. Tauri can be lunched through npm (see below). 
+Note: installing the tauri CLI via cargo is not necessary. Tauri can be launched through npm (see below). 
 
 ### Front-end and App Development
 
