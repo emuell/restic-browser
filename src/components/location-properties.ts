@@ -23,6 +23,30 @@ import '@vaadin/notification';
 // -------------------------------------------------------------------------------------------------
 
 /**
+ * Location credentials display types. Defaults to Password.
+ */
+
+enum CredentialDisplayType {
+  Password,
+  Text,
+  File
+};
+
+const credentialDisplayTypes = new Map([
+  ["AWS_ACCESS_KEY_ID", CredentialDisplayType.Text], 
+  ["AZURE_ACCOUNT_NAME", CredentialDisplayType.Text], 
+  ["B2_ACCOUNT_ID", CredentialDisplayType.Text], 
+  ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text], 
+  ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File], 
+]);
+
+const credentialFileFilters = new Map([
+  ["GOOGLE_APPLICATION_CREDENTIALS", [{name: "json", extensions: ["json"]}]]
+]);
+
+// -------------------------------------------------------------------------------------------------
+
+/**
  * Location properties form, part of the location dialog.
  */
 
@@ -52,6 +76,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
 
     // bind this to callbacks
     this._browseLocalRepositoryPath = this._browseLocalRepositoryPath.bind(this);
+    this._browseCredentialsPath = this._browseCredentialsPath.bind(this);
     this._readRepositoryPasswordFile = this._readRepositoryPasswordFile.bind(this);
   }
 
@@ -97,17 +122,51 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
             }
           </vaadin-text-field>
         </vaadin-horizontal-layout>
-        ${this._location.credentials.map((value) => html`
-          <vaadin-password-field 
-            label=${value.name}
-            required
-            .disabled=${! this.allowEditing}
-            value=${value.value}
-            @change=${mobx.action((event: CustomEvent) => {
-              value.value = (event.target as HTMLInputElement).value;
-            })}>
-          </vaadin-password-field>
-        `)}
+        ${this._location.credentials.map((value) => { 
+          switch (credentialDisplayTypes.get(value.name)) {
+            default:
+            case CredentialDisplayType.Password:
+              return html`
+                <vaadin-password-field 
+                  label=${value.name}
+                  required
+                  .disabled=${! this.allowEditing}
+                  value=${value.value}
+                  @change=${mobx.action((event: CustomEvent) => {
+                    value.value = (event.target as HTMLInputElement).value;
+                  })}>`;
+            case CredentialDisplayType.Text:
+              return html`
+                <vaadin-text-field 
+                  label=${value.name}
+                  required
+                  .disabled=${! this.allowEditing}
+                  value=${value.value}
+                  @change=${mobx.action((event: CustomEvent) => {
+                    value.value = (event.target as HTMLInputElement).value;
+                  })}>`;
+            case CredentialDisplayType.File:
+              return html`
+                <vaadin-horizontal-layout style="width: 24rem">
+                  <vaadin-text-field 
+                    style="width: 100%; margin-right: 4px;"
+                    label=${value.name}
+                    required
+                    .disabled=${! this.allowEditing}
+                    value=${value.value}
+                    @change=${mobx.action((event: CustomEvent) => {
+                      value.value = (event.target as HTMLInputElement).value;
+                    })}>
+                  </vaadin-text-field>
+                  ${this.allowEditing
+                      ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+                                @click=${() => this._browseCredentialsPath(value.name)}>Browse</vaadin-button>`
+                      : nothing
+                    }
+                </vaadin-horizontal-layout>
+              `;
+          }
+        })}
         <vaadin-horizontal-layout style="width: 24rem">
           <vaadin-password-field
             style="width: 100%; margin-right: 4px;"
@@ -160,9 +219,42 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           }
         }
         if (directory != null) {
-          mobx.action((directory: string) => {
-            this._location.path = directory;
-          })(directory);
+          mobx.runInAction(() => {
+            this._location.path = directory as string;
+          });
+        }
+      })
+      .catch((err) => {
+        Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
+          position: 'bottom-center',
+          theme: "error"
+        });
+      });
+  }
+
+  private _browseCredentialsPath(credential_name: string) {
+    open({
+      directory: false,
+      multiple: false,
+      filters: credentialFileFilters.get(credential_name),
+      title: "Please select a google application credentials JSON file"
+    })
+      .then((file) => {
+        if (Array.isArray(file)) {
+          if (file.length > 0) {
+            file = file[0];
+          } else {
+            file = null;
+          }
+        }
+        if (file != null) {
+          mobx.runInAction(() => {
+            let credential = this._location.credentials.find(
+              (item) => item.name == credential_name);
+            if (credential) {
+              credential.value = file as string;
+            }
+          });
         }
       })
       .catch((err) => {
