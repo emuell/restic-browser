@@ -42,6 +42,11 @@ export class ResticBrowserApp extends MobxLitElement {
        width: 100vw; 
        height: 100%;
     }
+    #error {
+       height: 100%;
+       align-items: center;
+       justify-content: center;
+    }
     #footer {
       height: auto;
     }
@@ -99,10 +104,12 @@ export class ResticBrowserApp extends MobxLitElement {
             .refreshRepositoryClick=${() => appState.openRepository() }
           >
           </restic-browser-app-header>
-          <restic-browser-error-message 
-              type=${appState.repoError ? "error" : "info"} 
-              message=${errorMessage}>
-          </restic-browser-error-message>
+          <vaadin-horizontal-layout id="error">
+            <restic-browser-error-message 
+                type=${appState.repoError ? "error" : "info"} 
+                message=${errorMessage}>
+            </restic-browser-error-message>
+          </vaadin-horizontal-layout>
         </vaadin-vertical-layout>
       `;
     }

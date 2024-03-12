@@ -21,7 +21,9 @@ export class ResticBrowserErrorMessage extends LitElement {
 
   static styles = css`
     #layout {
+      display: flex;
       height: 100%; 
+      width: auto;
       align-items: center; 
       justify-content: center; 
       margin-bottom: 25%;
