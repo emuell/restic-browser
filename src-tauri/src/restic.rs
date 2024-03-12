@@ -43,7 +43,7 @@ pub fn supported_location_types() -> Vec<LocationTypeInfo> {
             LocationType::GoogleCloudStorage,
             "gs",
             "Google Cloud Storage",
-            vec!["GOOGLE_ACCESS_TOKEN"],
+            vec!["GOOGLE_PROJECT_ID", "GOOGLE_APPLICATION_CREDENTIALS"],
         ),
     ]
 }
