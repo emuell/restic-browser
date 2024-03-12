@@ -1,5 +1,5 @@
 import { CSSResultGroup, css, html, nothing } from 'lit'
-import { customElement, property  } from 'lit/decorators.js'
+import { customElement, property } from 'lit/decorators.js'
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as mobx from 'mobx';
 
@@ -8,7 +8,7 @@ import { Location } from '../states/location';
 
 import { Notification } from '@vaadin/notification';
 
-import { open } from '@tauri-apps/api/dialog';
+import { DialogFilter, open } from '@tauri-apps/api/dialog';
 import { fs } from '@tauri-apps/api';
 
 import '@vaadin/horizontal-layout';
@@ -22,26 +22,25 @@ import '@vaadin/notification';
 
 // -------------------------------------------------------------------------------------------------
 
-/**
- * Location credentials display types. Defaults to Password.
- */
-
+// Credential display types.
 enum CredentialDisplayType {
   Password,
   Text,
   File
 };
 
-const credentialDisplayTypes = new Map([
-  ["AWS_ACCESS_KEY_ID", CredentialDisplayType.Text], 
-  ["AZURE_ACCOUNT_NAME", CredentialDisplayType.Text], 
-  ["B2_ACCOUNT_ID", CredentialDisplayType.Text], 
-  ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text], 
-  ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File], 
+// Known credential display types. Defaults to "Password" when undefined.
+const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
+  ["AWS_ACCESS_KEY_ID", CredentialDisplayType.Text],
+  ["AZURE_ACCOUNT_NAME", CredentialDisplayType.Text],
+  ["B2_ACCOUNT_ID", CredentialDisplayType.Text],
+  ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text],
+  ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File],
 ]);
 
-const credentialFileFilters = new Map([
-  ["GOOGLE_APPLICATION_CREDENTIALS", [{name: "json", extensions: ["json"]}]]
+// Dialog file filters for known file credentials. Defaults to "All files *.*".
+const credentialFileFilters: Map<string, DialogFilter[]> = new Map([
+  ["GOOGLE_APPLICATION_CREDENTIALS", [{ name: "json", extensions: ["json"] }]]
 ]);
 
 // -------------------------------------------------------------------------------------------------
@@ -54,7 +53,7 @@ const credentialFileFilters = new Map([
 export class ResticBrowserLocationProperties extends MobxLitElement {
 
   // when false, all form fields are disabled
-  @property({type: Boolean})
+  @property({ type: Boolean })
   allowEditing: boolean = true;
 
   // get actual edited state of the location
@@ -68,7 +67,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
   constructor() {
     super();
     mobx.makeObservable(this);
-    
+
     // initialize from app state and auto-update on changes
     mobx.autorun(() => {
       this._location.setFromOtherLocation(appState.repoLocation);
@@ -130,7 +129,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                 <vaadin-password-field 
                   label=${value.name}
                   required
-                  .disabled=${! this.allowEditing}
+                  .disabled=${!this.allowEditing}
                   value=${value.value}
                   @change=${mobx.action((event: CustomEvent) => {
                     value.value = (event.target as HTMLInputElement).value;
@@ -140,7 +139,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                 <vaadin-text-field 
                   label=${value.name}
                   required
-                  .disabled=${! this.allowEditing}
+                  .disabled=${!this.allowEditing}
                   value=${value.value}
                   @change=${mobx.action((event: CustomEvent) => {
                     value.value = (event.target as HTMLInputElement).value;
@@ -152,7 +151,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                     style="width: 100%; margin-right: 4px;"
                     label=${value.name}
                     required
-                    .disabled=${! this.allowEditing}
+                    .disabled=${!this.allowEditing}
                     value=${value.value}
                     @change=${mobx.action((event: CustomEvent) => {
                       value.value = (event.target as HTMLInputElement).value;
@@ -172,7 +171,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
             style="width: 100%; margin-right: 4px;"
             label="Repository Password"
             required
-            .disabled=${! this.allowEditing}
+            .disabled=${!this.allowEditing}
             value=${this._location.password}
             @change=${mobx.action((event: CustomEvent) => {
               this._location.password = (event.target as HTMLInputElement).value;
@@ -192,7 +191,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                    id="checkbox" 
                    label="Insecure TLS (skip TLS certificate verifications)"
                    .checked=${this._location.insecureTls}
-                   .disabled=${! this.allowEditing}
+                   .disabled=${!this.allowEditing}
                    @change=${mobx.action((event: CustomEvent) => {
                      this._location.insecureTls = (event.target as HTMLInputElement).checked;
                    })}
