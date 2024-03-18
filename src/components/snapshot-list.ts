@@ -176,7 +176,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
         <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="time" 
            .renderer=${this._timeRenderer} direction="desc"></vaadin-grid-sort-column>
         <vaadin-grid-sort-column .flexGrow=${1} path="paths"></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${1} path="tags"></vaadin-grid-sort-column>
+        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true}  path="tags"></vaadin-grid-sort-column>
         <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-sort-column>
         <!-- <vaadin-grid-sort-column path="username"></vaadin-grid-sort-column> -->
       </vaadin-grid>
