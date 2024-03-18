@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 
 // -------------------------------------------------------------------------------------------------
 
-/// Exit code a process gets killed with via kill_process_with_id.
+/// Exit code a process gets killed with via `kill_process_with_id`.
 #[cfg(target_os = "windows")]
 pub const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
 
@@ -15,7 +15,7 @@ fn terminate_process_with_id(pid: u32) -> Result<(), String> {
         Foundation::{CloseHandle, GetLastError, BOOL, FALSE, HANDLE, WIN32_ERROR},
         System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE},
     };
-    log::info!("Killing process with PID {}", pid);
+    log::info!("Killing process with PID {pid}");
 
     unsafe {
         // Open the process handle with intent to terminate
@@ -23,8 +23,7 @@ fn terminate_process_with_id(pid: u32) -> Result<(), String> {
         if handle == 0 {
             let error: WIN32_ERROR = GetLastError();
             return Err(format!(
-                "Failed to obtain handle to process {}: {:#x}",
-                pid, error
+                "Failed to obtain handle to process {pid}: {error:#x}",
             ));
         }
         // Terminate the process
@@ -33,7 +32,7 @@ fn terminate_process_with_id(pid: u32) -> Result<(), String> {
         CloseHandle(handle);
         if result == FALSE {
             let error: WIN32_ERROR = GetLastError();
-            return Err(format!("Failed to terminate process {}: {:#x}", pid, error));
+            return Err(format!("Failed to terminate process {pid}: {error:#x}"));
         }
     }
     Ok(())

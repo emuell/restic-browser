@@ -9,7 +9,11 @@ use std::{
 };
 
 use anyhow::anyhow;
-use simplelog::*;
+
+use simplelog::{
+    ColorChoice, CombinedLogger, Config, LevelFilter, SharedLogger, TermLogger, TerminalMode,
+    WriteLogger,
+};
 
 use which::which;
 #[cfg(target_os = "macos")]

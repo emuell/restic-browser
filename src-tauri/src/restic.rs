@@ -17,33 +17,33 @@ pub use snapshot::*;
 /// Currently supported location types by this backend and restic.
 pub fn supported_location_types() -> Vec<LocationTypeInfo> {
     vec![
-        LocationTypeInfo::new(LocationType::Local, "", "Local Path", vec![]),
-        LocationTypeInfo::new(LocationType::SFtp, "sftp", "SFTP", vec![]),
-        LocationTypeInfo::new(LocationType::Rest, "rest", "REST Server", vec![]),
-        LocationTypeInfo::new(LocationType::RClone, "rclone", "RCLONE", vec![]),
+        LocationTypeInfo::new(LocationType::Local, "", "Local Path", &[]),
+        LocationTypeInfo::new(LocationType::SFtp, "sftp", "SFTP", &[]),
+        LocationTypeInfo::new(LocationType::Rest, "rest", "REST Server", &[]),
+        LocationTypeInfo::new(LocationType::RClone, "rclone", "RCLONE", &[]),
         LocationTypeInfo::new(
             LocationType::AmazonS3,
             "s3",
             "Amazon S3",
-            vec!["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            &["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         ),
         LocationTypeInfo::new(
             LocationType::MSAzure,
             "azure",
             "Azure Blob Storage",
-            vec!["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
+            &["AZURE_ACCOUNT_NAME", "AZURE_ACCOUNT_KEY"],
         ),
         LocationTypeInfo::new(
             LocationType::Backblaze,
             "b2",
             "Backblaze B2",
-            vec!["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"],
+            &["B2_ACCOUNT_ID", "B2_ACCOUNT_KEY"],
         ),
         LocationTypeInfo::new(
             LocationType::GoogleCloudStorage,
             "gs",
             "Google Cloud Storage",
-            vec!["GOOGLE_PROJECT_ID", "GOOGLE_APPLICATION_CREDENTIALS"],
+            &["GOOGLE_PROJECT_ID", "GOOGLE_APPLICATION_CREDENTIALS"],
         ),
     ]
 }

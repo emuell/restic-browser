@@ -39,14 +39,14 @@ impl Location {
         // get repo from file or directly
         let path = if let Some(repository_file) = args.get("repository-file") {
             fs::read_to_string(repository_file)
-                .unwrap_or("".to_string())
+                .unwrap_or(String::new())
                 .trim_end()
                 .to_string()
         } else {
             args.get("repository")
                 .or(args.get("repo"))
                 .cloned()
-                .unwrap_or("".to_string())
+                .unwrap_or(String::new())
         };
         // get password from file, command or directly
         let password = if let Some(password_file) = args.get("password-file") {
@@ -56,7 +56,7 @@ impl Location {
                 .to_string()
         } else if let Some(password_command) = args.get("password-command") {
             let mut program_and_args = Shlex::new(password_command);
-            let program = program_and_args.next().unwrap_or("".to_string());
+            let program = program_and_args.next().unwrap_or(String::new());
             let args = program_and_args.collect::<Vec<_>>();
             if let Ok(output) = new_command(&program.into()).args(args).output() {
                 std::str::from_utf8(&output.stdout)
@@ -64,13 +64,13 @@ impl Location {
                     .trim_end()
                     .to_string()
             } else {
-                "".to_string()
+                String::new()
             }
         } else {
             args.get("password")
                 .or(args.get("pass"))
                 .cloned()
-                .unwrap_or("".to_string())
+                .unwrap_or(String::new())
         };
         // get insecure_tls option, when set
         let insecure_tls = args.contains_key("insecure-tls");
@@ -79,7 +79,7 @@ impl Location {
             path,
             password,
             credentials: vec![],
-            prefix: "".to_string(),
+            prefix: String::new(),
             insecure_tls,
         };
         // set prefix from path, when there's a path set
@@ -106,7 +106,7 @@ impl Location {
     }
 
     fn set_prefix_from_path(&mut self) {
-        self.prefix = "".to_string();
+        self.prefix = String::new();
         for location_info in supported_location_types() {
             if let Some(stripped_path) = self
                 .path
@@ -118,7 +118,7 @@ impl Location {
                     self.credentials.push(EnvValue {
                         name: credential.to_string(),
                         value: env::var(credential).unwrap_or_default(),
-                    })
+                    });
                 }
                 break;
             }

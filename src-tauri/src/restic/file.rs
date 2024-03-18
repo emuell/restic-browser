@@ -1,6 +1,6 @@
 // -------------------------------------------------------------------------------------------------
 
-/// A serializable restic file, as dumped by the restic binary via `restic ls --json``  
+/// A serializable restic file, as dumped by the restic binary via `restic ls --json`
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 pub struct File {
     pub name: String,

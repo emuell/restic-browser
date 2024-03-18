@@ -32,15 +32,13 @@ impl LocationTypeInfo {
         location_type: LocationType,
         prefix: &str,
         display_name: &str,
-        credentials: Vec<&str>,
+        credentials: &[&str],
     ) -> LocationTypeInfo {
         LocationTypeInfo {
             location_type,
             prefix: prefix.to_string(),
             display_name: display_name.to_string(),
-            credentials: credentials.iter().map(|c| c.to_string()).collect(),
+            credentials: credentials.iter().map(ToString::to_string).collect(),
         }
     }
 }
-
-
