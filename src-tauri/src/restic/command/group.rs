@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::{collections::HashMap, process::ExitStatus, sync::RwLock};
 
 use lazy_static::lazy_static;
 
@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 
 /// Exit code a process gets killed with via `kill_process_with_id`.
 #[cfg(target_os = "windows")]
-pub const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
+const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
 
 /// Tries to gracefully terminate a process with the provided process ID.
 #[cfg(target_os = "windows")]
@@ -54,6 +54,22 @@ lazy_static! {
     /// Currently running processes mapped by command group names.
     static ref RUNNING_RESTIC_COMMANDS: RwLock<HashMap<String, Vec<u32>>> =
         RwLock::new(HashMap::new());
+}
+
+// test with a command exit code if a command got aborted, probably via `terminate_all_commands_in_group`
+pub fn process_was_terminated(status: &ExitStatus) -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        status
+            .code()
+            .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        use nix::libc::SIGTERM;
+        use std::os::unix::process::ExitStatusExt;
+        status.signal().is_some_and(|status| status == SIGTERM)
+    }
 }
 
 /// Kill all running commands from the given command group.

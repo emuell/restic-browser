@@ -17,8 +17,8 @@ use crate::restic::Location;
 mod group;
 
 use group::{
-    add_command_to_group, remove_command_from_group, terminate_all_commands_in_group,
-    COMMAND_TERMINATED_EXIT_CODE,
+    add_command_to_group, process_was_terminated, remove_command_from_group,
+    terminate_all_commands_in_group,
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -234,28 +234,9 @@ impl Program {
     /// Log and return error from a restic run command.
     fn handle_run_error<S: AsRef<OsStr> + std::fmt::Debug>(args: &[S], output: &Output) -> String {
         // guess if this is a command which got aborted
-        #[cfg(target_os = "windows")]
-        if output
-            .status
-            .code()
-            .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
-        {
+        if process_was_terminated(&output.status) {
             log::info!("Restic '{:?}' command got aborted", args);
             return "Command got aborted".to_string();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            use nix::libc::SIGTERM;
-            use std::os::unix::process::ExitStatusExt;
-
-            if output
-                .status
-                .signal()
-                .is_some_and(|status| status == SIGTERM)
-            {
-                log::info!("Restic '{:?}' command got aborted", args);
-                return "Command got aborted".to_string();
-            }
         }
         // else log and return stderr as it is
         let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");
