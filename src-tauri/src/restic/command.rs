@@ -9,13 +9,17 @@ use std::{
 
 use scopeguard::defer;
 
-use crate::restic::*;
+use crate::restic::Location;
 
 // -------------------------------------------------------------------------------------------------
 
 /// Command group handling
 mod group;
-use group::*;
+
+use group::{
+    add_command_to_group, process_was_terminated, remove_command_from_group,
+    terminate_all_commands_in_group,
+};
 
 // -------------------------------------------------------------------------------------------------
 
@@ -27,7 +31,7 @@ pub fn new_command(program: &PathBuf) -> Command {
     #[allow(unused_mut)]
     let mut command = Command::new(program);
     #[cfg(target_os = "windows")]
-    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     command
 }
 
@@ -81,12 +85,12 @@ impl Program {
     }
 
     /// Run a restic command for the given location with the given args.
-    /// when @param command_group is some, all commands in the same group are
+    /// when param `command_group` is some, all commands in the same group are
     /// killed before starting the new command.
     pub fn run<C: Into<Option<&'static str>>>(
         &self,
-        location: Location,
-        args: Vec<&str>,
+        location: &Location,
+        args: &[&str],
         command_group: C,
     ) -> Result<String, String> {
         // kill all other running restic commands in the same group
@@ -97,8 +101,8 @@ impl Program {
             }
         }
         // start a new restic command
-        let args = self.args(args, &location);
-        let envs = self.envs(&location);
+        let args = self.args(args, location);
+        let envs = self.envs(location);
         let child = new_command(&self.restic_path)
             .envs(envs)
             .args(args.clone())
@@ -127,18 +131,18 @@ impl Program {
             let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
             Ok(stdout.to_string())
         } else {
-            Err(Self::handle_run_error(args, output))
+            Err(Self::handle_run_error(&args, &output))
         }
     }
 
     /// Run a restic command for the given location with the given args and redirect
     /// stdout to the given target file.
-    /// when @param command_group is some, all commands in the same group are
+    /// when @param `command_group` is some, all commands in the same group are
     /// killed before starting the new command.
     pub fn run_redirected<C: Into<Option<&'static str>>>(
         &self,
-        location: Location,
-        args: Vec<&str>,
+        location: &Location,
+        args: &[&str],
         file: fs::File,
         command_group: C,
     ) -> Result<(), String> {
@@ -150,8 +154,8 @@ impl Program {
             }
         }
         // start a new restic command
-        let args = self.args(args, &location);
-        let envs = self.envs(&location);
+        let args = self.args(args, location);
+        let envs = self.envs(location);
         let child = new_command(&self.restic_path)
             .envs(envs)
             .args(args.clone())
@@ -179,14 +183,15 @@ impl Program {
         if output.status.success() {
             Ok(())
         } else {
-            Err(Self::handle_run_error(args, output))
+            Err(Self::handle_run_error(&args, &output))
         }
     }
 
     // Create restic specific args for the given base args and location.
-    fn args<'a>(&self, args: Vec<&'a str>, location: &Location) -> Vec<Cow<'a, OsStr>> {
+    fn args<'a>(&self, args: &'a [&'a str], location: &Location) -> Vec<Cow<'a, OsStr>> {
         let mut args = args
-            .into_iter()
+            .iter()
+            .copied()
             .map(|s| Cow::Borrowed(OsStr::new(s)))
             .collect::<Vec<_>>();
         if location.prefix.starts_with("rclone") {
@@ -227,30 +232,11 @@ impl Program {
     }
 
     /// Log and return error from a restic run command.
-    fn handle_run_error<S: AsRef<OsStr> + std::fmt::Debug>(args: Vec<S>, output: Output) -> String {
+    fn handle_run_error<S: AsRef<OsStr> + std::fmt::Debug>(args: &[S], output: &Output) -> String {
         // guess if this is a command which got aborted
-        #[cfg(target_os = "windows")]
-        if output
-            .status
-            .code()
-            .is_some_and(|code| code as u32 == COMMAND_TERMINATED_EXIT_CODE)
-        {
+        if process_was_terminated(&output.status) {
             log::info!("Restic '{:?}' command got aborted", args);
             return "Command got aborted".to_string();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            use nix::libc::SIGTERM;
-            use std::os::unix::process::ExitStatusExt;
-
-            if output
-                .status
-                .signal()
-                .is_some_and(|status| status == SIGTERM)
-            {
-                log::info!("Restic '{:?}' command got aborted", args);
-                return "Command got aborted".to_string();
-            }
         }
         // else log and return stderr as it is
         let stderr = std::str::from_utf8(&output.stderr).unwrap_or("");

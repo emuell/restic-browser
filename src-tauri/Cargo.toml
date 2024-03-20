@@ -25,22 +25,22 @@ log = { version = "^0.4", features = [
 ] }
 simplelog = { version = "^0.12" }
 anyhow = { version = "^1.0" }
-which = { version = "^4.0" }
+which = { version = "^6.0" }
 open = { version = "^5.0" }
 shlex = { version = "^1.2" }
 
 # tauri
-tauri = { version = "^1.5", features = ["fs-all", "dialog-all", "cli"] }
+tauri = { version = "^1.6", features = ["fs-all", "dialog-all", "cli"] }
 tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 # windows
 [target.'cfg(target_os = "windows")'.dependencies.windows-sys]
-version = "^0.48"
+version = "^0.52"
 features = ["Win32_Foundation", "Win32_System_Threading"]
 
 # posix
 [target.'cfg(not(target_os = "windows"))'.dependencies.nix]
-version = "^0.27"
+version = "^0.28"
 features = ["process", "signal"]
 
 [features]

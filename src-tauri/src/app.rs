@@ -86,7 +86,7 @@ impl SharedAppState {
         Ok(state.clone())
     }
 
-    /// update restic property in the shared app state.
+    /// update `restic` property in the shared app state.
     fn update_restic(&self, restic: restic::Program) -> Result<(), String> {
         self.state
             .try_write()
@@ -95,7 +95,7 @@ impl SharedAppState {
         Ok(())
     }
 
-    /// update location property in the shared app state.
+    /// update `location` property in the shared app state.
     fn update_location(&self, location: restic::Location) -> Result<(), String> {
         self.state
             .try_write()
@@ -104,7 +104,7 @@ impl SharedAppState {
         Ok(())
     }
 
-    /// update snapshot_ids property in the shared app state.
+    /// update `snapshot_ids` property in the shared app state.
     fn update_snapshot_ids(&self, snapshot_ids: HashSet<String>) -> Result<(), String> {
         self.state
             .try_write()
@@ -191,19 +191,15 @@ pub fn get_snapshots(
     log::info!("Fetching snapshots from repository...");
     let command_output = state
         .restic
-        .run(
-            state.location,
-            vec!["snapshots", "--json"],
-            "fetch_snapshots",
-        )
+        .run(&state.location, &["snapshots", "--json"], "fetch_snapshots")
         .map_err(|err| err.to_string())?;
     let snapshots = serde_json::from_str::<Vec<restic::Snapshot>>(&command_output)
         .map_err(|err| err.to_string())?;
     // update snapshot cache
     let mut snapshot_ids = HashSet::new();
-    snapshots.iter().for_each(|v| {
+    for v in &snapshots {
         snapshot_ids.insert(v.id.clone());
-    });
+    }
     app_state.update_snapshot_ids(snapshot_ids)?;
     // return snapshots
     Ok(snapshots)
@@ -229,8 +225,8 @@ pub fn get_files(
     let command_output = state
         .restic
         .run(
-            state.location,
-            vec!["ls", &snapshot_id, "--json", &path],
+            &state.location,
+            &["ls", &snapshot_id, "--json", &path],
             "fetch_files",
         )
         .map_err(|err| err.to_string())?;
@@ -265,7 +261,7 @@ pub fn dump_file(
         .pick_folder();
     if folder.is_none() {
         // user cancelled dialog
-        return Ok("".to_string());
+        return Ok(String::new());
     }
     let target_folder = folder.unwrap();
     let target_file_name = if file.type_ == "dir" {
@@ -304,8 +300,8 @@ Are you sure that you want to overwrite the existing file?",
     state
         .restic
         .run_redirected(
-            state.location,
-            vec!["dump", "-a", "zip", &snapshot_id, &file.path],
+            &state.location,
+            &["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
             None,
         )
@@ -342,8 +338,8 @@ pub fn dump_file_to_temp(
     state
         .restic
         .run_redirected(
-            state.location,
-            vec!["dump", "-a", "zip", &snapshot_id, &file.path],
+            &state.location,
+            &["dump", "-a", "zip", &snapshot_id, &file.path],
             target_file,
             None,
         )
@@ -370,7 +366,7 @@ pub fn restore_file(
         .pick_folder();
     if folder.is_none() {
         // user cancelled dialog
-        return Ok("".to_string());
+        return Ok(String::new());
     }
     let target_file_name = folder.unwrap().join(file.name.clone());
     if target_file_name.exists() {
@@ -400,8 +396,8 @@ Are you sure that you want to overwrite the existing file(s)?",
     state
         .restic
         .run(
-            state.location,
-            vec![
+            &state.location,
+            &[
                 "restore",
                 &snapshot_id,
                 "--target",
