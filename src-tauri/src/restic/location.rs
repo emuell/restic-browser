@@ -40,7 +40,7 @@ impl Location {
         let path = if let Some(repository_file) = args.get("repository-file") {
             fs::read_to_string(repository_file)
                 .unwrap_or(String::new())
-                .trim_end()
+                .trim()
                 .to_string()
         } else {
             args.get("repository")
@@ -52,7 +52,7 @@ impl Location {
         let password = if let Some(password_file) = args.get("password-file") {
             fs::read_to_string(password_file)
                 .unwrap_or(String::new())
-                .trim_end()
+                .trim()
                 .to_string()
         } else if let Some(password_command) = args.get("password-command") {
             let mut program_and_args = Shlex::new(password_command);
