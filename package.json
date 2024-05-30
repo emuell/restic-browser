@@ -12,28 +12,28 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@adobe/lit-mobx": "^2.2.0",
-    "@tauri-apps/api": "^1.5.0",
-    "@vaadin/button": "^23.3.25",
-    "@vaadin/dialog": "^23.3.25",
-    "@vaadin/grid": "^23.3.25",
-    "@vaadin/horizontal-layout": "^23.3.25",
-    "@vaadin/icons": "^23.3.25",
-    "@vaadin/notification": "^23.3.25",
-    "@vaadin/password-field": "^23.3.25",
-    "@vaadin/select": "^23.3.25",
-    "@vaadin/split-layout": "^23.3.25",
-    "@vaadin/text-field": "^23.3.25",
-    "@vaadin/vertical-layout": "^23.3.25",
-    "lit": "^2.8.0",
-    "mobx": "^6.10.2",
-    "pretty-bytes": "^6.1.1"
+    "@adobe/lit-mobx": "^2.2",
+    "@tauri-apps/api": "^1.5",
+    "@vaadin/button": "^23.3",
+    "@vaadin/dialog": "^23.3",
+    "@vaadin/grid": "^23.3",
+    "@vaadin/horizontal-layout": "^23.3",
+    "@vaadin/icons": "^23.3",
+    "@vaadin/notification": "^23.3",
+    "@vaadin/password-field": "^23.3",
+    "@vaadin/select": "^23.3",
+    "@vaadin/split-layout": "^23.3",
+    "@vaadin/text-field": "^23.3",
+    "@vaadin/vertical-layout": "^23.3",
+    "lit": "^2.8",
+    "mobx": "^6.10",
+    "pretty-bytes": "^6.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.2",
-    "@types/node": "^20.10.6",
-    "typescript": "^5.2.2",
-    "vite": "^4.4.11"
+    "@tauri-apps/cli": "^1.5",
+    "@types/node": "^20.10",
+    "typescript": "^5.2",
+    "vite": "^4.5"
   },
   "vaadin": {
     "disableUsageStatistics": true
