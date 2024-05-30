@@ -277,7 +277,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         if (file != null) {
           fs.readTextFile(file).then(contents => {
             mobx.action((contents: string) => {
-              this._location.password = contents;
+              this._location.password = contents.trim();
             })(contents);
           }).catch(err => {
             Notification.show(`Failed to read password file: '${err.message || err}'`, {
