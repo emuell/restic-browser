@@ -56,7 +56,7 @@ impl Location {
                 .to_string()
         } else if let Some(password_command) = args.get("password-command") {
             let mut program_and_args = Shlex::new(password_command);
-            let program = program_and_args.next().unwrap_or(String::new());
+            let program = program_and_args.next().unwrap_or_default();
             let args = program_and_args.collect::<Vec<_>>();
             if let Ok(output) = new_command(&program.into()).args(args).output() {
                 std::str::from_utf8(&output.stdout)

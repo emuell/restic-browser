@@ -46,7 +46,7 @@ jobs:
           - {
               name: "macOS",
               executable_name: "Restic-Browser.app",
-              os: macos-11,
+              os: macos-13,
             }
 
     steps:
@@ -74,16 +74,22 @@ jobs:
           node-version: "lts/*"
           cache: "npm"
 
-      - name: Webkit Setup (Linux)
-        run: sudo apt update && sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: System dependencies (Linux)
+        run: |
+          sudo apt update
+          sudo apt install -y libgtk-3-dev libwebkit2gtk-4.0-dev
         if: ${{ matrix.config.name == 'Ubuntu' }}
 
-      - name: Install dependencies
+      - name: Node dependencies
         run: npm ci
 
-      - name: Build (Windows & Linux)
+      - name: Build (Windows)
         run: npm run tauri build
-        if: ${{ matrix.config.name != 'macOS' }}
+        if: ${{ matrix.config.name == 'Windows' }}
+
+      - name: Build (Linux)
+        run: npm run tauri build
+        if: ${{ matrix.config.name == 'Ubuntu' }}
 
       - name: Build (macOS)
         run: npm run tauri build -- --target universal-apple-darwin

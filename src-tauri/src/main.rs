@@ -38,20 +38,21 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         ColorChoice::Auto,
     )];
     // try creating a file log as well, but don't panic
-    match (|| -> Result<Box<WriteLogger<std::fs::File>>, Box<dyn std::error::Error>> {
+    let log_file_result: Result<Box<WriteLogger<std::fs::File>>, Box<dyn std::error::Error>> = {
         let log_path = app
             .path_resolver()
             .app_log_dir()
             .ok_or_else(|| anyhow!("Failed to resolve log directory"))?;
         std::fs::create_dir_all(log_path.as_path())?;
-        let mut log_file_path = log_path;
+        let mut log_file_path = log_path.clone();
         log_file_path.push("App.log");
         Ok(WriteLogger::new(
             LevelFilter::Info,
             Config::default(),
             std::fs::File::create(log_file_path.as_path())?,
         ))
-    })() {
+    };
+    match log_file_result {
         Err(err) => eprintln!("Failed to create log file: {err}"),
         Ok(logger) => loggers.push(logger),
     }
@@ -228,7 +229,7 @@ fn main() {
         if let Some(arg) = matches.args.get("help") {
             print!("{}", arg.value.as_str().unwrap());
             do_run = false;
-        } else if matches.args.get("version").is_some() {
+        } else if matches.args.contains_key("version") {
             let package = app.config().package.clone();
             println!(
                 "{} v{}",
