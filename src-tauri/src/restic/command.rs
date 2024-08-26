@@ -221,9 +221,12 @@ impl Program {
             } else {
                 envs.insert("RESTIC_REPOSITORY".to_string(), location.path.clone());
             }
+            // ensure that only RESTIC_REPOSITORY is set: restic else may use the repo file
+            envs.insert("RESTIC_REPOSITORY_FILE".to_string(), "".to_string());
         }
         if !location.password.is_empty() {
             envs.insert("RESTIC_PASSWORD".to_string(), location.password.clone());
+            envs.insert("RESTIC_PASSWORD_FILE".to_string(), "".to_string());
         }
         for credential in location.credentials.clone() {
             envs.insert(credential.name, credential.value);
