@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload Artifact (Windows)
         if: ${{ matrix.config.name == 'Windows' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-windows"
           path: ./src-tauri/target/release/*.exe
@@ -146,23 +146,38 @@ jobs:
 
       - name: Prepare Upload Artifact (Linux)
         if: ${{ matrix.config.name == 'Ubuntu' }}
-        run: cd ./src-tauri/target/release && tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
+        run: |
+          set -e
+          cd ./src-tauri/target/release
+          tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
+          cd ./bundle/appimage
+          mv *.AppImage ${{ matrix.config.executable_name }}.AppImage
 
-      - name: Upload Artifact (Linux)
+      - name: Upload Artifact (Linux, Executable)
         if: ${{ matrix.config.name == 'Ubuntu' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-linux"
           path: ./src-tauri/target/release/*.tar
           if-no-files-found: error
 
+      - name: Upload Artifact (Linux, AppImage)
+        if: ${{ matrix.config.name == 'Ubuntu' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-linux-appimage"
+          path: ./src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
       - name: Prepare Upload Artifact (macOS)
         if: ${{ matrix.config.name == 'macOS' }}
-        run: cd ./src-tauri/target/universal-apple-darwin/release/bundle/macos && tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
+        run: |
+          cd ./src-tauri/target/universal-apple-darwin/release/bundle/macos
+          tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
 
       - name: Upload Artifact (macOS)
         if: ${{ matrix.config.name == 'macOS' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "Restic-Browser-${{ needs.variables.outputs.ref_name }}-macOS"
           path: ./src-tauri/target/universal-apple-darwin/release/bundle/macos/*.tar

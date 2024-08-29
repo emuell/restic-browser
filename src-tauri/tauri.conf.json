@@ -23,7 +23,8 @@
     "bundle": {
       "active": true,
       "targets": [
-        "app"
+        "app",
+        "appimage"
       ],
       "category": "DeveloperTool",
       "copyright": "",

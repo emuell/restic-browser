@@ -66,6 +66,11 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         env::var("HOME").unwrap_or("~".into())
     );
 
+    // set PATH environment from shells in GUI apps on Linux and macOS
+    if let Err(err) = fix_path_env::fix() {
+        log::warn!("Failed to update PATH env: {}", err);
+    }
+
     // get restic from args or find restic in path
     let mut restic_path = None;
     let mut rclone_path = None;
