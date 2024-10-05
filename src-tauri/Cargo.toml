@@ -28,6 +28,8 @@ anyhow = { version = "^1.0" }
 which = { version = "^6.0" }
 open = { version = "^5.0" }
 shlex = { version = "^1.2" }
+semver = { version = "^1.0" }
+lenient_semver = { version = "^0.4" }
 
 # tauri
 tauri = { version = "^1.6", features = ["fs-all", "dialog-all", "cli"] }

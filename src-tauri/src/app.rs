@@ -38,7 +38,7 @@ impl AppState {
                 "Restic executable '{}' does not exist or can not be accessed.",
                 self.restic.restic_path().to_string_lossy()
             ));
-        } else if self.restic.restic_version() == [0, 0, 0] {
+        } else if self.restic.restic_version().is_none() {
             return Err(format!(
                 "Failed to query restic version. Is '{}' a valid restic application?",
                 self.restic.restic_path().to_string_lossy()

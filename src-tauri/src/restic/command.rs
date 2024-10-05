@@ -7,6 +7,8 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
+use semver::Version;
+
 use scopeguard::defer;
 
 use crate::restic::Location;
@@ -54,24 +56,25 @@ pub const RCLONE_EXECTUABLE_NAME: &str = "rclone";
 /// Restic command executable wrapper.
 #[derive(Debug, Default, Clone)]
 pub struct Program {
-    restic_version: [i32; 3],     // restic version [major, minor, rev]
-    restic_path: PathBuf,         // path to the restic executable
-    rclone_path: Option<PathBuf>, // optional path to rclone executable
+    restic_version: Option<Version>, // restic version
+    restic_path: PathBuf,            // path to the restic executable
+    rclone_path: Option<PathBuf>,    // optional path to rclone executable
 }
 
 impl Program {
     /// Create a new Restic program with the given path and optional path to rclone.
     pub fn new(restic_path: PathBuf, rclone_path: Option<PathBuf>) -> Self {
+        let restic_version = Self::query_restic_version(&restic_path);
         Self {
-            restic_version: Self::query_restic_version(&restic_path),
+            restic_version,
             restic_path,
             rclone_path,
         }
     }
 
     /// Restic program's versiion (major, minor, rev).
-    pub fn restic_version(&self) -> [i32; 3] {
-        self.restic_version
+    pub fn restic_version(&self) -> &Option<Version> {
+        &self.restic_version
     }
 
     /// Path to the restic executable.
@@ -253,10 +256,9 @@ impl Program {
     }
 
     /// Run restic command to query its version number.
-    fn query_restic_version(path: &PathBuf) -> [i32; 3] {
-        let mut version = [0, 0, 0];
+    fn query_restic_version(path: &PathBuf) -> Option<Version> {
         if !path.exists() {
-            return version;
+            return None;
         }
         // get version from restic binary
         match new_command(path).arg("version").output() {
@@ -266,8 +268,12 @@ impl Program {
                     let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
                     let mut name_and_version = stdout.split(' ');
                     if let Some(version_str) = name_and_version.nth(1) {
-                        for (v, s) in version.iter_mut().zip(version_str.split('.')) {
-                            *v = s.parse::<i32>().unwrap_or(0);
+                        match lenient_semver::parse(version_str) {
+                            Ok(version) => return Some(version),
+                            Err(err) => log::warn!(
+                                "Failed to parse version info from restic binary: {}",
+                                err
+                            ),
                         }
                     }
                 } else {
@@ -279,6 +285,6 @@ impl Program {
                 log::warn!("Failed to read version info from restic binary: {err}");
             }
         }
-        version
+        None
     }
 }
