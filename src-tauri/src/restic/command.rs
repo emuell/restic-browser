@@ -206,6 +206,9 @@ impl Program {
                 ))));
             }
         }
+        if location.allow_empty_password {
+            args.push(Cow::Borrowed(OsStr::new("--insecure-no-password")));
+        }
         if location.insecure_tls {
             args.push(Cow::Borrowed(OsStr::new("--insecure-tls")));
         }
@@ -215,6 +218,7 @@ impl Program {
     // Create restic specific environment variables for the given location
     fn envs(&self, location: &Location) -> HashMap<String, String> {
         let mut envs = HashMap::new();
+        // set repository
         if !location.path.is_empty() {
             if !location.prefix.is_empty() {
                 envs.insert(
@@ -227,10 +231,15 @@ impl Program {
             // ensure that only RESTIC_REPOSITORY is set: restic else may use the repo file
             envs.insert("RESTIC_REPOSITORY_FILE".to_string(), "".to_string());
         }
-        if !location.password.is_empty() {
+        // set password
+        if !location.allow_empty_password {
             envs.insert("RESTIC_PASSWORD".to_string(), location.password.clone());
-            envs.insert("RESTIC_PASSWORD_FILE".to_string(), "".to_string());
+        } else {
+            envs.insert("RESTIC_PASSWORD".to_string(), "".to_string());
         }
+        // ensure that only RESTIC_PASSWORD is set: restic else may use the password file
+        envs.insert("RESTIC_PASSWORD_FILE".to_string(), "".to_string());
+        // set all extra credentials for the location
         for credential in location.credentials.clone() {
             envs.insert(credential.name, credential.value);
         }

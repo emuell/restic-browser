@@ -2,6 +2,8 @@ use std::{collections::HashSet, fs, path::PathBuf, sync::RwLock};
 
 use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
 
+use semver::Version;
+
 use crate::restic::{self};
 
 // -------------------------------------------------------------------------------------------------
@@ -50,6 +52,22 @@ impl AppState {
     pub fn verify_location(&self) -> Result<(), String> {
         if self.location.path.is_empty() {
             return Err("No repository set".to_string());
+        }
+        if self.location.allow_empty_password
+            && self
+                .restic
+                .restic_version()
+                .as_ref()
+                .is_some_and(|v| v < &Version::new(0, 17, 0))
+        {
+            return Err(format!(
+                "Empty passwords are only supported in restic >= 0.17.0.
+Your installed binary is restic {}",
+                self.restic
+                    .restic_version()
+                    .clone()
+                    .unwrap_or_else(|| Version::new(0, 0, 0))
+            ));
         }
         Ok(())
     }
