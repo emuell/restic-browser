@@ -42,16 +42,22 @@ export namespace restic {
     prefix: string;
     path: string;
     credentials: EnvValue[];
+    allowEmptyPassword: boolean;
     password: string;
     insecureTls: boolean;
-  
+
     constructor(source: any = {}) {
       if ('string' === typeof source) source = JSON.parse(source);
-      this.prefix = source["prefix"];
-      this.path = source["path"];
+      this.prefix = source["prefix"] || "";
+      this.path = source["path"] || "";
       this.credentials = this.convertValues(source["credentials"], EnvValue);
-      this.password = source["password"];
-      this.insecureTls = source["insecureTls"];
+      this.allowEmptyPassword = source["allowEmptyPassword"] !== undefined
+        ? source["allowEmptyPassword"]
+        : false;
+      this.password = source["password"] || "";
+      this.insecureTls = source["insecureTls"] !== undefined 
+        ? source["insecureTls"] 
+        : false;
     }
 
     convertValues(a: any, classs: any): any {

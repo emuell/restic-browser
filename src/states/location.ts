@@ -24,6 +24,9 @@ export class Location {
   credentials: { name: string, value: string }[] = [];
 
   @mobx.observable
+  allowEmptyPassword: boolean = false;
+
+  @mobx.observable
   password: string = "";
 
   @mobx.observable
@@ -70,6 +73,7 @@ export class Location {
     this.prefix = "";
     this.path = "";
     this.credentials = [];
+    this.allowEmptyPassword = false;
     this.password = "";
     this.insecureTls = false;
   }
@@ -81,6 +85,7 @@ export class Location {
     this.prefix = other.prefix;
     this.path = other.path;
     this.credentials = Array.from(other.credentials);
+    this.allowEmptyPassword = other.allowEmptyPassword;
     this.password = copyPasswords ? other.password : "";
     this.insecureTls = other.insecureTls;
   }
@@ -96,6 +101,7 @@ export class Location {
     // apply repository path and password
     this.type = locationInfo.type;
     this.path = location.path;
+    this.allowEmptyPassword = location.allowEmptyPassword;
     this.password = location.password;
     this.insecureTls = location.insecureTls;
     this._setPrefixFromType();

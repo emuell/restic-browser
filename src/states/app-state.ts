@@ -95,7 +95,7 @@ class AppState {
   // select a new location preset
   @mobx.action
   setSelectedLocationPreset(locationPreset: LocationPreset): void {
-    console.assert(this.locationPresets.includes(locationPreset), 
+    console.assert(this.locationPresets.includes(locationPreset),
       "Trying to select an invalid location preset");
     this.selectedLocationPreset = locationPreset;
   }
@@ -141,9 +141,9 @@ class AppState {
   @mobx.action
   openRepository(): void {
     let location = new restic.Location(this.repoLocation);
-    if (!location.password && this.repoPassword) {
+    if (! location.allowEmptyPassword && ! location.password && this.repoPassword) {
       location.password = this.repoPassword;
-    }    
+    }
     ++this.isLoadingSnapshots;
     this.selectedSnapshotID = "";
     this.snapShots = [];
@@ -175,7 +175,7 @@ class AppState {
   // select a new snapshot
   @mobx.action
   setNewSnapshotId(id: string): void {
-    console.assert(this.snapShots.find((s) => s.id === id) !== undefined, 
+    console.assert(this.snapShots.find((s) => s.id === id) !== undefined,
       "Trying to select an invalid snapshot");
     this.selectedSnapshotID = id;
   }
