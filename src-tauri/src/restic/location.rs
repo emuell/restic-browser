@@ -17,13 +17,14 @@ pub struct EnvValue {
 
 /// A serializable restic repository location.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Location {
     pub prefix: String,
     pub path: String,
     pub credentials: Vec<EnvValue>,
-    #[serde(rename = "insecureTls")]
-    pub insecure_tls: bool,
+    pub allow_empty_password: bool,
     pub password: String,
+    pub insecure_tls: bool,
 }
 
 impl Location {
@@ -72,14 +73,16 @@ impl Location {
                 .cloned()
                 .unwrap_or(String::new())
         };
+        let allow_empty_password = false;
         // get insecure_tls option, when set
         let insecure_tls = args.contains_key("insecure-tls");
         // build basic location
         let mut location = Self {
             path,
-            password,
             credentials: vec![],
             prefix: String::new(),
+            allow_empty_password,
+            password,
             insecure_tls,
         };
         // set prefix from path, when there's a path set

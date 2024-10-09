@@ -90,115 +90,144 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
   render() {
     const locationTypes = appState.supportedLocationTypes;
     const locationInfo = locationTypes.find(v => v.type === this._location.type);
-    return html`
-      <vaadin-vertical-layout id="layout">
-        <vaadin-select
-          label="Type"
-          .items=${locationTypes.map(v => { return { label: v.displayName, value: v.type } })}
-          .value=${this._location.type}
+
+    const locationType = html`
+      <vaadin-select
+        label="Type"
+        .items=${locationTypes.map(v => { return { label: v.displayName, value: v.type } })}
+        .value=${this._location.type}
+        .disabled=${! this.allowEditing}
+        @change=${mobx.action((event: CustomEvent) => {
+          this._location.type = (event.target as HTMLInputElement).value;
+        })}
+      ></vaadin-select>`
+    ;
+
+    const locationPath = html`
+      <vaadin-horizontal-layout style="width: 24rem">
+        <vaadin-text-field style="width: 100%; margin-right: 4px;" 
+          label=${this._location.type === "local" ? "Path"
+            : (["sftp", "rest"].includes(this._location.type)) ? "URL" : "Bucket"}
+          required
+          .disabled=${! this.allowEditing}
+          value=${this._location.path}
+          @change=${mobx.action((event: CustomEvent) => {
+            this._location.path = (event.target as HTMLInputElement).value;
+          })}>
+          <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
+          </div>
+        </vaadin-text-field>
+        ${this._location.type === "local" && this.allowEditing
+          ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+                    @click=${this._browseLocalRepositoryPath}>Browse</vaadin-button>`
+          : nothing
+        }
+      </vaadin-horizontal-layout>
+    `;
+
+    const credentials = this._location.credentials.map((value) => {
+      switch (credentialDisplayTypes.get(value.name)) {
+        default:
+        case CredentialDisplayType.Password:
+          return html`
+              <vaadin-password-field 
+                label=${value.name}
+                required
+                .disabled=${! this.allowEditing}
+                value=${value.value}
+                @change=${mobx.action((event: CustomEvent) => {
+                  value.value = (event.target as HTMLInputElement).value;
+                })}
+              ></vaadin-password-field>`;
+        case CredentialDisplayType.Text:
+          return html`
+              <vaadin-text-field 
+                label=${value.name}
+                required
+                .disabled=${! this.allowEditing}
+                value=${value.value}
+                @change=${mobx.action((event: CustomEvent) => {
+                  value.value = (event.target as HTMLInputElement).value;
+                })}
+              ></vaadin-text-field>`;
+        case CredentialDisplayType.File:
+          return html`
+              <vaadin-horizontal-layout style="width: 24rem">
+                <vaadin-text-field 
+                  style="width: 100%; margin-right: 4px;"
+                  label=${value.name}
+                  required
+                  .disabled=${! this.allowEditing}
+                  value=${value.value}
+                  @change=${mobx.action((event: CustomEvent) => {
+                    value.value = (event.target as HTMLInputElement).value;
+                  })}
+                ></vaadin-text-field>
+                ${this.allowEditing
+                  ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+                            @click=${() => this._browseCredentialsPath(value.name)}>Browse</vaadin-button>`
+                  : nothing
+                }
+              </vaadin-horizontal-layout>`;
+      }
+    });
+
+    const password = (this._location.allowEmptyPassword == false) ? html`
+      <vaadin-horizontal-layout style="width: 24rem">
+        <vaadin-password-field
+          style="width: 100%; margin-right: 4px;"
+          label="Repository Password"
+          required
+          .disabled=${! this.allowEditing}
+          value=${this._location.password}
+          @change=${mobx.action((event: CustomEvent) => {
+            this._location.password = (event.target as HTMLInputElement).value;
+          })}
+        ></vaadin-password-field>
+        ${this.allowEditing
+          ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+            @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>`
+          : nothing
+        }
+      </vaadin-horizontal-layout>` : nothing
+    ;
+
+    const allowEmptyPassword = html`
+      <vaadin-horizontal-layout style="width: 24rem">
+        <vaadin-checkbox 
+          id="checkbox" 
+          label="Set no password"
+          .checked=${this._location.allowEmptyPassword}
           .disabled=${! this.allowEditing}
           @change=${mobx.action((event: CustomEvent) => {
-            this._location.type = (event.target as HTMLInputElement).value;
+            this._location.allowEmptyPassword = (event.target as HTMLInputElement).checked;
           })}
-        ></vaadin-select>
-        <vaadin-horizontal-layout style="width: 24rem">
-          <vaadin-text-field style="width: 100%; margin-right: 4px;" 
-            label=${this._location.type === "local"
-              ? "Path" : (["sftp", "rest"].includes(this._location.type)) ? "URL" : "Bucket"}
-            required
-            .disabled=${! this.allowEditing}
-            value=${this._location.path}
-            @change=${mobx.action((event: CustomEvent) => {
-              this._location.path = (event.target as HTMLInputElement).value;
-            })}>
-            <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
-            </div>
-          </vaadin-text-field>
-            ${this._location.type === "local" && this.allowEditing
-              ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
-                        @click=${this._browseLocalRepositoryPath}>Browse</vaadin-button>`
-              : nothing
-            }
-          </vaadin-text-field>
-        </vaadin-horizontal-layout>
-        ${this._location.credentials.map((value) => { 
-          switch (credentialDisplayTypes.get(value.name)) {
-            default:
-            case CredentialDisplayType.Password:
-              return html`
-                <vaadin-password-field 
-                  label=${value.name}
-                  required
-                  .disabled=${!this.allowEditing}
-                  value=${value.value}
-                  @change=${mobx.action((event: CustomEvent) => {
-                    value.value = (event.target as HTMLInputElement).value;
-                  })}>`;
-            case CredentialDisplayType.Text:
-              return html`
-                <vaadin-text-field 
-                  label=${value.name}
-                  required
-                  .disabled=${!this.allowEditing}
-                  value=${value.value}
-                  @change=${mobx.action((event: CustomEvent) => {
-                    value.value = (event.target as HTMLInputElement).value;
-                  })}>`;
-            case CredentialDisplayType.File:
-              return html`
-                <vaadin-horizontal-layout style="width: 24rem">
-                  <vaadin-text-field 
-                    style="width: 100%; margin-right: 4px;"
-                    label=${value.name}
-                    required
-                    .disabled=${!this.allowEditing}
-                    value=${value.value}
-                    @change=${mobx.action((event: CustomEvent) => {
-                      value.value = (event.target as HTMLInputElement).value;
-                    })}>
-                  </vaadin-text-field>
-                  ${this.allowEditing
-                      ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
-                                @click=${() => this._browseCredentialsPath(value.name)}>Browse</vaadin-button>`
-                      : nothing
-                    }
-                </vaadin-horizontal-layout>
-              `;
-          }
-        })}
-        <vaadin-horizontal-layout style="width: 24rem">
-          <vaadin-password-field
-            style="width: 100%; margin-right: 4px;"
-            label="Repository Password"
-            required
-            .disabled=${!this.allowEditing}
-            value=${this._location.password}
-            @change=${mobx.action((event: CustomEvent) => {
-              this._location.password = (event.target as HTMLInputElement).value;
-            })}
-          >
-          </vaadin-password-field>
-          ${this.allowEditing 
-            ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
-                      @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>`
-            : nothing
-          }
-        </vaadin-horizontal-layout>
+        ></vaadin-checkbox>
+      </vaadin-horizontal-layout>
+    `;
 
-      ${this._location.type !== "local"
-        ? html`<vaadin-form-item style="margin-top: 10.5px;">
-                 <vaadin-checkbox 
-                   id="checkbox" 
-                   label="Insecure TLS (skip TLS certificate verifications)"
-                   .checked=${this._location.insecureTls}
-                   .disabled=${!this.allowEditing}
-                   @change=${mobx.action((event: CustomEvent) => {
-                     this._location.insecureTls = (event.target as HTMLInputElement).checked;
-                   })}
-                 ></vaadin-checkbox>
-               </vaadin-form-item>`
-        : nothing
-      }
+    const insecureTsl = (this._location.type !== "local") ? html`
+      <vaadin-horizontal-layout>
+        <vaadin-form-item style="margin-top: 10.5px;">
+          <vaadin-checkbox 
+            id="checkbox" 
+            label="Skip TLS certificate verification"
+            .checked=${this._location.insecureTls}
+            .disabled=${! this.allowEditing}
+            @change=${mobx.action((event: CustomEvent) => {
+              this._location.insecureTls = (event.target as HTMLInputElement).checked;
+            })}
+          ></vaadin-checkbox>
+        </vaadin-form-item>` : nothing;
+
+    return html`
+      <vaadin-vertical-layout id="layout">
+        ${locationType}
+        ${locationPath}
+        ${credentials}
+        ${password} 
+        ${allowEmptyPassword}
+        ${insecureTsl}
       </vaadin-vertical-layout>
     `;
   }

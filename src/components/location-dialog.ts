@@ -48,7 +48,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   // when true, enter preset editing mode
   @state()
   private _editingPreset: boolean = false;
-  
+
   // location state before opening Save Preset dialog
   private _newPresetLocation: Location = new Location();
   // location state when we got opened
@@ -65,11 +65,11 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
     // memorize actual location to restore it on cancel
     this._initialLocation.setFromOtherLocation(appState.repoLocation);
-    
+
     // bind this to all callbacks
     this._handleMainDialogCancel = this._handleMainDialogCancel.bind(this);
     this._handleMainDialogClose = this._handleMainDialogClose.bind(this);
-    
+
     this._handlePresetDoubleClick = this._handlePresetDoubleClick.bind(this);
 
     this._handleShowSavePresetDialog = this._handleShowSavePresetDialog.bind(this);
@@ -124,7 +124,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     }
 
     // main dialog
-    const newLocationPresetSelected = 
+    const newLocationPresetSelected =
       (appState.selectedLocationPreset == appState.locationPresets[0]);
 
     let propertyButtons;
@@ -161,7 +161,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
             > Cancel
             </vaadin-button>
           </vaadin-horizontal-layout>
-        `; 
+        `;
     }
 
     const dialogLayout = html`
@@ -234,13 +234,15 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     let locationProperties = this._locationProperties;
     if (locationProperties) {
       appState.repoLocation.setFromOtherLocation(locationProperties.location);
-    } 
+    }
     else {
       console.error("Failed to fetch location properties component")
     }
     // ask for repo password?
     appState.setRepositoryPassword("");
-    if (appState.repoLocation.path && !appState.repoLocation.password) {
+    if (appState.repoLocation.path && 
+        ! appState.repoLocation.allowEmptyPassword &&
+        ! appState.repoLocation.password) {
       this._handleShowPasswordDialog();
       return;
     }
@@ -275,7 +277,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     // reset state and clone
     this._handledClose = true;
     this._editingPreset = false;
-    this.onClose(); 
+    this.onClose();
   }
 
   private _handleShowSavePresetDialog() {
@@ -299,13 +301,13 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
       this._showSavePresetDialog = false;
       this._editingPreset = false;
       return true;
-    } 
+    }
     else {
       Notification.show('No preset name set', {
-          position: 'middle',
-          theme: "info",
-          duration: 2000
-        });
+        position: 'middle',
+        theme: "info",
+        duration: 2000
+      });
       return false;
     }
   }
