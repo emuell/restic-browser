@@ -20,7 +20,7 @@ fn terminate_process_with_id(pid: u32) -> Result<(), String> {
     unsafe {
         // Open the process handle with intent to terminate
         let handle: HANDLE = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-        if handle == 0 {
+        if handle.is_null() {
             let error: WIN32_ERROR = GetLastError();
             return Err(format!(
                 "Failed to obtain handle to process {pid}: {error:#x}",
