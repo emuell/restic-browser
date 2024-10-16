@@ -4,6 +4,7 @@
 use std::{
     collections::HashMap,
     env, fs,
+    io::IsTerminal,
     path::{self, PathBuf},
     process,
 };
@@ -19,7 +20,7 @@ use which::which;
 #[cfg(target_os = "macos")]
 use which::which_in;
 
-use tauri::Manager;
+use tauri::{api::dialog::blocking::MessageDialogBuilder, Manager};
 use tauri_plugin_window_state::StateFlags;
 
 // -------------------------------------------------------------------------------------------------
@@ -29,7 +30,44 @@ mod restic;
 
 // -------------------------------------------------------------------------------------------------
 
-fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+// Show given message to the user and exit the process
+fn show_message_and_exit(message: String, exit_code: i32) -> ! {
+    if initialize_console() {
+        // dump message to console
+        if exit_code == 0 {
+            println!("{}", message);
+        } else {
+            eprintln!("{}", message);
+        }
+        std::process::exit(exit_code);
+    } else {
+        // else show a system dialog
+        MessageDialogBuilder::new("Restic Browser", message).show();
+        std::process::exit(exit_code);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+// Try attaching the tauri GUI app to a running console, so we can print into it.
+//
+// Returns true when running in a terminal, else false.
+fn initialize_console() -> bool {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+        // NB: if the app is not started from a command line this is expected to fail
+        let _ = unsafe { AttachConsole(ATTACH_PARENT_PROCESS) };
+    }
+    std::io::stdin().is_terminal()
+}
+
+// -------------------------------------------------------------------------------------------------
+
+// Try attaching the tauri GUI app to a running console, so we can print into it.
+//
+// Returns true when running in a terminal, else false.
+fn initialize_logger(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // create term logger
     let mut loggers: Vec<Box<dyn SharedLogger>> = vec![TermLogger::new(
         LevelFilter::Warn,
@@ -56,40 +94,61 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         Err(err) => eprintln!("Failed to create log file: {err}"),
         Ok(logger) => loggers.push(logger),
     }
-    // initialize
+    // create combined logger
     CombinedLogger::init(loggers).unwrap_or_else(|err| eprintln!("Failed to create logger: {err}"));
+    Ok(())
+}
 
-    // common bin directories on macOS
-    #[cfg(target_os = "macos")]
-    let common_path = format!(
-        "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
-        env::var("HOME").unwrap_or("~".into())
-    );
+// -------------------------------------------------------------------------------------------------
+
+fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    // setup term logger
+    initialize_logger(app)?;
+
+    // handle help/v arguments (early exit)
+    let arg_matches = app.get_cli_matches()?;
+    if let Some(arg) = arg_matches.args.get("help") {
+        let message = arg.value.as_str().expect("Invalid help string").to_string();
+        log::info!("Dumping arg help and exiting...");
+        show_message_and_exit(message, 0);
+    } else if arg_matches.args.contains_key("version") {
+        let package = app.config().package.clone();
+        let message = format!(
+            "{} v{}",
+            package.product_name.unwrap_or("Restic Browser".to_string()),
+            package.version.unwrap_or("[Unknown version]".to_string())
+        );
+        log::info!("Dumping version and exiting...");
+        show_message_and_exit(message, 0);
+    }
 
     // set PATH environment from shells in GUI apps on Linux and macOS
     if let Err(err) = fix_path_env::fix() {
         log::warn!("Failed to update PATH env: {}", err);
     }
 
+    // get common bin directories on macOS
+    #[cfg(target_os = "macos")]
+    let common_path = format!(
+        "/usr/local/bin:/opt/local/bin:/opt/homebrew/bin:{}/bin",
+        env::var("HOME").unwrap_or("~".into())
+    );
+
     // get restic from args or find restic in path
     let mut restic_path = None;
     let mut rclone_path = None;
-    match app.get_cli_matches() {
-        Ok(matches) => {
-            if let Some(arg) = matches.args.get("restic") {
-                restic_path = arg.value.as_str().map(PathBuf::from);
-                if let Some(ref path) = restic_path {
-                    log::info!("Got restic as arg {}", path.to_string_lossy());
-                }
-            }
-            if let Some(arg) = matches.args.get("rclone") {
-                rclone_path = arg.value.as_str().map(PathBuf::from);
-                if let Some(ref path) = rclone_path {
-                    log::info!("Got rclone as arg {}", path.to_string_lossy());
-                }
-            }
+
+    if let Some(arg) = arg_matches.args.get("restic") {
+        restic_path = arg.value.as_str().map(PathBuf::from);
+        if let Some(ref path) = restic_path {
+            log::info!("Got restic as arg {}", path.to_string_lossy());
         }
-        Err(err) => log::error!("{}", err.to_string()),
+    }
+    if let Some(arg) = arg_matches.args.get("rclone") {
+        rclone_path = arg.value.as_str().map(PathBuf::from);
+        if let Some(ref path) = rclone_path {
+            log::info!("Got rclone as arg {}", path.to_string_lossy());
+        }
     }
     if restic_path.is_none() {
         if let Ok(restic) = which(restic::RESTIC_EXECTUABLE_NAME) {
@@ -135,19 +194,14 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     }
 
     // get default restic location from args or env
-    let mut location;
-    if let Ok(matches) = app.get_cli_matches() {
-        location = restic::Location::new_from_args(
-            matches
-                .args
-                .into_iter()
-                .map(|(k, v)| (k, v.value.as_str().map(String::from)))
-                .collect::<HashMap<_, _>>(),
-        );
-        if location.path.is_empty() {
-            location = restic::Location::new_from_env();
-        }
-    } else {
+    let mut location = restic::Location::new_from_args(
+        arg_matches
+            .args
+            .into_iter()
+            .map(|(k, v)| (k, v.value.as_str().map(String::from)))
+            .collect::<HashMap<_, _>>(),
+    );
+    if location.path.is_empty() {
         location = restic::Location::new_from_env();
     }
 
@@ -194,9 +248,8 @@ fn show_app(app_window: tauri::Window) -> Result<(), String> {
 
 // -------------------------------------------------------------------------------------------------
 
-fn main() {
-    // create new app
-    let app = tauri::Builder::default()
+fn create_application() -> Result<tauri::App, Box<dyn std::error::Error>> {
+    tauri::Builder::default()
         .setup(initialize_app)
         .on_window_event(|event| {
             if let tauri::WindowEvent::Destroyed = event.event() {
@@ -226,27 +279,18 @@ fn main() {
             app::restore_file
         ])
         .build(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .map_err(Into::<Box<dyn std::error::Error>>::into)
+}
 
-    // show argument help / version only
-    let mut do_run = true;
-    if let Ok(matches) = app.get_cli_matches() {
-        if let Some(arg) = matches.args.get("help") {
-            print!("{}", arg.value.as_str().unwrap());
-            do_run = false;
-        } else if matches.args.contains_key("version") {
-            let package = app.config().package.clone();
-            println!(
-                "{} v{}",
-                package.product_name.unwrap_or("Restic Browser".to_string()),
-                package.version.unwrap_or("[Unknown version]".to_string())
-            );
-            do_run = false;
+// -------------------------------------------------------------------------------------------------
+
+fn main() {
+    match create_application() {
+        Ok(app) => {
+            app.run(|_app, _event| {});
         }
-    }
-
-    // run the app
-    if do_run {
-        app.run(|_, _| {});
+        Err(err) => {
+            show_message_and_exit(err.to_string(), 1);
+        }
     }
 }
