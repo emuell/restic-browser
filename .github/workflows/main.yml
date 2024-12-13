@@ -19,7 +19,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - name: Setting Global Variables
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         id: var
         with:
           script: |
@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Rust Setup (Windows & Linux)
         uses: dtolnay/rust-toolchain@stable
@@ -69,7 +69,7 @@ jobs:
           workspaces: "./src-tauri -> target"
 
       - name: Node Setup
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
           cache: "npm"
@@ -100,7 +100,7 @@ jobs:
           WINDOWS_CODE_CERT_DATA: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
           WINDOWS_CODE_CERT_PASS: ${{ secrets.WINDOWS_CODE_CERT_PASS }}
         if: ${{ matrix.config.name == 'Windows' && env.WINDOWS_CODE_CERT_DATA != null && env.WINDOWS_CODE_CERT_PASS != null }}
-        uses: lando/code-sign-action@v2
+        uses: lando/code-sign-action@v3
         with:
           file: ./src-tauri/target/release/${{ matrix.config.executable_name }}
           certificate-data: ${{ secrets.WINDOWS_CODE_CERT_DATA }}
