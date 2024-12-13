@@ -71,7 +71,7 @@ jobs:
       - name: Node Setup
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
+          node-version: "lts/Jod"
           cache: "npm"
 
       - name: System dependencies (Linux)

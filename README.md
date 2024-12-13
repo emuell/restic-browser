@@ -102,8 +102,8 @@ Restic-Browser [OPTIONS]
 
 ### Dependencies
 
-* Follow the [Tauri Prerequisites Docs](https://tauri.app/v1/guides/getting-started/prerequisites/) to install a *C/C++ toolchain* and *Rust* for your platform.
-* Make sure [npm](https://nodejs.org/en/download) *Node v18 LTS* is installed.
+* Follow the [Tauri Prerequisites Docs](https://tauri.app/v1/guides/getting-started/prerequisites/) to install a *C/C++ toolchain* and *Rust* 1.70 or later for your platform.
+* Make sure [npm](https://nodejs.org/en/download) *Node* 18 LTS or later is installed.
 * Install [restic](https://github.com/restic/restic/releases/) and make sure it is included in your $PATH. 
   
 Note: installing the tauri CLI via cargo is not necessary. Tauri can be launched through npm (see below). 
