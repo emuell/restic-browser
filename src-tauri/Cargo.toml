@@ -1,6 +1,6 @@
 [package]
 name = "restic-browser"
-version = "0.3.1"
+version = "0.3.2"
 description = "A restic backup browser GUI"
 authors = ["mail@emuell.net"]
 license = "MIT"
