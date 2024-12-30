@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/emuell/restic-browser"
 default-run = "restic-browser"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.78"
 
 [build-dependencies]
 tauri-build = { version = "^1.5", features = [] }
@@ -25,16 +25,16 @@ log = { version = "^0.4", features = [
 ] }
 simplelog = { version = "^0.12" }
 anyhow = { version = "^1.0" }
-which = { version = "^6.0" }
+which = { version = "^7.0" }
 open = { version = "^5.0" }
 shlex = { version = "^1.2" }
 semver = { version = "^1.0" }
 lenient_semver = { version = "^0.4" }
 
 # tauri
-tauri = { version = "^1.6", features = ["fs-all", "dialog-all", "cli"] }
+tauri = { version = "^1.8", features = ["fs-all", "dialog-all", "cli"] }
 tauri-plugin-window-state = "^0.1.1"
-fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "8481725b7ebfc56cdb052d522517421242eac36b" }
 
 # windows
 [target.'cfg(target_os = "windows")'.dependencies.windows-sys]
