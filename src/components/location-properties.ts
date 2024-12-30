@@ -103,11 +103,33 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       ></vaadin-select>`
     ;
 
+    let pathLabel;
+    switch (this._location.prefix) {
+      default:
+      case "local":
+        pathLabel = "Path";
+        break;
+      case "rclone":
+        pathLabel = "Remote";
+        break;
+      case "sftp":
+      case "rest":
+        pathLabel = "URL";
+        break;
+      case "s3":
+      case "b2":
+      case "azure":
+        pathLabel = "Bucket";
+        break;
+      case "gs":
+        pathLabel = "Container";
+        break;
+    }
+    
     const locationPath = html`
       <vaadin-horizontal-layout style="width: 24rem">
         <vaadin-text-field style="width: 100%; margin-right: 4px;" 
-          label=${this._location.type === "local" ? "Path"
-            : (["sftp", "rest"].includes(this._location.type)) ? "URL" : "Bucket"}
+          label=${pathLabel}
           required
           .disabled=${! this.allowEditing}
           value=${this._location.path}
