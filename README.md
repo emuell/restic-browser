@@ -91,18 +91,20 @@ Restic-Browser [OPTIONS]
 
 #### Windows:
 - Windows 10 or later with [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/#download-section)
+
 #### MacOS:
 - macOS 10.13 or later
+
 #### Linux:
 - Linux with GLIBC_2.31 or later (e.g. Ubuntu 20.04 or later)
 - WebKit2 (install via `apt install libwebkit2gtk-4.0` on Ubuntu)
-
+- Try using the Linux appimage from the prebuilt releases, in case libwebkit2gtk-4.0 is not available on your system.
 
 ## Development
 
 ### Dependencies
 
-* Follow the [Tauri Prerequisites Docs](https://tauri.app/v1/guides/getting-started/prerequisites/) to install a *C/C++ toolchain* and *Rust* 1.70 or later for your platform.
+* Follow the [Tauri Prerequisites Docs](https://tauri.app/v1/guides/getting-started/prerequisites/) to install a *C/C++ toolchain* and *Rust* 1.78 or later for your platform.
 * Make sure [npm](https://nodejs.org/en/download) *Node* 18 LTS or later is installed.
 * Install [restic](https://github.com/restic/restic/releases/) and make sure it is included in your $PATH. 
   
