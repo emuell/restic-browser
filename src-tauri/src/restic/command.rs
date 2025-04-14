@@ -197,6 +197,7 @@ impl Program {
             .copied()
             .map(|s| Cow::Borrowed(OsStr::new(s)))
             .collect::<Vec<_>>();
+        args.push(Cow::Borrowed(OsStr::new("--no-lock")));
         if location.prefix.starts_with("rclone") {
             if let Some(rclone_path) = &self.rclone_path {
                 args.push(Cow::Borrowed(OsStr::new("--option")));
