@@ -19,7 +19,12 @@ pub fn supported_location_types() -> Vec<LocationTypeInfo> {
     vec![
         LocationTypeInfo::new(LocationType::Local, "", "Local Path", &[]),
         LocationTypeInfo::new(LocationType::SFtp, "sftp", "SFTP", &[]),
-        LocationTypeInfo::new(LocationType::Rest, "rest", "REST Server", &[]),
+        LocationTypeInfo::new(
+            LocationType::Rest,
+            "rest",
+            "REST Server",
+            &["RESTIC_REST_USERNAME", "RESTIC_REST_PASSWORD"]
+        ),
         LocationTypeInfo::new(LocationType::RClone, "rclone", "RCLONE", &[]),
         LocationTypeInfo::new(
             LocationType::AmazonS3,
