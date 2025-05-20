@@ -1,5 +1,5 @@
 import * as mobx from 'mobx';
-import { writeTextFile, BaseDirectory, readTextFile, exists } from '@tauri-apps/api/fs';
+import { writeTextFile, BaseDirectory, readTextFile, exists } from '@tauri-apps/plugin-fs';
 
 import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
@@ -333,9 +333,9 @@ class AppState {
 
   // load presets from config file 
   private async _autoLoadPresets() {
-    if (await exists('presets.json', { dir: BaseDirectory.AppConfig })) {
+    if (await exists('presets.json', { baseDir: BaseDirectory.AppConfig })) {
       const presetsObject = JSON.parse(
-        await readTextFile('presets.json', { dir: BaseDirectory.AppConfig }));
+        await readTextFile('presets.json', { baseDir: BaseDirectory.AppConfig }));
       if (!Array.isArray(presetsObject)) {
         throw "Content is not an array";
       }
@@ -356,7 +356,7 @@ class AppState {
       // skip first entry: it is used as new location template
       () => JSON.stringify(this.locationPresets.slice(1)),
       (contents) => {
-        writeTextFile('presets.json', contents, { dir: BaseDirectory.AppConfig })
+        writeTextFile('presets.json', contents, { baseDir: BaseDirectory.AppConfig })
           .catch(err => {
             console.error("Failed to save location presets: '%s'", err.message || String(err))
           });

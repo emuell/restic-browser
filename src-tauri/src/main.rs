@@ -9,8 +9,6 @@ use std::{
     process,
 };
 
-use anyhow::anyhow;
-
 use simplelog::{
     ColorChoice, CombinedLogger, Config, LevelFilter, SharedLogger, TermLogger, TerminalMode,
     WriteLogger,
@@ -20,7 +18,9 @@ use which::which;
 #[cfg(target_os = "macos")]
 use which::which_in;
 
-use tauri::{api::dialog::blocking::MessageDialogBuilder, Manager};
+use tauri::Manager;
+use tauri_plugin_cli::CliExt;
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_window_state::StateFlags;
 
 // -------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ mod restic;
 // -------------------------------------------------------------------------------------------------
 
 // Show given message to the user and exit the process
-fn show_message_and_exit(message: String, exit_code: i32) -> ! {
+fn show_message_and_exit(app: &tauri::App, message: String, exit_code: i32) -> ! {
     if initialize_console() {
         // dump message to console
         if exit_code == 0 {
@@ -42,7 +42,7 @@ fn show_message_and_exit(message: String, exit_code: i32) -> ! {
         std::process::exit(exit_code);
     } else {
         // else show a system dialog
-        MessageDialogBuilder::new("Restic Browser", message).show();
+        app.app_handle().dialog().message(message).blocking_show();
         std::process::exit(exit_code);
     }
 }
@@ -77,10 +77,7 @@ fn initialize_logger(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>>
     )];
     // try creating a file log as well, but don't panic
     let log_file_result: Result<Box<WriteLogger<std::fs::File>>, Box<dyn std::error::Error>> = {
-        let log_path = app
-            .path_resolver()
-            .app_log_dir()
-            .ok_or_else(|| anyhow!("Failed to resolve log directory"))?;
+        let log_path = app.path().app_log_dir()?;
         std::fs::create_dir_all(log_path.as_path())?;
         let mut log_file_path = log_path.clone();
         log_file_path.push("App.log");
@@ -106,20 +103,25 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
     initialize_logger(app)?;
 
     // handle help/v arguments (early exit)
-    let arg_matches = app.get_cli_matches()?;
+    let arg_matches = app.cli().matches()?;
     if let Some(arg) = arg_matches.args.get("help") {
         let message = arg.value.as_str().expect("Invalid help string").to_string();
         log::info!("Dumping arg help and exiting...");
-        show_message_and_exit(message, 0);
+        show_message_and_exit(app, message, 0);
     } else if arg_matches.args.contains_key("version") {
-        let package = app.config().package.clone();
         let message = format!(
             "{} v{}",
-            package.product_name.unwrap_or("Restic Browser".to_string()),
-            package.version.unwrap_or("[Unknown version]".to_string())
+            app.config()
+                .product_name
+                .clone()
+                .unwrap_or("Restic Browser".to_string()),
+            app.config()
+                .version
+                .clone()
+                .unwrap_or("[Unknown version]".to_string())
         );
         log::info!("Dumping version and exiting...");
-        show_message_and_exit(message, 0);
+        show_message_and_exit(app, message, 0);
     }
 
     // set PATH environment from shells in GUI apps on Linux and macOS
@@ -228,7 +230,7 @@ fn initialize_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
 // -------------------------------------------------------------------------------------------------
 
-fn finalize_app(app: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+fn finalize_app(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Closing application...");
     // remove previews temp dir
     let state = app.state::<app::SharedAppState>().get()?;
@@ -239,7 +241,7 @@ fn finalize_app(app: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>>
 // -------------------------------------------------------------------------------------------------
 
 #[tauri::command]
-fn show_app(app_window: tauri::Window) -> Result<(), String> {
+fn show_app_window(app_window: tauri::Window) -> Result<(), String> {
     // app is initially hidden until this is called to avoid screen flickering
     // see src/hooks.ts, which invokes this on DOMContentLoaded
     app_window.show().map_err(|err| err.to_string())?;
@@ -250,10 +252,13 @@ fn show_app(app_window: tauri::Window) -> Result<(), String> {
 
 fn create_application() -> Result<tauri::App, Box<dyn std::error::Error>> {
     tauri::Builder::default()
+        .plugin(tauri_plugin_cli::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(initialize_app)
-        .on_window_event(|event| {
-            if let tauri::WindowEvent::Destroyed = event.event() {
-                let app = event.window().app_handle();
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                let app = window.app_handle();
                 finalize_app(app).unwrap_or_else(|err| {
                     log::info!("Finalizing application failed with error: {err}");
                 });
@@ -266,7 +271,7 @@ fn create_application() -> Result<tauri::App, Box<dyn std::error::Error>> {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            show_app,
+            show_app_window,
             app::supported_repo_location_types,
             app::default_repo_location,
             app::open_file_or_url,
@@ -290,7 +295,7 @@ fn main() {
             app.run(|_app, _event| {});
         }
         Err(err) => {
-            show_message_and_exit(err.to_string(), 1);
+            panic!("{}", err);
         }
     }
 }

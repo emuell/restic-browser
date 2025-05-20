@@ -1,6 +1,7 @@
 use std::{collections::HashSet, fs, path::PathBuf, sync::RwLock};
 
-use tauri::api::dialog::blocking::{ask, FileDialogBuilder, MessageDialogBuilder};
+use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 
 use semver::Version;
 
@@ -160,18 +161,22 @@ pub fn verify_restic_path(
     let state = app_state.get()?;
     if !state.restic.restic_path().exists() {
         // aks user to resolve restic path
-        MessageDialogBuilder::new(
-            "Restic Binary Missing",
-            "Failed to find restic program in your $PATH\n
+        app_window
+            .app_handle()
+            .dialog()
+            .message(
+                "Failed to find restic program in your $PATH\n
 Please select your installed restic binary manually in the following dialog.",
-        )
-        .parent(&app_window)
-        .show();
-        let restic_path = FileDialogBuilder::new()
-            .set_parent(&app_window)
+            )
+            .blocking_show();
+        let restic_path = app_window
+            .app_handle()
+            .dialog()
+            .file()
             .set_title("Locate restic program")
             .set_file_name(restic::RESTIC_EXECTUABLE_NAME)
-            .pick_file();
+            .blocking_pick_file()
+            .and_then(|f| f.into_path().ok());
         log::info!(
             "Got restic binary path '{}' from user",
             restic_path.clone().unwrap_or_default().display()
@@ -273,10 +278,12 @@ pub fn dump_file(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // set target dir
-    let folder = FileDialogBuilder::new()
+    let folder = app_window
+        .dialog()
+        .file()
         .set_title("Please select a target directory")
-        .set_parent(&app_window)
-        .pick_folder();
+        .blocking_pick_folder()
+        .and_then(|f| f.into_path().ok());
     if folder.is_none() {
         // user cancelled dialog
         return Ok(String::new());
@@ -289,15 +296,17 @@ pub fn dump_file(
     };
     // confirm overwriting
     if target_file_name.exists() {
-        let confirmed = ask(
-            Some(&app_window),
-            "Overwrite existing file?",
-            format!(
+        // confirm overwriting
+        let confirmed = app_window
+            .dialog()
+            .message(format!(
                 "The target file '{}' already exists.\n
-Are you sure that you want to overwrite the existing file?",
+Are you sure that you want to overwrite the existing file(s)?",
                 target_file_name.display()
-            ),
-        );
+            ))
+            .title("Overwrite existing file?")
+            .buttons(tauri_plugin_dialog::MessageDialogButtons::YesNo)
+            .blocking_show();
         if !confirmed {
             return Err(format!(
                 "target file '{}' already exists",
@@ -378,10 +387,12 @@ pub fn restore_file(
     state.verify_location()?;
     state.verify_snapshot(&snapshot_id)?;
     // set target dir
-    let folder = FileDialogBuilder::new()
+    let folder = app_window
+        .dialog()
+        .file()
         .set_title("Please select a target directory")
-        .set_parent(&app_window)
-        .pick_folder();
+        .blocking_pick_folder()
+        .and_then(|f| f.into_path().ok());
     if folder.is_none() {
         // user cancelled dialog
         return Ok(String::new());
@@ -389,15 +400,16 @@ pub fn restore_file(
     let target_file_name = folder.unwrap().join(file.name.clone());
     if target_file_name.exists() {
         // confirm overwriting
-        let confirmed = ask(
-            Some(&app_window),
-            "Overwrite existing directory or file?",
-            format!(
+        let confirmed = app_window
+            .dialog()
+            .message(format!(
                 "The target directory or file '{}' already exists.\n
 Are you sure that you want to overwrite the existing file(s)?",
                 target_file_name.display()
-            ),
-        );
+            ))
+            .title("Overwrite existing directory or file?")
+            .buttons(tauri_plugin_dialog::MessageDialogButtons::YesNo)
+            .blocking_show();
         if !confirmed {
             return Err(format!(
                 "target file or directory '{}' already exists",

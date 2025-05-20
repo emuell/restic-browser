@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@adobe/lit-mobx": "^2.2",
-    "@tauri-apps/api": "^1.5",
+    "@tauri-apps/api": "^2.2",
+    "@tauri-apps/plugin-dialog": "^2.2",
+    "@tauri-apps/plugin-fs": "^2.2",
     "@vaadin/button": "^23.3",
     "@vaadin/dialog": "^23.3",
     "@vaadin/grid": "^23.3",
@@ -30,10 +32,10 @@
     "pretty-bytes": "^6.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5",
+    "@tauri-apps/cli": "^2.2",
     "@types/node": "^20.10",
-    "typescript": "^5.2",
-    "vite": "^4.5"
+    "typescript": "^5.7",
+    "vite": "^6.0"
   },
   "vaadin": {
     "disableUsageStatistics": true

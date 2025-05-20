@@ -10,13 +10,13 @@ edition = "2021"
 rust-version = "1.78"
 
 [build-dependencies]
-tauri-build = { version = "^1.5", features = [] }
+tauri-build = { version = "^2.0", features = [] }
 
 [dependencies]
 
 # common
 lazy_static = { version = "^1.4" }
-scopeguard = { version = "1.2.0" }
+scopeguard = { version = "^1.2" }
 serde_json = "^1.0"
 serde = { version = "^1.0", features = ["derive"] }
 log = { version = "^0.4", features = [
@@ -24,7 +24,6 @@ log = { version = "^0.4", features = [
     "release_max_level_info",
 ] }
 simplelog = { version = "^0.12" }
-anyhow = { version = "^1.0" }
 which = { version = "^7.0" }
 open = { version = "^5.0" }
 shlex = { version = "^1.2" }
@@ -32,8 +31,11 @@ semver = { version = "^1.0" }
 lenient_semver = { version = "^0.4" }
 
 # tauri
-tauri = { version = "^1.8", features = ["fs-all", "dialog-all", "cli"] }
-tauri-plugin-window-state = "^0.1.1"
+tauri = { version = "^2.2", features = [] }
+tauri-plugin-window-state = { version = "^2.2" }
+tauri-plugin-fs = { version = "^2.2" }
+tauri-plugin-dialog = { version = "^2.2" }
+tauri-plugin-cli = { version = "^2.2" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "8481725b7ebfc56cdb052d522517421242eac36b" }
 
 # windows
@@ -43,7 +45,7 @@ features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_Console"
 
 # posix
 [target.'cfg(not(target_os = "windows"))'.dependencies.nix]
-version = "^0.29"
+version = "^0.30"
 features = ["process", "signal"]
 
 [features]

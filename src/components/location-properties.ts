@@ -8,8 +8,8 @@ import { Location } from '../states/location';
 
 import { Notification } from '@vaadin/notification';
 
-import { DialogFilter, open } from '@tauri-apps/api/dialog';
-import { fs } from '@tauri-apps/api';
+import { DialogFilter, open } from '@tauri-apps/plugin-dialog';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 
 import '@vaadin/horizontal-layout';
 import '@vaadin/vertical-layout';
@@ -125,7 +125,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         pathLabel = "Container";
         break;
     }
-    
+
     const locationPath = html`
       <vaadin-horizontal-layout style="width: 24rem">
         <vaadin-text-field style="width: 100%; margin-right: 4px;" 
@@ -326,7 +326,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           }
         }
         if (file != null) {
-          fs.readTextFile(file).then(contents => {
+          readTextFile(file).then(contents => {
             mobx.action((contents: string) => {
               this._location.password = contents.trim();
             })(contents);

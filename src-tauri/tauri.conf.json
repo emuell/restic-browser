@@ -1,58 +1,48 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Restic-Browser",
+  "mainBinaryName": "Restic-Browser",
+  "version": "0.3.2",
+  "identifier": "org.restic.browser",
   "build": {
     "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:5173",
-    "distDir": "../dist"
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
-  "package": {
-    "productName": "Restic-Browser",
-    "version": "0.3.2"
-  },
-  "tauri": {
-    "allowlist": {
-      "dialog": {
-        "all": true
-      },
-      "fs": {
-        "all": true,
-        "scope": ["$APPCONFIG/*"]
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app",
+      "appimage"
+    ],
+    "category": "DeveloperTool",
+    "copyright": "",
+    "shortDescription": "",
+    "longDescription": "",
+    "externalBin": [],
+    "resources": [],
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "silent": true,
+        "type": "downloadBootstrapper"
       }
     },
-    "bundle": {
-      "active": true,
-      "targets": [
-        "app",
-        "appimage"
-      ],
-      "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/icon.png",
-        "icons/icon.ico"
-      ],
-      "identifier": "org.restic.browser",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
+    "macOS": {
+      "signingIdentity": null
     },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false,
+        "files": {}
+      }
+    }
+  },
+  "plugins": {
     "cli": {
       "args": [
         {
@@ -97,22 +87,21 @@
           "longDescription": "skip TLS certificate verification when connecting to the repo (insecure)"
         }
       ]
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+    }
+  },
+  "app": {
     "windows": [
       {
         "fullscreen": false,
         "height": 600,
         "width": 800,
         "resizable": true,
-        "title": "Restic Browser",
-        "visible": false
+        "visible": false,
+        "title": "Restic Browser"
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
   }
 }
