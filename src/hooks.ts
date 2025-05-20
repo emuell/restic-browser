@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api';
+import { core } from '@tauri-apps/api';
 
 // workaround for vaadin with vite
 // see https://github.com/vaadin/vaadin-lumo-styles/issues/105
@@ -26,7 +26,7 @@ document.addEventListener('contextmenu', e => {
 
 // make window visible as soon as we got some content to show
 document.addEventListener("DOMContentLoaded", () => {
-  invoke<void>("show_app");
+  core.invoke<void>("show_app_window");
 });
 
 export { }
