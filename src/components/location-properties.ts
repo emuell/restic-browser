@@ -36,6 +36,7 @@ const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
   ["B2_ACCOUNT_ID", CredentialDisplayType.Text],
   ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text],
   ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File],
+  ["RESTIC_REST_USERNAME", CredentialDisplayType.Text],
 ]);
 
 // Dialog file filters for known file credentials. Defaults to "All files *.*".
