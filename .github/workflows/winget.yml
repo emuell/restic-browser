@@ -1,0 +1,31 @@
+name: Submit Restic-Browser package to Windows Package Manager Community Repository
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Specific tag name'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+jobs:
+  winget:
+    name: Publish winget package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit package to Windows Package Manager Community Repository
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: emuell.restic-browser
+          installers-regex: 'windows\.zip$'
+          version: ${{ inputs.tag_name || github.event.release.tag_name }}
+          release-tag: ${{ inputs.tag_name || github.event.release.tag_name }}
+          token: ${{ secrets.WINGET_PAT }}
+          fork-user: emuell
