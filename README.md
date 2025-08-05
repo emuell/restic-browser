@@ -10,7 +10,9 @@ Older versions of the restic browser were built using [Wails2](https://wails.io)
 
 ## Download
 
-Prebuilt binaries can be downloaded from the [GitHub releases](https://github.com/emuell/restic-browser/releases) page.
+Prebuilt binaries for **Windows**, **macOS** and **Linux** can be downloaded from the [GitHub releases](https://github.com/emuell/restic-browser/releases) page.
+
+On **Windows**, restic-browser can also be installed and updated via [winget](https://docs.microsoft.com/en-us/windows/package-manager/winget/) `winget install restic-browser`
 
 
 ## Features
