@@ -29,14 +29,20 @@ enum CredentialDisplayType {
   File
 };
 
-// Known credential display types. Defaults to "Password" when undefined.
-const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
-  ["AWS_ACCESS_KEY_ID", CredentialDisplayType.Text],
-  ["AZURE_ACCOUNT_NAME", CredentialDisplayType.Text],
-  ["B2_ACCOUNT_ID", CredentialDisplayType.Text],
-  ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text],
-  ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File],
-  ["RESTIC_REST_USERNAME", CredentialDisplayType.Text],
+interface CredentialConfig {
+  display: CredentialDisplayType,
+  required: boolean,
+};
+
+// Known credential configs. Defaults to { display = Password, required = true } when undefined.
+const credentialConfigs: Map<string, CredentialConfig> = new Map([
+  ["AWS_ACCESS_KEY_ID", { display: CredentialDisplayType.Text, required: true } ],
+  ["AWS_PROFILE", { display: CredentialDisplayType.Text, required: false }],
+  ["AZURE_ACCOUNT_NAME", { display: CredentialDisplayType.Text, required: true }],
+  ["B2_ACCOUNT_ID", { display: CredentialDisplayType.Text, required: true }],
+  ["GOOGLE_PROJECT_ID", { display: CredentialDisplayType.Text, required: true }],
+  ["GOOGLE_APPLICATION_CREDENTIALS", { display: CredentialDisplayType.File, required: true }],
+  ["RESTIC_REST_USERNAME", { display: CredentialDisplayType.Text, required: true }],
 ]);
 
 // Dialog file filters for known file credentials. Defaults to "All files *.*".
@@ -149,13 +155,16 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     `;
 
     const credentials = this._location.credentials.map((value) => {
-      switch (credentialDisplayTypes.get(value.name)) {
+      let config = credentialConfigs.get(value.name);
+      let display = config ? config.display : CredentialDisplayType.Password;
+      let required = config ? config.required : true;
+      switch (display) {
         default:
         case CredentialDisplayType.Password:
           return html`
               <vaadin-password-field 
                 label=${value.name}
-                required
+                .required=${required}
                 .disabled=${! this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
@@ -166,12 +175,12 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           return html`
               <vaadin-text-field 
                 label=${value.name}
-                required
+                .required=${required}
                 .disabled=${! this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
-                  value.value = (event.target as HTMLInputElement).value;
-                })}
+            value.value = (event.target as HTMLInputElement).value;
+          })}
               ></vaadin-text-field>`;
         case CredentialDisplayType.File:
           return html`
@@ -179,7 +188,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                 <vaadin-text-field 
                   style="width: 100%; margin-right: 4px;"
                   label=${value.name}
-                  required
+                  .required=${required}
                   .disabled=${! this.allowEditing}
                   value=${value.value}
                   @change=${mobx.action((event: CustomEvent) => {

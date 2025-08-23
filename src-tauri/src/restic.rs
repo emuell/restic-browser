@@ -30,7 +30,7 @@ pub fn supported_location_types() -> Vec<LocationTypeInfo> {
             LocationType::AmazonS3,
             "s3",
             "Amazon S3",
-            &["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+            &["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_PROFILE"],
         ),
         LocationTypeInfo::new(
             LocationType::MSAzure,
