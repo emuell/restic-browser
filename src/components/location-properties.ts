@@ -135,7 +135,14 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           .disabled=${! this.allowEditing}
           value=${this._location.path}
           @change=${mobx.action((event: CustomEvent) => {
-            this._location.path = (event.target as HTMLInputElement).value;
+            this._location.path = (event.target as HTMLInputElement).value.trim();
+            // ensure that the prefix is not included in the path
+            const prefix = locationInfo?.prefix ? locationInfo.prefix + ":" : "";
+            if (prefix !== "") {
+              if (this._location.path.startsWith(prefix)) {
+                this._location.path = String(this._location.path).replace(prefix, "").trim();
+              }
+            }
           })}>
           <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
           </div>
@@ -159,6 +166,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                 .disabled=${! this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
+                  // NB: don't trim passwords. Spaces are allowed here...
                   value.value = (event.target as HTMLInputElement).value;
                 })}
               ></vaadin-password-field>`;
@@ -170,7 +178,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                 .disabled=${! this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
-                  value.value = (event.target as HTMLInputElement).value;
+                  value.value = (event.target as HTMLInputElement).value.trim();
                 })}
               ></vaadin-text-field>`;
         case CredentialDisplayType.File:
@@ -183,7 +191,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                   .disabled=${! this.allowEditing}
                   value=${value.value}
                   @change=${mobx.action((event: CustomEvent) => {
-                    value.value = (event.target as HTMLInputElement).value;
+                    value.value = (event.target as HTMLInputElement).value.trim();
                   })}
                 ></vaadin-text-field>
                 ${this.allowEditing
@@ -204,9 +212,11 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           .disabled=${! this.allowEditing}
           value=${this._location.password}
           @change=${mobx.action((event: CustomEvent) => {
+            // NB: don't trim passwords. Spaces are allowed here...
             this._location.password = (event.target as HTMLInputElement).value;
           })}
-        ></vaadin-password-field>
+        >
+        </vaadin-password-field>
         ${this.allowEditing
           ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
             @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>`
