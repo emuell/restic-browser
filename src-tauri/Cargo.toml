@@ -10,7 +10,7 @@ edition = "2021"
 rust-version = "1.78"
 
 [build-dependencies]
-tauri-build = { version = "^2.0", features = [] }
+tauri-build = { version = "^2.4", features = [] }
 
 [dependencies]
 
@@ -31,11 +31,11 @@ semver = { version = "^1.0" }
 lenient_semver = { version = "^0.4" }
 
 # tauri
-tauri = { version = "^2.2", features = [] }
-tauri-plugin-window-state = { version = "^2.2" }
-tauri-plugin-fs = { version = "^2.2" }
-tauri-plugin-dialog = { version = "^2.2" }
-tauri-plugin-cli = { version = "^2.2" }
+tauri = { version = "~2.8", features = [] }
+tauri-plugin-window-state = { version = "~2.4" }
+tauri-plugin-fs = { version = "~2.4" }
+tauri-plugin-dialog = { version = "~2.4" }
+tauri-plugin-cli = { version = "~2.4" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "8481725b7ebfc56cdb052d522517421242eac36b" }
 
 # windows
