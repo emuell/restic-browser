@@ -46,7 +46,7 @@ jobs:
           - {
               name: "macOS",
               executable_name: "Restic-Browser.app",
-              os: macos-13,
+              os: macos-14,
             }
 
     steps:
