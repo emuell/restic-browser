@@ -5,11 +5,10 @@ on:
   pull_request:
     branches:
       - master
-  # run when a new semantic version tag got pushed (a release)
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+(.[0-9]+)?(-[a-z]+(.[0-9])?)?"
-  # allow to run the workflow manually from the actions tab
+  # run on github releases
+  release:
+    types: [released]
+  # run the workflow manually from the actions tab
   workflow_dispatch:
 
 jobs:
@@ -76,6 +75,7 @@ jobs:
 
       - name: System dependencies (Linux)
         run: |
+          set -e
           sudo apt update
           sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
         if: ${{ matrix.config.name == 'Ubuntu' }}
@@ -172,6 +172,7 @@ jobs:
       - name: Prepare Upload Artifact (macOS)
         if: ${{ matrix.config.name == 'macOS' }}
         run: |
+          set -e
           cd ./src-tauri/target/universal-apple-darwin/release/bundle/macos
           tar -cvf ${{ matrix.config.executable_name }}.tar ${{ matrix.config.executable_name }}
 
