@@ -1,8 +1,10 @@
 import * as mobx from 'mobx';
-import { writeTextFile, BaseDirectory, readTextFile, exists } from '@tauri-apps/plugin-fs';
+import { writeFile, BaseDirectory, readFile, exists } from '@tauri-apps/plugin-fs';
 
 import { restic } from '../backend/restic';
 import { resticApp } from '../backend/app';
+
+import { encodeTextData, decodeTextData } from '../utils/text-encoding';
 
 import { Location } from './location';
 import { LocationPreset } from './location-preset';
@@ -334,8 +336,9 @@ class AppState {
   // load presets from config file 
   private async _autoLoadPresets() {
     if (await exists('presets.json', { baseDir: BaseDirectory.AppConfig })) {
-      const presetsObject = JSON.parse(
-        await readTextFile('presets.json', { baseDir: BaseDirectory.AppConfig }));
+      let fileContent = await readFile('presets.json', { baseDir: BaseDirectory.AppConfig });
+      let textContent = decodeTextData(fileContent);
+      const presetsObject = JSON.parse(textContent);
       if (!Array.isArray(presetsObject)) {
         throw "Content is not an array";
       }
@@ -356,7 +359,8 @@ class AppState {
       // skip first entry: it is used as new location template
       () => JSON.stringify(this.locationPresets.slice(1)),
       (contents) => {
-        writeTextFile('presets.json', contents, { baseDir: BaseDirectory.AppConfig })
+        let fileContent = encodeTextData(contents);
+        writeFile('presets.json', fileContent, { baseDir: BaseDirectory.AppConfig })
           .catch(err => {
             console.error("Failed to save location presets: '%s'", err.message || String(err))
           });
