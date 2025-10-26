@@ -6,11 +6,33 @@
     {
       "label": "ui:dev",
       "type": "shell",
-      "isBackground": true,
       "command": "npm",
       "args": [
         "run",
         "dev"
+      ],
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "pattern": [
+            {
+              "regexp": "(ERROR|WARNING)\\(TypeScript\\)  (.*)",
+              "severity": 1,
+              "message": 2
+            },
+            {
+              "regexp": "^ FILE  (.*):(\\d*):(\\d*)$",
+              "file": 1,
+              "line": 2,
+              "column": 3
+            }
+          ],
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": ".*",
+            "endsPattern": ".*Local:.*"
+          }
+        }
       ]
     },
     {
@@ -20,11 +42,38 @@
       "args": [
         "run",
         "build"
+      ],
+      "problemMatcher": [
+        {
+          "owner": "typescript",
+          "source": "Typescript",
+          "fileLocation": "absolute",
+          "applyTo": "allDocuments",
+          "background": {
+            "activeOnStart": true
+          },
+          "pattern": [
+            {
+              "regexp": "(ERROR|WARNING)\\(TypeScript\\)  (.*)",
+              "severity": 1,
+              "message": 2
+            },
+            {
+              "regexp": "^ FILE  (.*):(\\d*):(\\d*)$",
+              "file": 1,
+              "line": 2,
+              "column": 3
+            }
+          ]
+        }
       ]
     },
     {
       "label": "tauri:dev",
       "type": "shell",
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -39,6 +88,9 @@
     {
       "label": "tauri:build",
       "type": "shell",
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": {
         "kind": "build",
         "isDefault": false
