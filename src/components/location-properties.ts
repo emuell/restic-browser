@@ -6,10 +6,12 @@ import * as mobx from 'mobx';
 import { appState } from '../states/app-state';
 import { Location } from '../states/location';
 
+import { decodeTextData } from '../utils/text-encoding';
+
 import { Notification } from '@vaadin/notification';
 
 import { DialogFilter, open } from '@tauri-apps/plugin-dialog';
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { readFile } from '@tauri-apps/plugin-fs';
 
 import '@vaadin/horizontal-layout';
 import '@vaadin/vertical-layout';
@@ -337,10 +339,12 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           }
         }
         if (file != null) {
-          readTextFile(file).then(contents => {
-            mobx.action((contents: string) => {
-              this._location.password = contents.trim();
-            })(contents);
+          readFile(file).then(fileContent => {
+            mobx.action((fileContent: Uint8Array) => {
+              // restic's `readText` impl supports BOM headers and also trims, so we should too
+              const textContent = decodeTextData(fileContent);
+              this._location.password = textContent.trim();
+            })(fileContent);
           }).catch(err => {
             Notification.show(`Failed to read password file: '${err.message || err}'`, {
               position: 'bottom-center',
