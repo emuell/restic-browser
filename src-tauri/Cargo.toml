@@ -9,29 +9,28 @@ default-run = "restic-browser"
 edition = "2021"
 rust-version = "1.78"
 
-[build-dependencies]
-tauri-build = { version = "^2.4", features = [] }
-
 [dependencies]
 
 # common
 lazy_static = { version = "^1.4" }
-scopeguard = { version = "^1.2" }
-serde_json = "^1.0"
-serde = { version = "^1.0", features = ["derive"] }
+scopeguard = { version = "^1.2", default-features = false }
+serde_json = { version = "^1.0" }
+serde = { version = "^1.0", default-features = false }
 log = { version = "^0.4", features = [
     "max_level_debug",
     "release_max_level_info",
 ] }
-simplelog = { version = "^0.12" }
-which = { version = "^7.0" }
+simplelog = { version = "^0.12", default-features = false, features = [
+    "termcolor",
+] }
+which = { version = "^8.0" }
 open = { version = "^5.0" }
-shlex = { version = "^1.2" }
-semver = { version = "^1.0" }
+shlex = { version = "^1.2", default-features = false }
+semver = { version = "^1.0", default-features = false }
 lenient_semver = { version = "^0.4" }
 
 # tauri
-tauri = { version = "~2.8", features = [] }
+tauri = { version = "~2.8", default-features = false, features = ["wry"] }
 tauri-plugin-window-state = { version = "~2.4" }
 tauri-plugin-fs = { version = "~2.4" }
 tauri-plugin-dialog = { version = "~2.4" }
@@ -39,17 +38,19 @@ tauri-plugin-cli = { version = "~2.4" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "8481725b7ebfc56cdb052d522517421242eac36b" }
 
 # windows
-[target.'cfg(target_os = "windows")'.dependencies.windows-sys]
-version = "^0.59"
-features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_Console"]
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "^0.61", features = [
+    "Win32_System_Console",
+    "Win32_System_Threading",
+] }
 
-# posix
-[target.'cfg(not(target_os = "windows"))'.dependencies.nix]
-version = "^0.30"
-features = ["process", "signal"]
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+nix = { version = "^0.30", features = ["process", "signal"] }
 
-[features]
-# this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
-# If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
-# DO NOT REMOVE!!
-custom-protocol = ["tauri/custom-protocol"]
+[build-dependencies]
+tauri-build = { version = "^2.4", default-features = false }
+
+# speed up debug builds by slightly compiling all dependent packages with optimizations
+[profile.dev.package."*"]
+opt-level = "z"
+debug = 1

@@ -11,9 +11,12 @@ const COMMAND_TERMINATED_EXIT_CODE: u32 = 288;
 /// Tries to gracefully terminate a process with the provided process ID.
 #[cfg(target_os = "windows")]
 fn terminate_process_with_id(pid: u32) -> Result<(), String> {
-    use windows_sys::Win32::{
-        Foundation::{CloseHandle, GetLastError, BOOL, FALSE, HANDLE, WIN32_ERROR},
-        System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE},
+    use windows_sys::{
+        core::BOOL,
+        Win32::{
+            Foundation::{CloseHandle, GetLastError, FALSE, HANDLE, WIN32_ERROR},
+            System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE},
+        },
     };
     log::info!("Killing process with PID {pid}");
 
