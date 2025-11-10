@@ -97,7 +97,8 @@
         "width": 800,
         "resizable": true,
         "visible": false,
-        "title": "Restic Browser"
+        "title": "Restic Browser",
+        "dragDropEnabled": false
       }
     ],
     "security": {
