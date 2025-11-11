@@ -1,12 +1,12 @@
-import { LitElement, html } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-import { dialogFooterRenderer, dialogRenderer } from '@vaadin/dialog/lit';
+import { dialogFooterRenderer, dialogRenderer } from "@vaadin/dialog/lit";
+import { html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
-import '@vaadin/dialog';
-import '@vaadin/horizontal-layout';
-import '@vaadin/vertical-layout';
-import '@vaadin/password-field';
-import '@vaadin/button';
+import "@vaadin/dialog";
+import "@vaadin/horizontal-layout";
+import "@vaadin/vertical-layout";
+import "@vaadin/password-field";
+import "@vaadin/button";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -14,9 +14,8 @@ import '@vaadin/button';
  * Modal dialog to get a repository password from the user.
  */
 
-@customElement('restic-browser-location-password-dialog')
+@customElement("restic-browser-location-password-dialog")
 export class ResticBrowserLocationPasswordDialog extends LitElement {
-
   // optional custom label for the password field: by default "Password".
   @property()
   label?: string;
@@ -24,12 +23,12 @@ export class ResticBrowserLocationPasswordDialog extends LitElement {
   // called when the dialog's 'Okay' button was invoked.
   @property()
   onClose!: (password: string) => void;
-  
+
   // called when the dialog's 'Cancel' button was invoked or the dialog got cancelled.
   @property()
   onCancel!: () => void;
 
-  private _password: string = ""
+  private _password: string = "";
   private _handledClose: boolean = false;
 
   constructor() {
@@ -76,15 +75,15 @@ export class ResticBrowserLocationPasswordDialog extends LitElement {
         .opened=${true}
         .noCloseOnOutsideClick=${true}
         @opened-changed=${(event: CustomEvent) => {
-          if (! event.detail.value && ! this._handledClose) {
+          if (!event.detail.value && !this._handledClose) {
             this._handleCancel();
           }
         }}
         ${dialogFooterRenderer(() => footerLayout, [])}
         ${dialogRenderer(() => dialogLayout, [])}
       ></vaadin-dialog>
-    `;      
-  } 
+    `;
+  }
 
   private _handleClose() {
     this._handledClose = true;
@@ -101,6 +100,6 @@ export class ResticBrowserLocationPasswordDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-location-password-dialog': ResticBrowserLocationPasswordDialog
+    "restic-browser-location-password-dialog": ResticBrowserLocationPasswordDialog;
   }
 }

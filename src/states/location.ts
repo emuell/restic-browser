@@ -1,16 +1,15 @@
-import * as mobx from 'mobx';
+import * as mobx from "mobx";
 
-import { restic } from '../backend/restic';
-import { appState } from './app-state';
+import { restic } from "../backend/restic";
+import { appState } from "./app-state";
 
 // -------------------------------------------------------------------------------------------------
 
 /*!
- * Represents an observable restic repository location. 
+ * Represents an observable restic repository location.
  */
 
 export class Location {
-
   @mobx.observable
   type: string = "local";
 
@@ -21,7 +20,7 @@ export class Location {
   path: string = "";
 
   @mobx.observable
-  credentials: { name: string, value: string }[] = [];
+  credentials: { name: string; value: string }[] = [];
 
   @mobx.observable
   allowEmptyPassword: boolean = false;
@@ -41,7 +40,7 @@ export class Location {
       () => {
         this._setPrefixFromType();
         this._setCredentialsFromType();
-      }
+      },
     );
   }
 
@@ -51,12 +50,20 @@ export class Location {
     let repositoryName = this.path;
     if (repositoryName != "") {
       try {
-        const urlPattern = /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
+        const urlPattern =
+          /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
         const matches = urlPattern.exec(repositoryName);
         if (matches && matches.groups) {
-          const { protocol = '', username = '', password = '', host = '', port = '', path = '' } = matches.groups;
+          const {
+            protocol = "",
+            username = "",
+            password = "",
+            host = "",
+            port = "",
+            path = "",
+          } = matches.groups;
           if (username && password) {
-            repositoryName = `${protocol || ''}${username}:***@${host}${port ? `:${port}` : ''}${path}`;
+            repositoryName = `${protocol || ""}${username}:***@${host}${port ? `:${port}` : ""}${path}`;
           }
         }
       } catch (error) {
@@ -66,7 +73,7 @@ export class Location {
     return repositoryName;
   }
 
-  // reset all location properties 
+  // reset all location properties
   @mobx.action
   reset(): void {
     this.type = "local";
@@ -93,9 +100,9 @@ export class Location {
   // set location properties from a restic.Location
   @mobx.action
   setFromResticLocation(location: restic.Location): void {
-    // find matching location type 
-    const locationInfo = appState.supportedLocationTypes.find(v => v.prefix === location.prefix);
-    if (! locationInfo) {
+    // find matching location type
+    const locationInfo = appState.supportedLocationTypes.find((v) => v.prefix === location.prefix);
+    if (!locationInfo) {
       throw Error(`Unexpected/unsupported location prefix: '${location.prefix}'`);
     }
     // apply repository path and password
@@ -108,8 +115,8 @@ export class Location {
     this._setCredentialsFromType();
     // set all required credentials as well, if they are valid
     for (const credential of locationInfo.credentials) {
-      const defaultValue = location.credentials.find(v => v.name === credential)
-      const locationValue = this.credentials.find(v => v.name === credential)
+      const defaultValue = location.credentials.find((v) => v.name === credential);
+      const locationValue = this.credentials.find((v) => v.name === credential);
       if (defaultValue && locationValue) {
         locationValue.value = defaultValue.value;
       }
@@ -119,17 +126,19 @@ export class Location {
   // set prefix from the current location type
   @mobx.action
   private _setPrefixFromType(): void {
-    const locationInfo = appState.supportedLocationTypes.find(v => v.type === this.type);
+    const locationInfo = appState.supportedLocationTypes.find((v) => v.type === this.type);
     this.prefix = locationInfo?.prefix || "";
   }
 
   // set credentials from the current location type
   @mobx.action
   private _setCredentialsFromType(): void {
-    const locationInfo = appState.supportedLocationTypes.find(v => v.type === this.type);
+    const locationInfo = appState.supportedLocationTypes.find((v) => v.type === this.type);
     const reqiredCredentials = locationInfo?.credentials || [];
-    if (this.credentials.map(v => v.name).toString() !== reqiredCredentials.toString()) {
-      this.credentials = reqiredCredentials.map((v) => { return { name: v, value: "" }; })
+    if (this.credentials.map((v) => v.name).toString() !== reqiredCredentials.toString()) {
+      this.credentials = reqiredCredentials.map((v) => {
+        return { name: v, value: "" };
+      });
     }
   }
-};
+}

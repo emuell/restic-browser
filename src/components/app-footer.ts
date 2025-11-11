@@ -1,19 +1,18 @@
-import { css, html } from 'lit'
-import { customElement, state } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
-import * as mobx from 'mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import { css, html } from "lit";
+import { customElement, state } from "lit/decorators.js";
+import * as mobx from "mobx";
 
-import { appState } from '../states/app-state';
+import { appState } from "../states/app-state";
 
-import '@vaadin/horizontal-layout';
+import "@vaadin/horizontal-layout";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Status bar alike footer in the restic browser app
 
-@customElement('restic-browser-app-footer')
+@customElement("restic-browser-app-footer")
 export class ResticBrowserAppFooter extends MobxLitElement {
-
   @state()
   private _statusMessage: string = "";
 
@@ -28,16 +27,13 @@ export class ResticBrowserAppFooter extends MobxLitElement {
         newMessage = `Restoring '${last.file.name}'`;
         if (appState.pendingFileDumps.length > 2) {
           newMessage += ` and ${appState.pendingFileDumps.length - 1} other entries`;
-        }
-        else if (appState.pendingFileDumps.length > 1) {
+        } else if (appState.pendingFileDumps.length > 1) {
           newMessage += ` and one other entry`;
         }
         newMessage += ". Please wait...";
-      }
-      else if (appState.isLoadingSnapshots > 0) {
+      } else if (appState.isLoadingSnapshots > 0) {
         newMessage = "Fetching snapshots...";
-      } 
-      else if (appState.isLoadingFiles > 0) {
+      } else if (appState.isLoadingFiles > 0) {
         newMessage = "Fetching files...";
       }
       if (newMessage !== "") {
@@ -46,8 +42,7 @@ export class ResticBrowserAppFooter extends MobxLitElement {
           messageTimeoutId = undefined;
         }
         this._statusMessage = newMessage;
-      } 
-      else {
+      } else {
         messageTimeoutId = setTimeout(() => {
           this._statusMessage = "";
           messageTimeoutId = undefined;
@@ -79,8 +74,6 @@ export class ResticBrowserAppFooter extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-app-footer': ResticBrowserAppFooter
+    "restic-browser-app-footer": ResticBrowserAppFooter;
   }
 }
-
-

@@ -1,26 +1,25 @@
-import { css, html } from 'lit'
-import { customElement, state } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import { css, html } from "lit";
+import { customElement, state } from "lit/decorators.js";
 
-import { appState } from './states/app-state';
+import { appState } from "./states/app-state";
 
-import './components/app-footer';
-import './components/app-header';
-import './components/file-list';
-import './components/snapshot-list';
-import './components/location-dialog';
-import './components/error-message';
+import "./components/app-footer";
+import "./components/app-header";
+import "./components/file-list";
+import "./components/snapshot-list";
+import "./components/location-dialog";
+import "./components/error-message";
 
-import '@vaadin/vertical-layout';
-import '@vaadin/split-layout';
+import "@vaadin/vertical-layout";
+import "@vaadin/split-layout";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Main app layout.
 
-@customElement('restic-browser-app')
+@customElement("restic-browser-app")
 export class ResticBrowserApp extends MobxLitElement {
-  
   @state()
   private _showLocationDialog: boolean = false;
 
@@ -28,7 +27,7 @@ export class ResticBrowserApp extends MobxLitElement {
     super();
     this._keyDownHandler = this._keyDownHandler.bind(this);
   }
-  
+
   private _keyDownHandler(event: KeyboardEvent) {
     if (event.ctrlKey && event.key == "o") {
       this._showLocationDialog = true;
@@ -87,21 +86,21 @@ export class ResticBrowserApp extends MobxLitElement {
             appState.openRepository();
           }}
           .onCancel=${() => {
-            this._showLocationDialog = false; 
+            this._showLocationDialog = false;
           }}>
         </restic-browser-location-dialog>
       `;
     }
     // repository error
-    if (appState.repoError || ! appState.repoLocation.path) {
-      const errorMessage = appState.repoError ? 
-        `Failed to open repository: ${appState.repoError}` : 
-        "No repository selected";
+    if (appState.repoError || !appState.repoLocation.path) {
+      const errorMessage = appState.repoError
+        ? `Failed to open repository: ${appState.repoError}`
+        : "No repository selected";
       return html`
         <vaadin-vertical-layout id="layout">
           <restic-browser-app-header id="header" 
-            .openRepositoryClick=${() => this._showLocationDialog = true }
-            .refreshRepositoryClick=${() => appState.openRepository() }
+            .openRepositoryClick=${() => (this._showLocationDialog = true)}
+            .refreshRepositoryClick=${() => appState.openRepository()}
           >
           </restic-browser-app-header>
           <vaadin-horizontal-layout id="error">
@@ -117,8 +116,8 @@ export class ResticBrowserApp extends MobxLitElement {
     return html`
       <vaadin-vertical-layout id="layout">
         <restic-browser-app-header id="header" 
-          .openRepositoryClick=${() => this._showLocationDialog = true }
-          .refreshRepositoryClick=${() => appState.openRepository() }
+          .openRepositoryClick=${() => (this._showLocationDialog = true)}
+          .refreshRepositoryClick=${() => appState.openRepository()}
         >
         </restic-browser-app-header>
         <vaadin-split-layout id="split" orientation="vertical" theme="small">
@@ -135,6 +134,6 @@ export class ResticBrowserApp extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-app': ResticBrowserApp
+    "restic-browser-app": ResticBrowserApp;
   }
 }

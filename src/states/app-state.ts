@@ -1,13 +1,11 @@
-import * as mobx from 'mobx';
-import { writeFile, BaseDirectory, readFile, exists } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, exists, readFile, writeFile } from "@tauri-apps/plugin-fs";
+import * as mobx from "mobx";
 
-import { restic } from '../backend/restic';
-import { resticApp } from '../backend/app';
-
-import { encodeTextData, decodeTextData } from '../utils/text-encoding';
-
-import { Location } from './location';
-import { LocationPreset } from './location-preset';
+import { resticApp } from "../backend/app";
+import { restic } from "../backend/restic";
+import { decodeTextData, encodeTextData } from "../utils/text-encoding";
+import { Location } from "./location";
+import { LocationPreset } from "./location-preset";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -16,7 +14,6 @@ import { LocationPreset } from './location-preset';
 !*/
 
 class AppState {
-
   // location presets
   @mobx.observable
   locationPresets: LocationPreset[] = [new LocationPreset()];
@@ -35,13 +32,13 @@ class AppState {
   @mobx.observable
   repoError: string = "";
 
-  // snapshots 
+  // snapshots
   @mobx.observable
   snapShots: restic.Snapshot[] = [];
   @mobx.observable
   selectedSnapshotID: string = "";
 
-  // loading status 
+  // loading status
   @mobx.observable
   isLoadingSnapshots: number = 0;
 
@@ -50,7 +47,7 @@ class AppState {
 
   // pending open or dump operations
   @mobx.observable
-  pendingFileDumps: { file: restic.File, mode: "open" | "restore" }[] = [];
+  pendingFileDumps: { file: restic.File; mode: "open" | "restore" }[] = [];
 
   // repository location types supported by the backend
   @mobx.observable
@@ -74,31 +71,30 @@ class AppState {
         if (this.repoLocation.path) {
           this.openRepository();
         }
-      }
-      catch (err: any) {
-        console.error("Failed to fetch default location: '%s'", err.message || String(err))
+      } catch (err: any) {
+        console.error("Failed to fetch default location: '%s'", err.message || String(err));
       }
 
       // auto-load location presets from config dir
       try {
         await this._autoLoadPresets();
-      }
-      catch (err: any) {
-        console.warn("Failed to load location presets file: '%s'", err.message || String(err))
+      } catch (err: any) {
+        console.warn("Failed to load location presets file: '%s'", err.message || String(err));
       }
       // auto-save location presets to config dir on changes
       this._autoSavePresets();
-    })()
-      .catch(err => {
-        console.error("Failed to initialize appState: '%s'", err.message || String(err))
-      });
+    })().catch((err) => {
+      console.error("Failed to initialize appState: '%s'", err.message || String(err));
+    });
   }
 
   // select a new location preset
   @mobx.action
   setSelectedLocationPreset(locationPreset: LocationPreset): void {
-    console.assert(this.locationPresets.includes(locationPreset),
-      "Trying to select an invalid location preset");
+    console.assert(
+      this.locationPresets.includes(locationPreset),
+      "Trying to select an invalid location preset",
+    );
     this.selectedLocationPreset = locationPreset;
   }
 
@@ -116,13 +112,12 @@ class AppState {
   @mobx.action
   removeLocationPreset(index: number) {
     if (index != 0) {
-      let deletingSelected = (this.selectedLocationPreset === this.locationPresets[index]);
+      let deletingSelected = this.selectedLocationPreset === this.locationPresets[index];
       this.locationPresets.splice(index, 1);
       if (deletingSelected) {
         this.selectedLocationPreset = this.locationPresets[0];
       }
-    }
-    else {
+    } else {
       console.error("Trying to delete the first location preset");
     }
   }
@@ -143,42 +138,49 @@ class AppState {
   @mobx.action
   openRepository(): void {
     let location = new restic.Location(this.repoLocation);
-    if (! location.allowEmptyPassword && ! location.password && this.repoPassword) {
+    if (!location.allowEmptyPassword && !location.password && this.repoPassword) {
       location.password = this.repoPassword;
     }
     ++this.isLoadingSnapshots;
     this.selectedSnapshotID = "";
     this.snapShots = [];
     this.repoError = "";
-    resticApp.openRepository(location)
+    resticApp
+      .openRepository(location)
       .then(() => resticApp.getSnapshots())
-      .then(mobx.action((result) => {
-        this.repoError = "";
-        this.snapShots = result;
-        if (!result.find((s) => s.short_id === this.selectedSnapshotID)) {
-          if (result.length) { // select most recent
-            this.selectedSnapshotID = result[result.length - 1].id;
+      .then(
+        mobx.action((result) => {
+          this.repoError = "";
+          this.snapShots = result;
+          if (!result.find((s) => s.short_id === this.selectedSnapshotID)) {
+            if (result.length) {
+              // select most recent
+              this.selectedSnapshotID = result[result.length - 1].id;
+            } else {
+              this.selectedSnapshotID = "";
+            }
           }
-          else {
-            this.selectedSnapshotID = "";
-          }
-        }
-        this._filesCache.clear();
-        --this.isLoadingSnapshots;
-      }))
-      .catch(mobx.action((err) => {
-        this.repoError = err.message || String(err);
-        this.snapShots = [];
-        this.selectedSnapshotID = "";
-        --this.isLoadingSnapshots;
-      }));
+          this._filesCache.clear();
+          --this.isLoadingSnapshots;
+        }),
+      )
+      .catch(
+        mobx.action((err) => {
+          this.repoError = err.message || String(err);
+          this.snapShots = [];
+          this.selectedSnapshotID = "";
+          --this.isLoadingSnapshots;
+        }),
+      );
   }
 
   // select a new snapshot
   @mobx.action
   setNewSnapshotId(id: string): void {
-    console.assert(this.snapShots.find((s) => s.id === id) !== undefined,
-      "Trying to select an invalid snapshot");
+    console.assert(
+      this.snapShots.find((s) => s.id === id) !== undefined,
+      "Trying to select an invalid snapshot",
+    );
     this.selectedSnapshotID = id;
   }
 
@@ -192,43 +194,48 @@ class AppState {
     // do we got cached files for this snapshot and path?
     const cachedFiles = this._getCachedFiles(selectedSnapshotID, rootPath);
     if (cachedFiles) {
-      return Promise.resolve(cachedFiles)
+      return Promise.resolve(cachedFiles);
     }
     // else fetch new ones and cache them
     ++this.isLoadingFiles;
-    return resticApp.getFiles(this.selectedSnapshotID, rootPath || "/")
-      .then(mobx.action((files) => {
-        --this.isLoadingFiles;
-        this._addCachedFiles(selectedSnapshotID, rootPath, files);
-        return files;
-      }))
-      .catch(mobx.action((error) => {
-        --this.isLoadingFiles;
-        throw error;
-      }));
+    return resticApp
+      .getFiles(this.selectedSnapshotID, rootPath || "/")
+      .then(
+        mobx.action((files) => {
+          --this.isLoadingFiles;
+          this._addCachedFiles(selectedSnapshotID, rootPath, files);
+          return files;
+        }),
+      )
+      .catch(
+        mobx.action((error) => {
+          --this.isLoadingFiles;
+          throw error;
+        }),
+      );
   }
 
   // dump specified snapshot file to temp, then open it with the system's default program
   @mobx.action
   async openFile(file: restic.File): Promise<void> {
-
     this.pendingFileDumps.push({ file, mode: "open" });
 
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
-        item => item.file.path === file.path && item.mode === "open");
+        (item) => item.file.path === file.path && item.mode === "open",
+      );
       if (index !== -1) {
         this.pendingFileDumps.splice(index, 1);
       }
     });
 
-    return resticApp.dumpFileToTemp(this.selectedSnapshotID, file)
+    return resticApp
+      .dumpFileToTemp(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
-        resticApp.openFileOrUrl(path)
-          .catch(err => {
-            throw err;
-          })
+        resticApp.openFileOrUrl(path).catch((err) => {
+          throw err;
+        });
       })
       .catch((err) => {
         removePendingFile();
@@ -240,18 +247,19 @@ class AppState {
   // files will be restored as they are, folders will be restored as zip files
   @mobx.action
   dumpFile(file: restic.File): Promise<string> {
-
     this.pendingFileDumps.push({ file, mode: "restore" });
 
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
-        item => item.file.path === file.path && item.mode === "restore");
+        (item) => item.file.path === file.path && item.mode === "restore",
+      );
       if (index !== -1) {
         this.pendingFileDumps.splice(index, 1);
       }
     });
 
-    return resticApp.dumpFile(this.selectedSnapshotID, file)
+    return resticApp
+      .dumpFile(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
         return path;
@@ -265,18 +273,19 @@ class AppState {
   // restore specified snapshot file to a custom target directory
   @mobx.action
   restoreFile(file: restic.File): Promise<string> {
-
     this.pendingFileDumps.push({ file, mode: "restore" });
 
     const removePendingFile = mobx.action(() => {
       const index = this.pendingFileDumps.findIndex(
-        item => item.file.path === file.path && item.mode === "restore");
+        (item) => item.file.path === file.path && item.mode === "restore",
+      );
       if (index !== -1) {
         this.pendingFileDumps.splice(index, 1);
       }
     });
 
-    return resticApp.restoreFile(this.selectedSnapshotID, file)
+    return resticApp
+      .restoreFile(this.selectedSnapshotID, file)
       .then((path) => {
         removePendingFile();
         return path;
@@ -292,19 +301,19 @@ class AppState {
   // maximum size of the files cache
   static readonly MAX_CACHED_FILE_ENTRIES = 50;
 
-  // file cache for \function fetchFiles 
-  private _filesCache = new Map<string, { files: restic.File[], lastAccessTime: number }>();
+  // file cache for \function fetchFiles
+  private _filesCache = new Map<string, { files: restic.File[]; lastAccessTime: number }>();
 
-  // construct a key for the filesList cache 
+  // construct a key for the filesList cache
   private static _cachedFilesKey(snapShotId: string, path: string): string {
     const normalizedPath = !path ? "/" : path.replace(/\\/g, "/");
     return snapShotId + ":" + normalizedPath;
   }
 
-  // get cached files for the given snapshot and path. 
-  // returns undefined when no cached files are present. 
+  // get cached files for the given snapshot and path.
+  // returns undefined when no cached files are present.
   private _getCachedFiles(snapShotId: string, path: string): restic.File[] | undefined {
-    const entry = this._filesCache.get(AppState._cachedFilesKey(snapShotId, path))
+    const entry = this._filesCache.get(AppState._cachedFilesKey(snapShotId, path));
     if (entry) {
       entry.lastAccessTime = Date.now();
       return entry.files;
@@ -312,7 +321,7 @@ class AppState {
     return undefined;
   }
 
-  // add files for the given snapshot and path to the cache. 
+  // add files for the given snapshot and path to the cache.
   private _addCachedFiles(snapShotId: string, path: string, files: restic.File[]) {
     const currentTime = Date.now();
     if (this._filesCache.size > AppState.MAX_CACHED_FILE_ENTRIES) {
@@ -321,22 +330,25 @@ class AppState {
       let oldestKey = "";
       for (const [key, value] of Array.from(this._filesCache)) {
         if (value.lastAccessTime < oldestTime) {
-          oldestTime = value.lastAccessTime
-          oldestKey = key
+          oldestTime = value.lastAccessTime;
+          oldestKey = key;
         }
       }
-      this._filesCache.delete(oldestKey)
+      this._filesCache.delete(oldestKey);
     }
     // add new entry
     this._filesCache.set(AppState._cachedFilesKey(snapShotId, path), {
-      files: files, lastAccessTime: currentTime
+      files: files,
+      lastAccessTime: currentTime,
     });
   }
 
-  // load presets from config file 
+  // load presets from config file
   private async _autoLoadPresets() {
-    if (await exists('presets.json', { baseDir: BaseDirectory.AppConfig })) {
-      let fileContent = await readFile('presets.json', { baseDir: BaseDirectory.AppConfig });
+    if (await exists("presets.json", { baseDir: BaseDirectory.AppConfig })) {
+      let fileContent = await readFile("presets.json", {
+        baseDir: BaseDirectory.AppConfig,
+      });
       let textContent = decodeTextData(fileContent);
       const presetsObject = JSON.parse(textContent);
       if (!Array.isArray(presetsObject)) {
@@ -344,15 +356,18 @@ class AppState {
       }
       // NB: keep first entry: it is used as new location template
       mobx.runInAction(() =>
-        this.locationPresets.push(...presetsObject.map((presetObject) => {
-          const newPreset = new LocationPreset();
-          newPreset.fromJSON(presetObject);
-          return newPreset;
-        })));
+        this.locationPresets.push(
+          ...presetsObject.map((presetObject) => {
+            const newPreset = new LocationPreset();
+            newPreset.fromJSON(presetObject);
+            return newPreset;
+          }),
+        ),
+      );
     }
   }
 
-  // save presets to config file 
+  // save presets to config file
   private _autoSavePresets() {
     // auto-save location presets to config dir
     mobx.reaction(
@@ -360,11 +375,14 @@ class AppState {
       () => JSON.stringify(this.locationPresets.slice(1)),
       (contents) => {
         let fileContent = encodeTextData(contents);
-        writeFile('presets.json', fileContent, { baseDir: BaseDirectory.AppConfig })
-          .catch(err => {
-            console.error("Failed to save location presets: '%s'", err.message || String(err))
-          });
-      }, { delay: 500 });
+        writeFile("presets.json", fileContent, {
+          baseDir: BaseDirectory.AppConfig,
+        }).catch((err) => {
+          console.error("Failed to save location presets: '%s'", err.message || String(err));
+        });
+      },
+      { delay: 500 },
+    );
   }
 }
 

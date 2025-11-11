@@ -1,5 +1,4 @@
 export namespace restic {
-
   export class RepositoryLocationType {
     type: string;
     prefix: string;
@@ -7,7 +6,7 @@ export namespace restic {
     credentials: string[];
 
     constructor(source: any = {}) {
-      if ('string' === typeof source) source = JSON.parse(source);
+      if ("string" === typeof source) source = JSON.parse(source);
       this.type = source["type"];
       this.prefix = source["prefix"];
       this.displayName = source["displayName"];
@@ -19,7 +18,7 @@ export namespace restic {
         return a;
       }
       if (a.slice) {
-        return (a as any[]).map(elem => this.convertValues(elem, classs));
+        return (a as any[]).map((elem) => this.convertValues(elem, classs));
       } else if ("object" === typeof a) {
         return new classs(a);
       }
@@ -32,7 +31,7 @@ export namespace restic {
     value: string;
 
     constructor(source: any = {}) {
-      if ('string' === typeof source) source = JSON.parse(source);
+      if ("string" === typeof source) source = JSON.parse(source);
       this.name = source["name"];
       this.value = source["value"];
     }
@@ -47,17 +46,14 @@ export namespace restic {
     insecureTls: boolean;
 
     constructor(source: any = {}) {
-      if ('string' === typeof source) source = JSON.parse(source);
+      if ("string" === typeof source) source = JSON.parse(source);
       this.prefix = source["prefix"] || "";
       this.path = source["path"] || "";
       this.credentials = this.convertValues(source["credentials"], EnvValue);
-      this.allowEmptyPassword = source["allowEmptyPassword"] !== undefined
-        ? source["allowEmptyPassword"]
-        : false;
+      this.allowEmptyPassword =
+        source["allowEmptyPassword"] !== undefined ? source["allowEmptyPassword"] : false;
       this.password = source["password"] || "";
-      this.insecureTls = source["insecureTls"] !== undefined 
-        ? source["insecureTls"] 
-        : false;
+      this.insecureTls = source["insecureTls"] !== undefined ? source["insecureTls"] : false;
     }
 
     convertValues(a: any, classs: any): any {
@@ -65,7 +61,7 @@ export namespace restic {
         return a;
       }
       if (a.slice) {
-        return (a as any[]).map(elem => this.convertValues(elem, classs));
+        return (a as any[]).map((elem) => this.convertValues(elem, classs));
       } else if ("object" === typeof a) {
         return new classs(a);
       }
@@ -83,7 +79,7 @@ export namespace restic {
     username: string;
 
     constructor(source: any = {}) {
-      if ('string' === typeof source) source = JSON.parse(source);
+      if ("string" === typeof source) source = JSON.parse(source);
       this.id = source["id"];
       this.short_id = source["short_id"];
       this.time = source["time"];
@@ -107,7 +103,7 @@ export namespace restic {
     ctime?: string;
 
     constructor(source: any = {}) {
-      if ('string' === typeof source) source = JSON.parse(source);
+      if ("string" === typeof source) source = JSON.parse(source);
       this.name = source["name"];
       this.type = source["type"];
       this.path = source["path"];
@@ -121,4 +117,3 @@ export namespace restic {
     }
   }
 }
-

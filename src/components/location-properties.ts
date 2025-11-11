@@ -1,26 +1,23 @@
-import { CSSResultGroup, css, html, nothing } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
-import * as mobx from 'mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import { DialogFilter, open } from "@tauri-apps/plugin-dialog";
+import { readFile } from "@tauri-apps/plugin-fs";
+import { Notification } from "@vaadin/notification";
+import { CSSResultGroup, css, html, nothing } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import * as mobx from "mobx";
 
-import { appState } from '../states/app-state';
-import { Location } from '../states/location';
+import { appState } from "../states/app-state";
+import { Location } from "../states/location";
+import { decodeTextData } from "../utils/text-encoding";
 
-import { decodeTextData } from '../utils/text-encoding';
-
-import { Notification } from '@vaadin/notification';
-
-import { DialogFilter, open } from '@tauri-apps/plugin-dialog';
-import { readFile } from '@tauri-apps/plugin-fs';
-
-import '@vaadin/horizontal-layout';
-import '@vaadin/vertical-layout';
-import '@vaadin/password-field';
-import '@vaadin/item';
-import '@vaadin/checkbox';
-import '@vaadin/button';
-import '@vaadin/select';
-import '@vaadin/notification';
+import "@vaadin/horizontal-layout";
+import "@vaadin/vertical-layout";
+import "@vaadin/password-field";
+import "@vaadin/item";
+import "@vaadin/checkbox";
+import "@vaadin/button";
+import "@vaadin/select";
+import "@vaadin/notification";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -28,8 +25,8 @@ import '@vaadin/notification';
 enum CredentialDisplayType {
   Password,
   Text,
-  File
-};
+  File,
+}
 
 // Known credential display types. Defaults to "Password" when undefined.
 const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
@@ -43,7 +40,7 @@ const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
 
 // Dialog file filters for known file credentials. Defaults to "All files *.*".
 const credentialFileFilters: Map<string, DialogFilter[]> = new Map([
-  ["GOOGLE_APPLICATION_CREDENTIALS", [{ name: "json", extensions: ["json"] }]]
+  ["GOOGLE_APPLICATION_CREDENTIALS", [{ name: "json", extensions: ["json"] }]],
 ]);
 
 // -------------------------------------------------------------------------------------------------
@@ -52,9 +49,8 @@ const credentialFileFilters: Map<string, DialogFilter[]> = new Map([
  * Location properties form, part of the location dialog.
  */
 
-@customElement('restic-browser-location-properties')
+@customElement("restic-browser-location-properties")
 export class ResticBrowserLocationProperties extends MobxLitElement {
-
   // when false, all form fields are disabled
   @property({ type: Boolean })
   allowEditing: boolean = true;
@@ -74,7 +70,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     // initialize from app state and auto-update on changes
     mobx.autorun(() => {
       this._location.setFromOtherLocation(appState.repoLocation);
-    })
+    });
 
     // bind this to callbacks
     this._browseLocalRepositoryPath = this._browseLocalRepositoryPath.bind(this);
@@ -92,19 +88,20 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
 
   render() {
     const locationTypes = appState.supportedLocationTypes;
-    const locationInfo = locationTypes.find(v => v.type === this._location.type);
+    const locationInfo = locationTypes.find((v) => v.type === this._location.type);
 
     const locationType = html`
       <vaadin-select
         label="Type"
-        .items=${locationTypes.map(v => { return { label: v.displayName, value: v.type } })}
+        .items=${locationTypes.map((v) => {
+          return { label: v.displayName, value: v.type };
+        })}
         .value=${this._location.type}
-        .disabled=${! this.allowEditing}
+        .disabled=${!this.allowEditing}
         @change=${mobx.action((event: CustomEvent) => {
           this._location.type = (event.target as HTMLInputElement).value;
         })}
-      ></vaadin-select>`
-    ;
+      ></vaadin-select>`;
 
     let pathLabel;
     switch (this._location.prefix) {
@@ -134,7 +131,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         <vaadin-text-field style="width: 100%; margin-right: 4px;" 
           label=${pathLabel}
           required
-          .disabled=${! this.allowEditing}
+          .disabled=${!this.allowEditing}
           value=${this._location.path}
           @change=${mobx.action((event: CustomEvent) => {
             this._location.path = (event.target as HTMLInputElement).value.trim();
@@ -149,10 +146,11 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
           </div>
         </vaadin-text-field>
-        ${this._location.type === "local" && this.allowEditing
-          ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+        ${
+          this._location.type === "local" && this.allowEditing
+            ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
                     @click=${this._browseLocalRepositoryPath}>Browse</vaadin-button>`
-          : nothing
+            : nothing
         }
       </vaadin-horizontal-layout>
     `;
@@ -165,7 +163,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
               <vaadin-password-field 
                 label=${value.name}
                 required
-                .disabled=${! this.allowEditing}
+                .disabled=${!this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
                   // NB: don't trim passwords. Spaces are allowed here...
@@ -177,7 +175,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
               <vaadin-text-field 
                 label=${value.name}
                 required
-                .disabled=${! this.allowEditing}
+                .disabled=${!this.allowEditing}
                 value=${value.value}
                 @change=${mobx.action((event: CustomEvent) => {
                   value.value = (event.target as HTMLInputElement).value.trim();
@@ -190,28 +188,31 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
                   style="width: 100%; margin-right: 4px;"
                   label=${value.name}
                   required
-                  .disabled=${! this.allowEditing}
+                  .disabled=${!this.allowEditing}
                   value=${value.value}
                   @change=${mobx.action((event: CustomEvent) => {
                     value.value = (event.target as HTMLInputElement).value.trim();
                   })}
                 ></vaadin-text-field>
-                ${this.allowEditing
-                  ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+                ${
+                  this.allowEditing
+                    ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
                             @click=${() => this._browseCredentialsPath(value.name)}>Browse</vaadin-button>`
-                  : nothing
+                    : nothing
                 }
               </vaadin-horizontal-layout>`;
       }
     });
 
-    const password = (this._location.allowEmptyPassword == false) ? html`
+    const password =
+      this._location.allowEmptyPassword == false
+        ? html`
       <vaadin-horizontal-layout style="width: 24rem">
         <vaadin-password-field
           style="width: 100%; margin-right: 4px;"
           label="Repository Password"
           required
-          .disabled=${! this.allowEditing}
+          .disabled=${!this.allowEditing}
           value=${this._location.password}
           @change=${mobx.action((event: CustomEvent) => {
             // NB: don't trim passwords. Spaces are allowed here...
@@ -219,13 +220,14 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           })}
         >
         </vaadin-password-field>
-        ${this.allowEditing
-          ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
+        ${
+          this.allowEditing
+            ? html`<vaadin-button theme="primary" style="width: 4rem; margin-top: auto;" 
             @click=${this._readRepositoryPasswordFile}>Read</vaadin-button>`
-          : nothing
+            : nothing
         }
-      </vaadin-horizontal-layout>` : nothing
-    ;
+      </vaadin-horizontal-layout>`
+        : nothing;
 
     const allowEmptyPassword = html`
       <vaadin-horizontal-layout style="width: 24rem">
@@ -233,7 +235,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           id="checkbox" 
           label="Set no password"
           .checked=${this._location.allowEmptyPassword}
-          .disabled=${! this.allowEditing}
+          .disabled=${!this.allowEditing}
           @change=${mobx.action((event: CustomEvent) => {
             this._location.allowEmptyPassword = (event.target as HTMLInputElement).checked;
           })}
@@ -241,19 +243,22 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       </vaadin-horizontal-layout>
     `;
 
-    const insecureTsl = (this._location.type !== "local") ? html`
+    const insecureTsl =
+      this._location.type !== "local"
+        ? html`
       <vaadin-horizontal-layout>
         <vaadin-form-item style="margin-top: 10.5px;">
           <vaadin-checkbox 
             id="checkbox" 
             label="Skip TLS certificate verification"
             .checked=${this._location.insecureTls}
-            .disabled=${! this.allowEditing}
+            .disabled=${!this.allowEditing}
             @change=${mobx.action((event: CustomEvent) => {
               this._location.insecureTls = (event.target as HTMLInputElement).checked;
             })}
           ></vaadin-checkbox>
-        </vaadin-form-item>` : nothing;
+        </vaadin-form-item>`
+        : nothing;
 
     return html`
       <vaadin-vertical-layout id="layout">
@@ -271,7 +276,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     open({
       directory: true,
       multiple: false,
-      title: "Please select the root folder of a restic repository"
+      title: "Please select the root folder of a restic repository",
     })
       .then((directory) => {
         if (Array.isArray(directory)) {
@@ -289,8 +294,8 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       })
       .catch((err) => {
         Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
-          position: 'bottom-center',
-          theme: "error"
+          position: "bottom-center",
+          theme: "error",
         });
       });
   }
@@ -300,7 +305,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       directory: false,
       multiple: false,
       filters: credentialFileFilters.get(credential_name),
-      title: "Please select a google application credentials JSON file"
+      title: "Please select a google application credentials JSON file",
     })
       .then((file) => {
         if (Array.isArray(file)) {
@@ -313,7 +318,8 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         if (file != null) {
           mobx.runInAction(() => {
             let credential = this._location.credentials.find(
-              (item) => item.name == credential_name);
+              (item) => item.name == credential_name,
+            );
             if (credential) {
               credential.value = file as string;
             }
@@ -322,41 +328,49 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       })
       .catch((err) => {
         Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
-          position: 'bottom-center',
-          theme: "error"
+          position: "bottom-center",
+          theme: "error",
         });
       });
   }
 
   private _readRepositoryPasswordFile() {
-    open({ multiple: false, title: "Select file to read password from", directory: false })
-      .then(mobx.action((file) => {
-        if (Array.isArray(file)) {
-          if (file.length > 0) {
-            file = file[0];
-          } else {
-            file = null;
+    open({
+      multiple: false,
+      title: "Select file to read password from",
+      directory: false,
+    })
+      .then(
+        mobx.action((file) => {
+          if (Array.isArray(file)) {
+            if (file.length > 0) {
+              file = file[0];
+            } else {
+              file = null;
+            }
           }
-        }
-        if (file != null) {
-          readFile(file).then(fileContent => {
-            mobx.action((fileContent: Uint8Array) => {
-              // restic's `readText` impl supports BOM headers and also trims, so we should too
-              const textContent = decodeTextData(fileContent);
-              this._location.password = textContent.trim();
-            })(fileContent);
-          }).catch(err => {
-            Notification.show(`Failed to read password file: '${err.message || err}'`, {
-              position: 'bottom-center',
-              theme: "error"
-            });
-          });
-        }
-      }))
+          if (file != null) {
+            readFile(file)
+              .then((fileContent) => {
+                mobx.action((fileContent: Uint8Array) => {
+                  // restic's `readText` impl supports BOM headers and also trims, so we should too
+                  const textContent = decodeTextData(fileContent);
+                  this._location.password = textContent.trim();
+                })(fileContent);
+              })
+              .catch((err) => {
+                Notification.show(`Failed to read password file: '${err.message || err}'`, {
+                  position: "bottom-center",
+                  theme: "error",
+                });
+              });
+          }
+        }),
+      )
       .catch((err) => {
         Notification.show(`Failed to open file dialog: '${err.message || err}'`, {
-          position: 'bottom-center',
-          theme: "error"
+          position: "bottom-center",
+          theme: "error",
         });
       });
   }
@@ -366,6 +380,6 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-location-properties': ResticBrowserLocationProperties,
+    "restic-browser-location-properties": ResticBrowserLocationProperties;
   }
 }

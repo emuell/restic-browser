@@ -1,25 +1,24 @@
-import { CSSResultGroup, css, html, render } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
-import * as mobx from 'mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import { dialogFooterRenderer } from "@vaadin/dialog/lit";
+import { Notification } from "@vaadin/notification";
+import { CSSResultGroup, css, html, render } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import * as mobx from "mobx";
 
-import { appState } from '../states/app-state';
-import { Location } from '../states/location';
-import { LocationPreset } from '../states/location-preset';
-import { ResticBrowserLocationProperties } from './location-properties';
+import { appState } from "../states/app-state";
+import { Location } from "../states/location";
+import { LocationPreset } from "../states/location-preset";
+import { ResticBrowserLocationProperties } from "./location-properties";
 
-import { dialogFooterRenderer } from '@vaadin/dialog/lit';
-import { Notification } from '@vaadin/notification';
+import "./location-properties";
+import "./location-presets";
+import "./location-save-preset-dialog";
+import "./location-password-dialog";
 
-import '@vaadin/dialog';
-import '@vaadin/horizontal-layout';
-import '@vaadin/button';
-import '@vaadin/notification';
-
-import './location-properties';
-import './location-presets';
-import './location-save-preset-dialog';
-import './location-password-dialog';
+import "@vaadin/dialog";
+import "@vaadin/horizontal-layout";
+import "@vaadin/button";
+import "@vaadin/notification";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -27,9 +26,8 @@ import './location-password-dialog';
  * Modal dialog to manage location presets and to set appState.repoLocation.
  */
 
-@customElement('restic-browser-location-dialog')
+@customElement("restic-browser-location-dialog")
 export class ResticBrowserLocationDialog extends MobxLitElement {
-
   // called when the dialog's 'Okay' button was invoked.
   @property()
   onClose!: () => void;
@@ -125,7 +123,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
     // main dialog
     const newLocationPresetSelected =
-      (appState.selectedLocationPreset == appState.locationPresets[0]);
+      appState.selectedLocationPreset == appState.locationPresets[0];
 
     let propertyButtons;
     if (newLocationPresetSelected) {
@@ -138,7 +136,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
           </vaadin-button>
         </vaadin-horizontal-layout>
       `;
-    } else if (! this._editingPreset) {
+    } else if (!this._editingPreset) {
       propertyButtons = html`
         <vaadin-horizontal-layout id="locationPropertyButtons">
           <vaadin-button theme="primary" 
@@ -206,8 +204,12 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
         .opened=${true}
         .noCloseOnOutsideClick=${true}
         @opened-changed=${(event: CustomEvent) => {
-          if (! event.detail.value && ! this._handledClose && 
-              ! this._showSavePresetDialog && ! this._showPasswordDialog) {
+          if (
+            !event.detail.value &&
+            !this._handledClose &&
+            !this._showSavePresetDialog &&
+            !this._showPasswordDialog
+          ) {
             this._handleMainDialogCancel();
           }
         }}
@@ -223,7 +225,8 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
   private get _locationProperties(): ResticBrowserLocationProperties | undefined {
     if (this._dialogContentRoot) {
       return this._dialogContentRoot.querySelector(
-        "#locationProperties") as ResticBrowserLocationProperties;
+        "#locationProperties",
+      ) as ResticBrowserLocationProperties;
     } else {
       return undefined;
     }
@@ -234,15 +237,16 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     let locationProperties = this._locationProperties;
     if (locationProperties) {
       appState.repoLocation.setFromOtherLocation(locationProperties.location);
-    }
-    else {
-      console.error("Failed to fetch location properties component")
+    } else {
+      console.error("Failed to fetch location properties component");
     }
     // ask for repo password?
     appState.setRepositoryPassword("");
-    if (appState.repoLocation.path && 
-        ! appState.repoLocation.allowEmptyPassword &&
-        ! appState.repoLocation.password) {
+    if (
+      appState.repoLocation.path &&
+      !appState.repoLocation.allowEmptyPassword &&
+      !appState.repoLocation.password
+    ) {
       this._handleShowPasswordDialog();
       return;
     }
@@ -256,7 +260,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     // restore location to initial state
     mobx.runInAction(() => {
       appState.setRepositoryPassword("");
-      appState.setSelectedLocationPreset(appState.locationPresets[0])
+      appState.setSelectedLocationPreset(appState.locationPresets[0]);
       appState.setRepositoryLocation(this._initialLocation);
     });
     // reset state and clone
@@ -285,9 +289,8 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     let locationProperties = this._locationProperties;
     if (locationProperties) {
       this._newPresetLocation.setFromOtherLocation(locationProperties.location);
-    }
-    else {
-      console.error("Failed to fetch location properties component")
+    } else {
+      console.error("Failed to fetch location properties component");
     }
     // open preset save dialog
     this._showSavePresetDialog = true;
@@ -295,18 +298,17 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handleSavePresetDialogClose(presetName: string, savePasswords: boolean): boolean {
     if (presetName) {
-      // create new location preset from the properties 
+      // create new location preset from the properties
       appState.addLocationPreset(this._newPresetLocation, presetName, savePasswords);
       // close save preset dialog
       this._showSavePresetDialog = false;
       this._editingPreset = false;
       return true;
-    }
-    else {
-      Notification.show('No preset name set', {
-        position: 'middle',
+    } else {
+      Notification.show("No preset name set", {
+        position: "middle",
         theme: "info",
-        duration: 2000
+        duration: 2000,
       });
       return false;
     }
@@ -324,7 +326,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handlePasswordDialogClose(password: string) {
     // set repo password
-    appState.setRepositoryPassword(password)
+    appState.setRepositoryPassword(password);
     // reset state and clone
     this._showPasswordDialog = false;
     this._handledClose = true;
@@ -334,7 +336,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handlePasswordDialogCancel() {
     // reset repo password
-    appState.setRepositoryPassword("")
+    appState.setRepositoryPassword("");
     this._showPasswordDialog = false;
   }
 
@@ -348,9 +350,8 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
     let locationProperties = this._locationProperties;
     if (locationProperties) {
       appState.repoLocation.setFromOtherLocation(locationProperties.location);
-    }
-    else {
-      console.error("Failed to fetch location properties component")
+    } else {
+      console.error("Failed to fetch location properties component");
     }
     // stop editing
     this._editingPreset = false;
@@ -366,6 +367,6 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-location-dialog': ResticBrowserLocationDialog
+    "restic-browser-location-dialog": ResticBrowserLocationDialog;
   }
 }
