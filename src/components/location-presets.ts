@@ -1,12 +1,17 @@
 import { MobxLitElement } from "@adobe/lit-mobx";
-import { Grid, GridActiveItemChangedEvent, GridDragStartEvent, GridDropEvent } from "@vaadin/grid";
+import type {
+  Grid,
+  GridActiveItemChangedEvent,
+  GridDragStartEvent,
+  GridDropEvent,
+} from "@vaadin/grid";
 import { columnBodyRenderer } from "@vaadin/grid/lit.js";
-import { CSSResultGroup, css, html, nothing } from "lit";
+import { type CSSResultGroup, css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import * as mobx from "mobx";
 
 import { appState } from "../states/app-state";
-import { LocationPreset } from "../states/location-preset";
+import type { LocationPreset } from "../states/location-preset";
 
 import "@vaadin/vertical-layout";
 import "@vaadin/grid";
@@ -88,7 +93,7 @@ export class ResticBrowserLocationPresets extends MobxLitElement {
             ${columnBodyRenderer(
               (item: LocationPreset, model, _column) => html`
               ${
-                model.index != 0
+                model.index !== 0
                   ? html`<span>${item.name}</span>`
                   : html`<i><b>${item.name}</b></i>`
               }`,
@@ -102,7 +107,7 @@ export class ResticBrowserLocationPresets extends MobxLitElement {
             ${columnBodyRenderer(
               (_item, model, _column) => html`
               ${
-                model.index != 0
+                model.index !== 0
                   ? html`
                   <vaadin-button
                     .tabindex=${null}

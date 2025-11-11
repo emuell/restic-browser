@@ -1,6 +1,6 @@
 import * as mobx from "mobx";
 
-import { restic } from "../backend/restic";
+import type { restic } from "../backend/restic";
 import { appState } from "./app-state";
 
 // -------------------------------------------------------------------------------------------------
@@ -48,12 +48,12 @@ export class Location {
   // should only used for display purposes, as this malforms the path.
   get clokedPath(): string {
     let repositoryName = this.path;
-    if (repositoryName != "") {
+    if (repositoryName !== "") {
       try {
         const urlPattern =
-          /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^\/]+)(?::(?<port>\d+))?(?<path>.*)$/;
+          /^(?<protocol>.+:\/\/)?(?:(?<username>[^:@]+)(?::(?<password>[^@]+))?@)?(?<host>[^/]+)(?::(?<port>\d+))?(?<path>.*)$/;
         const matches = urlPattern.exec(repositoryName);
-        if (matches && matches.groups) {
+        if (matches?.groups) {
           const {
             protocol = "",
             username = "",
@@ -66,7 +66,7 @@ export class Location {
             repositoryName = `${protocol || ""}${username}:***@${host}${port ? `:${port}` : ""}${path}`;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // silently ignore regex errors here
       }
     }

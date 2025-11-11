@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/useLiteralKeys: clarity */
 import * as mobx from "mobx";
 
 import { restic } from "../backend/restic";

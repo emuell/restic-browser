@@ -1,8 +1,8 @@
 import { MobxLitElement } from "@adobe/lit-mobx";
-import { DialogFilter, open } from "@tauri-apps/plugin-dialog";
+import { type DialogFilter, open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { Notification } from "@vaadin/notification";
-import { CSSResultGroup, css, html, nothing } from "lit";
+import { type CSSResultGroup, css, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import * as mobx from "mobx";
 
@@ -103,10 +103,9 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         })}
       ></vaadin-select>`;
 
-    let pathLabel;
+    let pathLabel: string;
     switch (this._location.prefix) {
       default:
-      case "local":
         pathLabel = "Path";
         break;
       case "rclone":
@@ -136,14 +135,14 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
           @change=${mobx.action((event: CustomEvent) => {
             this._location.path = (event.target as HTMLInputElement).value.trim();
             // ensure that the prefix is not included in the path
-            const prefix = locationInfo?.prefix ? locationInfo.prefix + ":" : "";
+            const prefix = locationInfo?.prefix ? `${locationInfo.prefix}:` : "";
             if (prefix !== "") {
               if (this._location.path.startsWith(prefix)) {
                 this._location.path = String(this._location.path).replace(prefix, "").trim();
               }
             }
           })}>
-          <div slot="prefix">${locationInfo?.prefix ? locationInfo.prefix + ":" : ""}
+          <div slot="prefix">${locationInfo?.prefix ? `${locationInfo.prefix}:` : ""}
           </div>
         </vaadin-text-field>
         ${
@@ -158,7 +157,6 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     const credentials = this._location.credentials.map((value) => {
       switch (credentialDisplayTypes.get(value.name)) {
         default:
-        case CredentialDisplayType.Password:
           return html`
               <vaadin-password-field 
                 label=${value.name}
@@ -205,7 +203,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     });
 
     const password =
-      this._location.allowEmptyPassword == false
+      this._location.allowEmptyPassword === false
         ? html`
       <vaadin-horizontal-layout style="width: 24rem">
         <vaadin-password-field
@@ -317,8 +315,8 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
         }
         if (file != null) {
           mobx.runInAction(() => {
-            let credential = this._location.credentials.find(
-              (item) => item.name == credential_name,
+            const credential = this._location.credentials.find(
+              (item) => item.name === credential_name,
             );
             if (credential) {
               credential.value = file as string;

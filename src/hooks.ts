@@ -3,13 +3,13 @@ import { core } from "@tauri-apps/api";
 // workaround for vaadin with vite
 // see https://github.com/vaadin/vaadin-lumo-styles/issues/105
 const oldDefine = customElements.define;
-customElements.define = function (
+customElements.define = (
   name: string,
-  constructor: CustomElementConstructor,
+  construct: CustomElementConstructor,
   options?: ElementDefinitionOptions,
-) {
+) => {
   try {
-    return oldDefine.call(customElements, name, constructor, options);
+    return oldDefine.call(customElements, name, construct, options);
   } catch (error) {
     if (
       error instanceof DOMException &&
@@ -35,5 +35,3 @@ document.addEventListener(
 document.addEventListener("DOMContentLoaded", () => {
   core.invoke<void>("show_app_window");
 });
-
-export {};

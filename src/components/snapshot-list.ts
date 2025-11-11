@@ -1,16 +1,16 @@
 import { MobxLitElement } from "@adobe/lit-mobx";
-import {
+import type {
   Grid,
   GridActiveItemChangedEvent,
   GridCellFocusEvent,
   GridColumn,
   GridItemModel,
 } from "@vaadin/grid";
-import { css, html, PropertyValues, render } from "lit";
+import { css, html, type PropertyValues, render } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import * as mobx from "mobx";
 
-import { restic } from "../backend/restic";
+import type { restic } from "../backend/restic";
 import { appState } from "../states/app-state";
 
 import "./spinner";
@@ -54,7 +54,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     );
     // sync selection changes with appState
     const updateGridSelectionFromAppState = () => {
-      const selectedSnapshot = appState.snapShots.find((v) => v.id == appState.selectedSnapshotID);
+      const selectedSnapshot = appState.snapShots.find((v) => v.id === appState.selectedSnapshotID);
       if (selectedSnapshot) {
         this._selectedItems = [selectedSnapshot];
       }
@@ -85,7 +85,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    for (let disposer of this._actionDisposers) {
+    for (const disposer of this._actionDisposers) {
       disposer();
     }
     this._actionDisposers = [];

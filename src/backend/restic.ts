@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/complexity/useLiteralKeys: clarity */
 export namespace restic {
   export class RepositoryLocationType {
     type: string;

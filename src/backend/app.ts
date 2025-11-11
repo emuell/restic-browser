@@ -1,6 +1,6 @@
 import { core } from "@tauri-apps/api";
 
-import { restic } from "./restic";
+import type { restic } from "./restic";
 
 export namespace resticApp {
   export function supportedRepoLocationTypes(): Promise<restic.RepositoryLocationType[]> {

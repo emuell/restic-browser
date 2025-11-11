@@ -1,5 +1,5 @@
 import { MobxLitElement } from "@adobe/lit-mobx";
-import {
+import type {
   Grid,
   GridActiveItemChangedEvent,
   GridCellFocusEvent,
@@ -7,13 +7,13 @@ import {
   GridItemModel,
 } from "@vaadin/grid";
 import { Notification } from "@vaadin/notification";
-import { css, html, PropertyValues, render } from "lit";
+import { css, html, type PropertyValues, render } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import * as mobx from "mobx";
 import prettyBytes from "pretty-bytes";
 
 import { resticApp } from "../backend/app";
-import { restic } from "../backend/restic";
+import type { restic } from "../backend/restic";
 import { appState } from "../states/app-state";
 
 import "./error-message";
@@ -88,7 +88,7 @@ export class ResticBrowserFileList extends MobxLitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    for (let disposer of this._actionDisposers) {
+    for (const disposer of this._actionDisposers) {
       disposer();
     }
     this._actionDisposers = [];
@@ -177,7 +177,7 @@ export class ResticBrowserFileList extends MobxLitElement {
 
   private _parentRootPath(path: string): string | undefined {
     let rootPath = path.trim();
-    if (rootPath && rootPath != "/") {
+    if (rootPath && rootPath !== "/") {
       if (rootPath.endsWith("/")) {
         rootPath = rootPath.substring(0, rootPath.length - 1);
       }
@@ -255,7 +255,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   }
 
   private _keyDownHandler(event: KeyboardEvent) {
-    let selectedFile = this._selectedFiles.length ? this._selectedFiles[0] : undefined;
+    const selectedFile = this._selectedFiles.length ? this._selectedFiles[0] : undefined;
     if (!selectedFile) {
       return;
     }
@@ -323,7 +323,7 @@ export class ResticBrowserFileList extends MobxLitElement {
           <vaadin-icon icon="vaadin:level-right"></vaadin-icon>
         </vaadin-button>
       `;
-      if (model.item.name == "..") {
+      if (model.item.name === "..") {
         render(
           html`
             ${setRootpathButton}
@@ -535,7 +535,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     if (this._fetchError && appState.isLoadingFiles === 0) {
       let errorMessage = this._fetchError;
       if (appState.selectedSnapshotID) {
-        errorMessage = "Failed to fetch files: " + errorMessage;
+        errorMessage = `Failed to fetch files: ${errorMessage}`;
       }
       return html`
         ${header}

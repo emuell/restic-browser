@@ -52,7 +52,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
   render() {
     let repositoryName = appState.repoLocation.clokedPath;
     if (repositoryName && appState.repoLocation.prefix) {
-      repositoryName = appState.repoLocation.prefix + ": " + repositoryName;
+      repositoryName = `${appState.repoLocation.prefix}: ${repositoryName}`;
     }
     if (!repositoryName) {
       repositoryName = "No repository selected";
@@ -73,7 +73,7 @@ export class ResticBrowserAppHeader extends MobxLitElement {
           ${repositoryName}
         </div>
           <vaadin-button theme="primary icon"
-            .hidden=${appState.repoLocation.path == ""}
+            .hidden=${appState.repoLocation.path === ""}
             title="Reload repository snapshots" 
             @click=${() => {
               if (this.refreshRepositoryClick) {

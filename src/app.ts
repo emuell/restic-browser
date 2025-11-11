@@ -29,7 +29,7 @@ export class ResticBrowserApp extends MobxLitElement {
   }
 
   private _keyDownHandler(event: KeyboardEvent) {
-    if (event.ctrlKey && event.key == "o") {
+    if (event.ctrlKey && event.key === "o") {
       this._showLocationDialog = true;
       event.preventDefault();
     }
@@ -77,8 +77,8 @@ export class ResticBrowserApp extends MobxLitElement {
   }
 
   render() {
-    // repository location dialog
     if (this._showLocationDialog) {
+      // repository location dialog
       return html`
         <restic-browser-location-dialog 
           .onClose=${() => {
@@ -90,43 +90,49 @@ export class ResticBrowserApp extends MobxLitElement {
           }}>
         </restic-browser-location-dialog>
       `;
-    }
-    // repository error
-    if (appState.repoError || !appState.repoLocation.path) {
-      const errorMessage = appState.repoError
-        ? `Failed to open repository: ${appState.repoError}`
-        : "No repository selected";
-      return html`
-        <vaadin-vertical-layout id="layout">
-          <restic-browser-app-header id="header" 
-            .openRepositoryClick=${() => (this._showLocationDialog = true)}
-            .refreshRepositoryClick=${() => appState.openRepository()}
-          >
-          </restic-browser-app-header>
-          <vaadin-horizontal-layout id="error">
-            <restic-browser-error-message 
-                type=${appState.repoError ? "error" : "info"} 
-                message=${errorMessage}>
-            </restic-browser-error-message>
-          </vaadin-horizontal-layout>
-        </vaadin-vertical-layout>
-      `;
-    }
-    // repsitory browser layout
-    return html`
-      <vaadin-vertical-layout id="layout">
+    } else {
+      // repository error or browser content
+      const appHeader = html`
         <restic-browser-app-header id="header" 
-          .openRepositoryClick=${() => (this._showLocationDialog = true)}
-          .refreshRepositoryClick=${() => appState.openRepository()}
+          .openRepositoryClick=${() => {
+            this._showLocationDialog = true;
+          }}
+          .refreshRepositoryClick=${() => {
+            appState.openRepository();
+          }}
         >
         </restic-browser-app-header>
-        <vaadin-split-layout id="split" orientation="vertical" theme="small">
-        <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
-          <restic-browser-file-list id="filelist"></restic-browser-file-list>
-        </vaadin-split-layout> 
-        <restic-browser-app-footer id="footer"></restic-browser-app-footer>
-      </vaadin-vertical-layout>
-    `;
+      `;
+      // repository error
+      if (appState.repoError || !appState.repoLocation.path) {
+        const errorMessage = appState.repoError
+          ? `Failed to open repository: ${appState.repoError}`
+          : "No repository selected";
+        return html`
+          <vaadin-vertical-layout id="layout">
+            ${appHeader}
+            <vaadin-horizontal-layout id="error">
+              <restic-browser-error-message 
+                  type=${appState.repoError ? "error" : "info"} 
+                  message=${errorMessage}>
+              </restic-browser-error-message>
+            </vaadin-horizontal-layout>
+          </vaadin-vertical-layout>
+        `;
+      } else {
+        // repository browser layout
+        return html`
+          <vaadin-vertical-layout id="layout">
+            ${appHeader}
+            <vaadin-split-layout id="split" orientation="vertical" theme="small">
+            <restic-browser-snapshot-list id="snapshots"></restic-browser-snapshot-list>
+              <restic-browser-file-list id="filelist"></restic-browser-file-list>
+            </vaadin-split-layout> 
+            <restic-browser-app-footer id="footer"></restic-browser-app-footer>
+          </vaadin-vertical-layout>
+        `;
+      }
+    }
   }
 }
 

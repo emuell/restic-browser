@@ -4,7 +4,7 @@ import * as mobx from "mobx";
 import { resticApp } from "../backend/app";
 import { restic } from "../backend/restic";
 import { decodeTextData, encodeTextData } from "../utils/text-encoding";
-import { Location } from "./location";
+import type { Location } from "./location";
 import { LocationPreset } from "./location-preset";
 
 // -------------------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class AppState {
   // add a new location preset from the given location with the given name
   @mobx.action
   addLocationPreset(location: Location, displayName: string, savePasswords: boolean) {
-    let newPreset = new LocationPreset();
+    const newPreset = new LocationPreset();
     newPreset.name = displayName;
     newPreset.location.setFromOtherLocation(location, savePasswords);
     this.locationPresets.push(newPreset);
@@ -111,8 +111,8 @@ class AppState {
   // remove given location preset
   @mobx.action
   removeLocationPreset(index: number) {
-    if (index != 0) {
-      let deletingSelected = this.selectedLocationPreset === this.locationPresets[index];
+    if (index !== 0) {
+      const deletingSelected = this.selectedLocationPreset === this.locationPresets[index];
       this.locationPresets.splice(index, 1);
       if (deletingSelected) {
         this.selectedLocationPreset = this.locationPresets[0];
@@ -137,7 +137,7 @@ class AppState {
   // open the current repository and populate snapshots
   @mobx.action
   openRepository(): void {
-    let location = new restic.Location(this.repoLocation);
+    const location = new restic.Location(this.repoLocation);
     if (!location.allowEmptyPassword && !location.password && this.repoPassword) {
       location.password = this.repoPassword;
     }
@@ -307,7 +307,7 @@ class AppState {
   // construct a key for the filesList cache
   private static _cachedFilesKey(snapShotId: string, path: string): string {
     const normalizedPath = !path ? "/" : path.replace(/\\/g, "/");
-    return snapShotId + ":" + normalizedPath;
+    return `${snapShotId}:${normalizedPath}`;
   }
 
   // get cached files for the given snapshot and path.
@@ -346,10 +346,10 @@ class AppState {
   // load presets from config file
   private async _autoLoadPresets() {
     if (await exists("presets.json", { baseDir: BaseDirectory.AppConfig })) {
-      let fileContent = await readFile("presets.json", {
+      const fileContent = await readFile("presets.json", {
         baseDir: BaseDirectory.AppConfig,
       });
-      let textContent = decodeTextData(fileContent);
+      const textContent = decodeTextData(fileContent);
       const presetsObject = JSON.parse(textContent);
       if (!Array.isArray(presetsObject)) {
         throw "Content is not an array";
@@ -374,7 +374,7 @@ class AppState {
       // skip first entry: it is used as new location template
       () => JSON.stringify(this.locationPresets.slice(1)),
       (contents) => {
-        let fileContent = encodeTextData(contents);
+        const fileContent = encodeTextData(contents);
         writeFile("presets.json", fileContent, {
           baseDir: BaseDirectory.AppConfig,
         }).catch((err) => {

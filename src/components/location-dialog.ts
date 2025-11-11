@@ -1,14 +1,14 @@
 import { MobxLitElement } from "@adobe/lit-mobx";
 import { dialogFooterRenderer } from "@vaadin/dialog/lit";
 import { Notification } from "@vaadin/notification";
-import { CSSResultGroup, css, html, render } from "lit";
+import { type CSSResultGroup, css, html, render, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import * as mobx from "mobx";
 
 import { appState } from "../states/app-state";
 import { Location } from "../states/location";
-import { LocationPreset } from "../states/location-preset";
-import { ResticBrowserLocationProperties } from "./location-properties";
+import type { LocationPreset } from "../states/location-preset";
+import type { ResticBrowserLocationProperties } from "./location-properties";
 
 import "./location-properties";
 import "./location-presets";
@@ -123,9 +123,9 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
     // main dialog
     const newLocationPresetSelected =
-      appState.selectedLocationPreset == appState.locationPresets[0];
+      appState.selectedLocationPreset === appState.locationPresets[0];
 
-    let propertyButtons;
+    let propertyButtons: TemplateResult;
     if (newLocationPresetSelected) {
       propertyButtons = html`
         <vaadin-horizontal-layout id="locationPropertyButtons">
@@ -234,7 +234,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handleMainDialogClose() {
     // set appState's location from properties component
-    let locationProperties = this._locationProperties;
+    const locationProperties = this._locationProperties;
     if (locationProperties) {
       appState.repoLocation.setFromOtherLocation(locationProperties.location);
     } else {
@@ -286,7 +286,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handleShowSavePresetDialog() {
     // memorize location state from the properties before closing the main dialog
-    let locationProperties = this._locationProperties;
+    const locationProperties = this._locationProperties;
     if (locationProperties) {
       this._newPresetLocation.setFromOtherLocation(locationProperties.location);
     } else {
@@ -347,7 +347,7 @@ export class ResticBrowserLocationDialog extends MobxLitElement {
 
   private _handleFinishEditingPreset() {
     // set appState's location from properties
-    let locationProperties = this._locationProperties;
+    const locationProperties = this._locationProperties;
     if (locationProperties) {
       appState.repoLocation.setFromOtherLocation(locationProperties.location);
     } else {

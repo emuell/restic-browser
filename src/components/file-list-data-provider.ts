@@ -1,10 +1,10 @@
-import {
+import type {
   GridDataProviderCallback,
   GridDataProviderParams,
   GridSorterDefinition,
 } from "@vaadin/grid";
 
-import { restic } from "../backend/restic";
+import type { restic } from "../backend/restic";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ import { restic } from "../backend/restic";
 function normalizeEmptyValue(value: any): any {
   if ([undefined, null].includes(value)) {
     return "";
-  } else if (isNaN(value)) {
+  } else if (Number.isNaN(value)) {
     return value.toString();
   }
   return value;
@@ -92,7 +92,7 @@ export class FileListDataProvider {
       path: "name",
       direction: "asc",
     };
-    if (params.sortOrders && params.sortOrders.length) {
+    if (params.sortOrders?.length) {
       if (params.sortOrders[0].direction) {
         sortOrder = params.sortOrders[0];
       }
@@ -111,9 +111,9 @@ export class FileListDataProvider {
     this._sortedFiles = Array.from(this._files);
     this._sortedFiles.sort((a: restic.File, b: restic.File) => {
       // always keep .. item at top
-      if (a.type === "dir" && a.name == "..") {
+      if (a.type === "dir" && a.name === "..") {
         return -1;
-      } else if (b.type === "dir" && b.name == "..") {
+      } else if (b.type === "dir" && b.name === "..") {
         return 1;
       }
       // keep directories at top or bottom when sorting by name
