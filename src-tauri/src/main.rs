@@ -252,6 +252,7 @@ fn show_app_window(app_window: tauri::Window) -> Result<(), String> {
 
 fn create_application() -> Result<tauri::App, Box<dyn std::error::Error>> {
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_cli::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())

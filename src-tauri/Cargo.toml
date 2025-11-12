@@ -36,6 +36,7 @@ tauri-plugin-fs = { version = "~2.4" }
 tauri-plugin-dialog = { version = "~2.4" }
 tauri-plugin-cli = { version = "~2.4" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "8481725b7ebfc56cdb052d522517421242eac36b" }
+tauri-plugin-clipboard-manager = "2"
 
 # windows
 [target.'cfg(target_os = "windows")'.dependencies]

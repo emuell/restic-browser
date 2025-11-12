@@ -14,9 +14,11 @@
   "dependencies": {
     "@adobe/lit-mobx": "^2.2",
     "@tauri-apps/api": "~2.8",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-dialog": "~2.4",
     "@tauri-apps/plugin-fs": "~2.4",
     "@vaadin/button": "^23.3",
+    "@vaadin/context-menu": "^23.3",
     "@vaadin/dialog": "^23.3",
     "@vaadin/grid": "^23.3",
     "@vaadin/horizontal-layout": "^23.3",

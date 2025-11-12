@@ -6,11 +6,13 @@ import type {
   GridColumn,
   GridItemModel,
 } from "@vaadin/grid";
+import type { ContextMenuItem } from "@vaadin/context-menu";
 import { Notification } from "@vaadin/notification";
 import { css, html, type PropertyValues, render } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import * as mobx from "mobx";
 import prettyBytes from "pretty-bytes";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { resticApp } from "../backend/app";
 import type { restic } from "../backend/restic";
@@ -20,6 +22,7 @@ import "./error-message";
 import "./spinner";
 
 import "@vaadin/grid";
+import "@vaadin/context-menu";
 import "@vaadin/grid/vaadin-grid-sort-column.js";
 import "@vaadin/text-field";
 import "@vaadin/button";
@@ -63,6 +66,7 @@ export class ResticBrowserFileList extends MobxLitElement {
     this._cTimeRenderer = this._cTimeRenderer.bind(this);
     this._mTimeRenderer = this._mTimeRenderer.bind(this);
     this._aTimeRenderer = this._aTimeRenderer.bind(this);
+    this._handleItemSelected = this._handleItemSelected.bind(this);
   }
 
   connectedCallback(): void {
@@ -287,6 +291,44 @@ export class ResticBrowserFileList extends MobxLitElement {
     }
   }
 
+  private _getContextMenuItems(file: restic.File): (ContextMenuItem & { value: string })[] {
+    if (file.name === "..") {
+      return [];
+    }
+    return [
+      {
+        text: "Copy File Name",
+        value: file.name,
+      },
+      {
+        text: "Copy File Path",
+        value: file.path,
+      },
+    ];
+  }
+
+  private async _handleItemSelected(
+    event: CustomEvent<{ value: ContextMenuItem & { value: string } }>,
+  ) {
+    const item = event.detail.value;
+    if (item?.value) {
+      try {
+        await writeText(item.value);
+        Notification.show(`Copied to clipboard`, {
+          position: "bottom-center",
+          duration: 2000,
+          theme: "success",
+        });
+      } catch (err: any) {
+        Notification.show(`Failed to copy: ${err.message || err}`, {
+          position: "middle",
+          duration: 3000,
+          theme: "error",
+        });
+      }
+    }
+  }
+
   private _pathRenderer(
     root: HTMLElement,
     _column: GridColumn<restic.File>,
@@ -475,6 +517,10 @@ export class ResticBrowserFileList extends MobxLitElement {
       align-items: center;
       justify-content: center;
     }
+    #contextmenu {
+      display: flex;
+      flex: 1;
+    }
     #grid {
       height: unset;
       flex: 1;
@@ -548,30 +594,36 @@ export class ResticBrowserFileList extends MobxLitElement {
 
     return html`
       ${header}
-      <vaadin-grid
-        id="grid"
-        theme="compact no-border small" 
-        .dataProvider=${this._fileDataProvider.provider}
-        .selectedItems=${this._selectedFiles}
-        @active-item-changed=${this._activeItemChanged}
-        @cell-focus=${this._cellFocusChanged}
-        @keydown=${this._keyDownHandler}
+      <vaadin-context-menu
+        id="contextmenu"
+        .items=${this._selectedFiles.length ? this._getContextMenuItems(this._selectedFiles[0]) : []}
+        @item-selected=${this._handleItemSelected}
       >
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" header=""
-          .renderer=${this._pathRenderer}></vaadin-grid-column>
-          <vaadin-grid-sort-column .flexGrow=${1} path="name" direction="asc"
-          .renderer=${this._nameRenderer}></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="size"
-          .renderer=${this._sizeRenderer}></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="mode"
-          .renderer=${this._modeRenderer}></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="mtime" 
-          .renderer=${this._mTimeRenderer}></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="atime" 
-          .renderer=${this._aTimeRenderer}></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="ctime" 
-          .renderer=${this._cTimeRenderer}></vaadin-grid-sort-column>
-      </vaadin-grid>
+        <vaadin-grid
+          id="grid"
+          theme="compact no-border small"
+          .dataProvider=${this._fileDataProvider.provider}
+          .selectedItems=${this._selectedFiles}
+          @active-item-changed=${this._activeItemChanged}
+          @cell-focus=${this._cellFocusChanged}
+          @keydown=${this._keyDownHandler}
+        >
+          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="path" header=""
+            .renderer=${this._pathRenderer}></vaadin-grid-column>
+            <vaadin-grid-sort-column .flexGrow=${1} path="name" direction="asc"
+            .renderer=${this._nameRenderer}></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="size"
+            .renderer=${this._sizeRenderer}></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .width=${"6rem"} path="mode"
+            .renderer=${this._modeRenderer}></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="mtime"
+            .renderer=${this._mTimeRenderer}></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="atime"
+            .renderer=${this._aTimeRenderer}></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="ctime"
+            .renderer=${this._cTimeRenderer}></vaadin-grid-sort-column>
+        </vaadin-grid>
+      </vaadin-context-menu>
     `;
   }
 }

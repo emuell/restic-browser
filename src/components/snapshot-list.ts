@@ -6,18 +6,23 @@ import type {
   GridColumn,
   GridItemModel,
 } from "@vaadin/grid";
+import type { ContextMenuItem } from "@vaadin/context-menu";
+import { Notification } from "@vaadin/notification";
 import { css, html, type PropertyValues, render } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
 import * as mobx from "mobx";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import type { restic } from "../backend/restic";
 import { appState } from "../states/app-state";
 
 import "./spinner";
 
+import "@vaadin/context-menu";
 import "@vaadin/horizontal-layout";
 import "@vaadin/grid";
 import "@vaadin/grid/vaadin-grid-sort-column.js";
+import "@vaadin/notification";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -38,6 +43,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     super();
     // bind this to renderers
     this._timeRenderer = this._timeRenderer.bind(this);
+    this._handleItemSelected = this._handleItemSelected.bind(this);
   }
 
   connectedCallback() {
@@ -109,6 +115,49 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     }
   }
 
+  private _getContextMenuItems(snapshot: restic.Snapshot): (ContextMenuItem & { value: string })[] {
+    return [
+      {
+        text: "Copy Snapshot ID",
+        value: snapshot.id,
+      },
+      {
+        text: "Copy Short ID",
+        value: snapshot.short_id,
+      },
+      {
+        text: "Copy Paths",
+        value: snapshot.paths.join(", "),
+      },
+      {
+        text: "Copy Hostname",
+        value: snapshot.hostname,
+      },
+    ];
+  }
+
+  private async _handleItemSelected(
+    event: CustomEvent<{ value: ContextMenuItem & { value: string } }>,
+  ) {
+    const item = event.detail.value;
+    if (item?.value) {
+      try {
+        await writeText(item.value);
+        Notification.show(`Copied to clipboard`, {
+          position: "bottom-center",
+          duration: 2000,
+          theme: "success",
+        });
+      } catch (err: any) {
+        Notification.show(`Failed to copy: ${err.message || err}`, {
+          position: "middle",
+          duration: 3000,
+          theme: "error",
+        });
+      }
+    }
+  }
+
   private _timeRenderer(
     root: HTMLElement,
     _column: GridColumn<restic.Snapshot>,
@@ -135,6 +184,10 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       height: 100%; 
       align-items: center;
       justify-content: center;
+    }
+    #contextmenu {
+      display: flex;
+      flex: 1;
     }
     #grid {
       height: unset;
@@ -172,22 +225,28 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
     return html`
       ${header}
-      <vaadin-grid
-        id="grid"
-        theme="compact no-border" 
-        .items=${appState.snapShots}
-        .selectedItems=${this._selectedItems}
-        @active-item-changed=${this._activeItemChanged}
-        @cell-focus=${this._cellFocusChanged}
+      <vaadin-context-menu
+        id="contextmenu"
+        .items=${this._selectedItems.length ? this._getContextMenuItems(this._selectedItems[0]) : []}
+        @item-selected=${this._handleItemSelected}
       >
-        <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="short_id"></vaadin-grid-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="time" 
-           .renderer=${this._timeRenderer} direction="desc"></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${1} path="paths"></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true}  path="tags"></vaadin-grid-sort-column>
-        <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-sort-column>
-        <!-- <vaadin-grid-sort-column path="username"></vaadin-grid-sort-column> -->
-      </vaadin-grid>
+        <vaadin-grid
+          id="grid"
+          theme="compact no-border"
+          .items=${appState.snapShots}
+          .selectedItems=${this._selectedItems}
+          @active-item-changed=${this._activeItemChanged}
+          @cell-focus=${this._cellFocusChanged}
+        >
+          <vaadin-grid-column .flexGrow=${0} .autoWidth=${true} path="short_id"></vaadin-grid-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="time"
+             .renderer=${this._timeRenderer} direction="desc"></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${1} path="paths"></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true}  path="tags"></vaadin-grid-sort-column>
+          <vaadin-grid-sort-column .flexGrow=${0} .autoWidth=${true} path="hostname"></vaadin-grid-sort-column>
+          <!-- <vaadin-grid-sort-column path="username"></vaadin-grid-sort-column> -->
+        </vaadin-grid>
+      </vaadin-context-menu>
     `;
   }
 }
