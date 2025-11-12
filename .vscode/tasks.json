@@ -7,10 +7,7 @@
       "label": "ui:dev",
       "type": "shell",
       "command": "npm",
-      "args": [
-        "run",
-        "dev"
-      ],
+      "args": ["run", "dev"],
       "isBackground": true,
       "problemMatcher": [
         {
@@ -39,10 +36,7 @@
       "label": "ui:build",
       "type": "shell",
       "command": "npm",
-      "args": [
-        "run",
-        "build"
-      ],
+      "args": ["run", "build"],
       "problemMatcher": [
         {
           "owner": "typescript",
@@ -71,36 +65,24 @@
     {
       "label": "tauri:dev",
       "type": "shell",
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "problemMatcher": ["$rustc"],
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "command": "npm",
-      "args": [
-        "run",
-        "tauri",
-        "dev"
-      ]
+      "args": ["run", "tauri", "dev"]
     },
     {
       "label": "tauri:build",
       "type": "shell",
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "problemMatcher": ["$rustc"],
       "group": {
         "kind": "build",
         "isDefault": false
       },
       "command": "npm",
-      "args": [
-        "run",
-        "tauri",
-        "build"
-      ]
+      "args": ["run", "tauri", "build"]
     }
   ]
 }

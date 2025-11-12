@@ -1,8 +1,10 @@
-import { 
-  GridDataProviderCallback, GridDataProviderParams, GridSorterDefinition 
+import type {
+  GridDataProviderCallback,
+  GridDataProviderParams,
+  GridSorterDefinition,
 } from "@vaadin/grid";
 
-import { restic } from "../backend/restic";
+import type { restic } from "../backend/restic";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -10,8 +12,8 @@ import { restic } from "../backend/restic";
 
 function normalizeEmptyValue(value: any): any {
   if ([undefined, null].includes(value)) {
-    return '';
-  } else if (isNaN(value)) {
+    return "";
+  } else if (Number.isNaN(value)) {
     return value.toString();
   }
   return value;
@@ -31,9 +33,9 @@ function compare(a: any, b: any): number {
 }
 
 function get(path: string, object: any): any {
-  return path.split('.').reduce((obj, property) => obj[property], object);
+  return path.split(".").reduce((obj, property) => obj[property], object);
 }
-    
+
 // -------------------------------------------------------------------------------------------------
 
 /* 
@@ -41,7 +43,6 @@ function get(path: string, object: any): any {
 */
 
 export class FileListDataProvider {
-
   private _files: restic.File[] = [];
   private _sortedFiles: restic.File[] = [];
   private _sortedFilesOrder?: GridSorterDefinition = undefined;
@@ -52,7 +53,7 @@ export class FileListDataProvider {
   }
 
   // get currently sorted files
-  get sortedFiles(): restic.File[] {    
+  get sortedFiles(): restic.File[] {
     return this._files;
   }
 
@@ -72,7 +73,7 @@ export class FileListDataProvider {
   // the actual data-provider callback
   provider(
     params: GridDataProviderParams<restic.File>,
-    callback: GridDataProviderCallback<restic.File>
+    callback: GridDataProviderCallback<restic.File>,
   ) {
     const items = this._sortFiles(params);
     const count = Math.min(items.length, params.pageSize);
@@ -86,22 +87,23 @@ export class FileListDataProvider {
   }
 
   private _sortFiles(params: GridDataProviderParams<restic.File>): restic.File[] {
-
     // get sort order (multi sorting not supported ATM)
     let sortOrder: GridSorterDefinition = {
       path: "name",
-      direction: "asc"
+      direction: "asc",
     };
-    if (params.sortOrders && params.sortOrders.length) {
+    if (params.sortOrders?.length) {
       if (params.sortOrders[0].direction) {
         sortOrder = params.sortOrders[0];
       }
     }
 
     // check if we need to update our files cache
-    if (this._sortedFilesOrder && 
-        this._sortedFilesOrder.direction === sortOrder.direction && 
-        this._sortedFilesOrder.path === sortOrder.path) {
+    if (
+      this._sortedFilesOrder &&
+      this._sortedFilesOrder.direction === sortOrder.direction &&
+      this._sortedFilesOrder.path === sortOrder.path
+    ) {
       return this._sortedFiles;
     }
 
@@ -109,35 +111,38 @@ export class FileListDataProvider {
     this._sortedFiles = Array.from(this._files);
     this._sortedFiles.sort((a: restic.File, b: restic.File) => {
       // always keep .. item at top
-      if (a.type === "dir" && a.name == "..") {
+      if (a.type === "dir" && a.name === "..") {
         return -1;
-      } else if (b.type === "dir" && b.name == "..") {
+      } else if (b.type === "dir" && b.name === "..") {
         return 1;
       }
       // keep directories at top or bottom when sorting by name
       if (sortOrder.path === "name") {
         if (a.type === "dir" && b.type !== "dir") {
-          return (sortOrder.direction === "asc") ? -1 : 1;
+          return sortOrder.direction === "asc" ? -1 : 1;
         } else if (a.type !== "dir" && b.type === "dir") {
-          return (sortOrder.direction === "asc") ? 1 : -1;
+          return sortOrder.direction === "asc" ? 1 : -1;
         }
         // and do a "natural" sort on names
-        const options: Intl.CollatorOptions = { numeric: true, sensitivity: "base" };
-        if (sortOrder.direction === 'asc') {
+        const options: Intl.CollatorOptions = {
+          numeric: true,
+          sensitivity: "base",
+        };
+        if (sortOrder.direction === "asc") {
           return a.name.localeCompare(b.name, undefined, options);
-        } else { 
+        } else {
           return b.name.localeCompare(a.name, undefined, options);
         }
       } else {
-        // apply custom sorting 
-        if (sortOrder.direction === 'asc') {
+        // apply custom sorting
+        if (sortOrder.direction === "asc") {
           return compare(get(sortOrder.path, a), get(sortOrder.path, b));
-        } else { 
+        } else {
           return compare(get(sortOrder.path, b), get(sortOrder.path, a));
         }
       }
     });
-  
+
     return this._sortedFiles;
   }
 }

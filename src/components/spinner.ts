@@ -1,18 +1,17 @@
-import { css, html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
-import '@vaadin/icons';
-import '@vaadin/icon';
+import "@vaadin/icons";
+import "@vaadin/icon";
 
-import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js';
+import "@vaadin/vaadin-lumo-styles/vaadin-iconset.js";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Shows a message along with an error icon
 
-@customElement('restic-browser-spinner')
+@customElement("restic-browser-spinner")
 export class ResticBrowserSpinner extends LitElement {
-  
   @property()
   size: string = "16px";
 
@@ -46,8 +45,6 @@ export class ResticBrowserSpinner extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-spinner': ResticBrowserSpinner
+    "restic-browser-spinner": ResticBrowserSpinner;
   }
 }
-
-

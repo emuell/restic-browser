@@ -1,11 +1,10 @@
-import { LitElement, html } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { dialogFooterRenderer, dialogRenderer } from "@vaadin/dialog/lit.js";
+import { html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
-import { dialogFooterRenderer, dialogRenderer } from '@vaadin/dialog/lit.js';
-
-import '@vaadin/dialog';
-import '@vaadin/horizontal-layout';
-import '@vaadin/button';
+import "@vaadin/dialog";
+import "@vaadin/horizontal-layout";
+import "@vaadin/button";
 
 // -------------------------------------------------------------------------------------------------
 
@@ -13,9 +12,8 @@ import '@vaadin/button';
  * Modal dialog to query a name and save options for a new location preset.
  */
 
-@customElement('restic-browser-location-save-preset-dialog')
+@customElement("restic-browser-location-save-preset-dialog")
 export class ResticBrowserLocationSavePresetDialog extends LitElement {
-
   // optional custom label for the password field: by default "Password".
   @property()
   onClose!: (name: string, savePasswords: boolean) => boolean;
@@ -26,12 +24,12 @@ export class ResticBrowserLocationSavePresetDialog extends LitElement {
 
   private _name: string = "";
   private _savePasswords: boolean = false;
-  
+
   private _handledClose: boolean = false;
 
   constructor() {
     super();
-    
+
     // bind this to all callbacks
     this._handleDialogClose = this._handleDialogClose.bind(this);
     this._handleDialogCancel = this._handleDialogCancel.bind(this);
@@ -80,7 +78,7 @@ export class ResticBrowserLocationSavePresetDialog extends LitElement {
         .opened=${true}
         .noCloseOnOutsideClick=${true}
         @opened-changed=${(event: CustomEvent) => {
-          if (! event.detail.value && ! this._handledClose) {
+          if (!event.detail.value && !this._handledClose) {
             this._handleDialogCancel();
           }
         }}
@@ -106,6 +104,6 @@ export class ResticBrowserLocationSavePresetDialog extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-location-save-preset-dialog': ResticBrowserLocationSavePresetDialog
+    "restic-browser-location-save-preset-dialog": ResticBrowserLocationSavePresetDialog;
   }
 }

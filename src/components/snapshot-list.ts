@@ -1,29 +1,31 @@
-import { css, html, PropertyValues, render } from 'lit'
-import { customElement, query, state } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
-import * as mobx from 'mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import type {
+  Grid,
+  GridActiveItemChangedEvent,
+  GridCellFocusEvent,
+  GridColumn,
+  GridItemModel,
+} from "@vaadin/grid";
+import { css, html, type PropertyValues, render } from "lit";
+import { customElement, query, state } from "lit/decorators.js";
+import * as mobx from "mobx";
 
-import { appState } from '../states/app-state';
-import { restic } from '../backend/restic';
+import type { restic } from "../backend/restic";
+import { appState } from "../states/app-state";
 
-import { 
-  Grid, GridActiveItemChangedEvent, GridCellFocusEvent, GridColumn, GridItemModel 
-} from '@vaadin/grid';
+import "./spinner";
 
-import './spinner';
-
-import '@vaadin/horizontal-layout';
-import '@vaadin/grid';
-import '@vaadin/grid/vaadin-grid-sort-column.js';
+import "@vaadin/horizontal-layout";
+import "@vaadin/grid";
+import "@vaadin/grid/vaadin-grid-sort-column.js";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Snapshot list / table.
 
-@customElement('restic-browser-snapshot-list')
+@customElement("restic-browser-snapshot-list")
 export class ResticBrowserSnapshotList extends MobxLitElement {
-  
-  @state() 
+  @state()
   private _selectedItems: restic.Snapshot[] = [];
 
   @query("#grid")
@@ -41,43 +43,49 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     // request auto column width update on snapshot changes
-    this._actionDisposers.push(mobx.reaction(
-      () => appState.snapShots, 
-      () => {
-        this._recalculateColumnWidths = true;
-      }, 
-      { fireImmediately: true }
-    ));
+    this._actionDisposers.push(
+      mobx.reaction(
+        () => appState.snapShots,
+        () => {
+          this._recalculateColumnWidths = true;
+        },
+        { fireImmediately: true },
+      ),
+    );
     // sync selection changes with appState
     const updateGridSelectionFromAppState = () => {
-      const selectedSnapshot = appState.snapShots.find(v => v.id == appState.selectedSnapshotID);
+      const selectedSnapshot = appState.snapShots.find((v) => v.id === appState.selectedSnapshotID);
       if (selectedSnapshot) {
         this._selectedItems = [selectedSnapshot];
       }
     };
-    this._actionDisposers.push(mobx.reaction(
-      () => appState.selectedSnapshotID, 
-      () => {
-        // when switching snapshot ids, update the selection in our grid
-       updateGridSelectionFromAppState(); 
-      }, 
-      { fireImmediately: true }
-    ));    
-    this._actionDisposers.push(mobx.reaction(
-      () => appState.isLoadingSnapshots > 0, 
-      (isLoading: boolean) => {
-        // when loading finished, this is the first time the grid actually is shown
-        if (!isLoading) {
+    this._actionDisposers.push(
+      mobx.reaction(
+        () => appState.selectedSnapshotID,
+        () => {
+          // when switching snapshot ids, update the selection in our grid
           updateGridSelectionFromAppState();
-        }
-      }, 
-      { fireImmediately: false }
-    ));
+        },
+        { fireImmediately: true },
+      ),
+    );
+    this._actionDisposers.push(
+      mobx.reaction(
+        () => appState.isLoadingSnapshots > 0,
+        (isLoading: boolean) => {
+          // when loading finished, this is the first time the grid actually is shown
+          if (!isLoading) {
+            updateGridSelectionFromAppState();
+          }
+        },
+        { fireImmediately: false },
+      ),
+    );
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    for (let disposer of this._actionDisposers) {
+    for (const disposer of this._actionDisposers) {
       disposer();
     }
     this._actionDisposers = [];
@@ -100,11 +108,11 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       appState.setNewSnapshotId(item.id);
     }
   }
-  
+
   private _timeRenderer(
-    root: HTMLElement, 
-    _column: GridColumn<restic.Snapshot>, 
-    model: GridItemModel<restic.Snapshot>
+    root: HTMLElement,
+    _column: GridColumn<restic.Snapshot>,
+    model: GridItemModel<restic.Snapshot>,
   ) {
     render(html`${new Date(model.item.time).toLocaleString()}`, root);
   }
@@ -134,7 +142,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       margin: 0px 8px;
     }
   `;
-  
+
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
     // apply auto column width updates after content got rendered
@@ -145,7 +153,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       }
     }
   }
-  
+
   render() {
     const header = html`
       <vaadin-horizontal-layout id="header" style="">
@@ -188,6 +196,6 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-snapshot-list': ResticBrowserSnapshotList
+    "restic-browser-snapshot-list": ResticBrowserSnapshotList;
   }
 }

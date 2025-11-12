@@ -12,20 +12,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "app",
-      "appimage"
-    ],
+    "targets": ["app", "appimage"],
     "category": "DeveloperTool",
     "copyright": "",
     "shortDescription": "",
     "longDescription": "",
     "externalBin": [],
     "resources": [],
-    "icon": [
-      "icons/icon.png",
-      "icons/icon.ico"
-    ],
+    "icon": ["icons/icon.png", "icons/icon.ico"],
     "windows": {
       "webviewInstallMode": {
         "silent": true,

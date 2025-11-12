@@ -1,18 +1,17 @@
-import { css, html, LitElement } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { css, html, LitElement } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
-import '@vaadin/icons';
-import '@vaadin/icon';
+import "@vaadin/icons";
+import "@vaadin/icon";
 
-import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js';
+import "@vaadin/vaadin-lumo-styles/vaadin-iconset.js";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Shows a message along with an error icon
 
-@customElement('restic-browser-error-message')
+@customElement("restic-browser-error-message")
 export class ResticBrowserErrorMessage extends LitElement {
-  
   @property()
   type: "info" | "error" = "error";
 
@@ -31,9 +30,8 @@ export class ResticBrowserErrorMessage extends LitElement {
   `;
 
   render() {
-    const iconColor = (this.type === "error") 
-      ? "--lumo-error-text-color" 
-      : "--lumo-primary-text-color";
+    const iconColor =
+      this.type === "error" ? "--lumo-error-text-color" : "--lumo-primary-text-color";
     const errorIcon = html`
       <vaadin-icon 
         icon="lumo:error" 
@@ -51,6 +49,6 @@ export class ResticBrowserErrorMessage extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-error-message': ResticBrowserErrorMessage
+    "restic-browser-error-message": ResticBrowserErrorMessage;
   }
 }

@@ -1,22 +1,20 @@
-import { css, html } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-import { MobxLitElement } from '@adobe/lit-mobx';
+import { MobxLitElement } from "@adobe/lit-mobx";
+import { css, html } from "lit";
+import { customElement, property } from "lit/decorators.js";
 
-import { appState } from '../states/app-state';
+import eye from "../assets/images/eye.png";
+import logo from "../assets/images/logo.png";
+import { appState } from "../states/app-state";
 
-import eye from '../assets/images/eye.png'
-import logo from '../assets/images/logo.png'
-
-import '@vaadin/horizontal-layout';
-import '@vaadin/button';
+import "@vaadin/horizontal-layout";
+import "@vaadin/button";
 
 // -------------------------------------------------------------------------------------------------
- 
+
 // Allow opening new repositories and shows active repository in a header alike view
 
-@customElement('restic-browser-app-header')
+@customElement("restic-browser-app-header")
 export class ResticBrowserAppHeader extends MobxLitElement {
-
   @property()
   openRepositoryClick?: () => void = undefined;
   @property()
@@ -54,9 +52,9 @@ export class ResticBrowserAppHeader extends MobxLitElement {
   render() {
     let repositoryName = appState.repoLocation.clokedPath;
     if (repositoryName && appState.repoLocation.prefix) {
-      repositoryName = appState.repoLocation.prefix + ": " + repositoryName;
+      repositoryName = `${appState.repoLocation.prefix}: ${repositoryName}`;
     }
-    if (! repositoryName) {
+    if (!repositoryName) {
       repositoryName = "No repository selected";
     }
     return html`
@@ -65,18 +63,17 @@ export class ResticBrowserAppHeader extends MobxLitElement {
         <img src=${logo} id="logo" alt="Restic-Browser" />
         <vaadin-button theme="primary" 
           @click=${() => {
-            if (this.openRepositoryClick) { 
-              this.openRepositoryClick(); 
-             } 
-            } 
-          }>
+            if (this.openRepositoryClick) {
+              this.openRepositoryClick();
+            }
+          }}>
           Open Repository
         </vaadin-button>
         <div id="repoPath" class="${!appState.repoLocation.path ? "disabled" : ""}">
           ${repositoryName}
         </div>
           <vaadin-button theme="primary icon"
-            .hidden=${appState.repoLocation.path == ''}
+            .hidden=${appState.repoLocation.path === ""}
             title="Reload repository snapshots" 
             @click=${() => {
               if (this.refreshRepositoryClick) {
@@ -96,8 +93,6 @@ export class ResticBrowserAppHeader extends MobxLitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'restic-browser-app-header': ResticBrowserAppHeader
+    "restic-browser-app-header": ResticBrowserAppHeader;
   }
 }
-
-
