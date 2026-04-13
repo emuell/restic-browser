@@ -18,7 +18,7 @@ jobs:
     runs-on: "ubuntu-22.04"
     steps:
       - name: Setting Global Variables
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         id: var
         with:
           script: |
