@@ -174,6 +174,12 @@ class AppState {
       );
   }
 
+  // clear the currently selected snapshot
+  @mobx.action
+  clearSnapshotSelection(): void {
+    this.selectedSnapshotID = "";
+  }
+
   // select a new snapshot
   @mobx.action
   setNewSnapshotId(id: string): void {
