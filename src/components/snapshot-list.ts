@@ -13,6 +13,7 @@ import * as mobx from "mobx";
 
 import type { restic } from "../backend/restic";
 import { appState } from "../states/app-state";
+import { formatDateTime } from "../utils/date-time";
 
 import "./spinner";
 
@@ -27,12 +28,11 @@ import "@vaadin/select";
 
 // -------------------------------------------------------------------------------------------------
 
-// Value of the "(All)" option in the filter selects, which clears a column's filter.
-// NB: this can't be an empty string.
+// Value of the "Show all" filter option: can't be empty, as `vaadin-select` then falls back to
+// using the item's label as value.
 const NO_FILTER_VALUE = String.fromCharCode(0);
 
-// ISO-8601 month prefix of a snapshot time, e.g. "2026-09". This is what the time column filters
-// on: the grid matches substrings of the raw, ISO formatted time value.
+// Month of a raw snapshot time, e.g. "2026-09": the grid filters substrings of the raw values.
 function snapshotMonth(time: string): string {
   return time.slice(0, 7);
 }
@@ -52,18 +52,16 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
   private _grid!: Grid<restic.Snapshot> | null;
   private _recalculateColumnWidths: boolean = false;
 
-  // Selected filter value of each filterable column, mirrored from the `vaadin-grid-filter`
-  // elements in the column headers. The grid does the actual filtering: this only is needed to
-  // narrow down the offered filter values and to detect that the selected snapshot got filtered
-  // out.
+  // selected filter value of each column: the grid does the filtering itself, this only is needed
+  // to narrow down the offered values and to detect that the selected snapshot got filtered out
   private _filterValues: Map<string, string> = new Map();
-  // Callbacks to re-render the header cell contents of each column, by column path.
+  // re-renders the header cell content of each column, by column path
   private _headerUpdaters: Map<string, () => void> = new Map();
-  // Header cell contents which already got rendered, to detect newly created header cells.
+  // already rendered header cell contents, to detect newly created ones
   private _renderedHeaderRoots: WeakSet<HTMLElement> = new WeakSet();
 
-  // Header renderers for all columns. NB: the renderer identity must be stable, as the grid wipes
-  // a header cell's content whenever the renderer function changed.
+  // header renderer identities must be stable: the grid wipes a header cell's content when the
+  // renderer function changed
   private _shortIdHeaderRenderer = this._plainHeaderRenderer("short_id", "Short_id");
   private _timeHeaderRenderer = this._filterHeaderRenderer("time", "Time");
   private _pathsHeaderRenderer = this._filterHeaderRenderer("paths", "Paths");
@@ -150,10 +148,9 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     _column: GridColumn<restic.Snapshot>,
     model: GridItemModel<restic.Snapshot>,
   ) {
-    render(html`${new Date(model.item.time).toLocaleString()}`, root);
+    render(html`${formatDateTime(model.item.time)}`, root);
   }
 
-  // filterable values of a snapshot in the given column
   private _snapshotFilterValues(snapshot: restic.Snapshot, path: string): string[] {
     if (path === "time") {
       return [snapshotMonth(snapshot.time)];
@@ -162,8 +159,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     return Array.isArray(value) ? value : [String(value ?? "")];
   }
 
-  // does the snapshot pass all active column filters, apart from the given column's one?
-  // NB: must match how the grid's array data provider filters items.
+  // must match how the grid's array data provider filters items
   private _matchesFilters(snapshot: restic.Snapshot, exceptPath?: string): boolean {
     return [...this._filterValues.entries()].every(
       ([path, value]) =>
@@ -175,9 +171,8 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     );
   }
 
-  // filter values which are offered in the given column's header: only snapshots which pass the
-  // *other* columns' filters contribute their values, so the offered values narrow down as
-  // filters get applied.
+  // only snapshots which pass the *other* columns' filters contribute their values, so the
+  // offered values narrow down as filters get applied
   private _filterOptions(path: string): { label: string; value: string }[] {
     const values = new Set<string>();
     for (const snapshot of appState.snapShots) {
@@ -205,9 +200,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     ];
   }
 
-  // Header renderer for the columns which can not be filtered: renders the column's label and an
-  // invisible filter select, so its label aligns with the filterable columns' labels.
-  // NB: the label must match the one the grid generates from the column's path.
+  // the label must match the one the grid generates from the column's path
   private _plainHeaderRenderer(
     path: string,
     label: string,
@@ -230,9 +223,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     );
   }
 
-  // Header renderer for a filterable column: renders the column's sorter and below it a select
-  // with the filter values which are present in the column. The grid picks up the
-  // `vaadin-grid-filter` and filters its items on its own.
+  // the grid picks up the rendered `vaadin-grid-filter` and filters its items on its own
   private _filterHeaderRenderer(
     path: string,
     label: string,
@@ -273,15 +264,13 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
     );
   }
 
-  // re-render the column headers to update the offered filter values and their visibility
   private _updateHeaders() {
     for (const update of this._headerUpdaters.values()) {
       update();
     }
   }
 
-  // show or hide the filters in all column headers. hiding them also clears all active filters, so
-  // that the snapshot list never is filtered by an invisible filter.
+  // hiding the filters also clears them, so the list never is filtered by an invisible filter
   private _toggleFilters() {
     this._showFilters = !this._showFilters;
     if (!this._showFilters) {
@@ -293,8 +282,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   private _clearFilters() {
     this._filterValues.clear();
-    // NB: the `vaadin-grid-filter` elements stay in the DOM when the filters are hidden, so the
-    // grid keeps track of them: reset their values to unfilter the grid.
+    // the filter elements stay in the DOM when hidden, so the grid keeps track of them
     for (const filter of this.renderRoot.querySelectorAll("vaadin-grid-filter")) {
       filter.value = "";
     }
@@ -308,19 +296,16 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       return;
     }
     this._filterValues.set(path, value);
-    // NB: `vaadin-grid-filter` only binds the value of its *own* filter field, so the value of our
-    // custom, slotted one must be forwarded manually to actually apply the filter in the grid.
+    // `vaadin-grid-filter` only binds its *own* filter field's value: forward ours manually
     const filter = target.closest("vaadin-grid-filter");
     if (filter) {
       filter.value = value;
     }
     this._clearSelectionWhenFiltered();
-    // update the offered filter values in the other columns, but not while the select which
-    // triggered this change still is busy applying it
+    // deferred: the select which fired the change still is busy applying it
     queueMicrotask(() => this._updateHeaders());
   }
 
-  // deselect the selected snapshot, when it got hidden by the column filters
   private _clearSelectionWhenFiltered() {
     const selectedSnapshot = appState.snapShots.find((v) => v.id === appState.selectedSnapshotID);
     if (selectedSnapshot && !this._matchesFilters(selectedSnapshot)) {
@@ -367,7 +352,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       align-items: center;
     }
     .filter-header vaadin-select {
-      /* the "small" theme still is too tall for a grid header: this shrinks the input container */
+      /* the "small" theme still is too tall for a grid header */
       --lumo-text-field-size: var(--lumo-size-xs);
       font-size: var(--lumo-font-size-xs);
       width: 100%;
@@ -376,12 +361,12 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
       padding-bottom: 0px;
     }
     .filter-header vaadin-select [slot="value"] {
-      /* NB: the selected item's height is what actually sets the select's height */
+      /* the selected item's height is what sets the select's height */
       --_lumo-selected-item-height: var(--lumo-size-xs);
       --_lumo-selected-item-padding: 0px;
     }
     .filter-header vaadin-select.dummy-filter {
-      /* only present to align the header label with the filterable columns' labels */
+      /* only present to align the label with the filterable columns' labels */
       visibility: hidden;
       width: 0px;
       min-width: 0px;
@@ -394,7 +379,7 @@ export class ResticBrowserSnapshotList extends MobxLitElement {
 
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
-    // update the offered filter values after the snapshots changed
+    // the offered filter values may have changed
     this._updateHeaders();
     // apply auto column width updates after content got rendered
     if (this._recalculateColumnWidths) {

@@ -15,6 +15,7 @@ import prettyBytes from "pretty-bytes";
 import { resticApp } from "../backend/app";
 import type { restic } from "../backend/restic";
 import { appState } from "../states/app-state";
+import { formatDateTime } from "../utils/date-time";
 
 import "./error-message";
 import "./spinner";
@@ -417,7 +418,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     render(
       html`
-        ${model.item.atime ? new Date(model.item.atime).toLocaleString() : "-"}
+        ${model.item.atime ? formatDateTime(model.item.atime) : "-"}
       `,
       root,
     );
@@ -430,7 +431,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     render(
       html`
-        ${model.item.ctime ? new Date(model.item.ctime).toLocaleString() : "-"}
+        ${model.item.ctime ? formatDateTime(model.item.ctime) : "-"}
       `,
       root,
     );
@@ -443,7 +444,7 @@ export class ResticBrowserFileList extends MobxLitElement {
   ) {
     render(
       html`
-        ${model.item.mtime ? new Date(model.item.mtime).toLocaleString() : "-"}
+        ${model.item.mtime ? formatDateTime(model.item.mtime) : "-"}
       `,
       root,
     );
