@@ -36,11 +36,20 @@ const credentialDisplayTypes: Map<string, CredentialDisplayType> = new Map([
   ["GOOGLE_PROJECT_ID", CredentialDisplayType.Text],
   ["GOOGLE_APPLICATION_CREDENTIALS", CredentialDisplayType.File],
   ["RESTIC_REST_USERNAME", CredentialDisplayType.Text],
+  ["SFTP_IDENTITY_FILE", CredentialDisplayType.File],
+  ["KNOWN_HOSTS_FILE", CredentialDisplayType.File],
+  ["SFTP_PORT", CredentialDisplayType.Text],
 ]);
 
 // Dialog file filters for known file credentials. Defaults to "All files *.*".
 const credentialFileFilters: Map<string, DialogFilter[]> = new Map([
   ["GOOGLE_APPLICATION_CREDENTIALS", [{ name: "json", extensions: ["json"] }]],
+]);
+
+const credentialFileDialogTitle: Map<string, DialogFilter[]> = new Map([
+  ["GOOGLE_APPLICATION_CREDENTIALS", "Please select a google application credentials JSON file"],
+  ["SFTP_IDENTITY_FILE", "Please select an SSH identity file"],
+  ["KNOWN_HOSTS_FILE", "Please select an SSH known hosts file"],
 ]);
 
 // -------------------------------------------------------------------------------------------------
@@ -242,7 +251,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
     `;
 
     const insecureTsl =
-      this._location.type !== "local"
+      this._location.type !== "local" && this._location.prefix !== "sftp"
         ? html`
       <vaadin-horizontal-layout>
         <vaadin-form-item style="margin-top: 10.5px;">
@@ -303,7 +312,7 @@ export class ResticBrowserLocationProperties extends MobxLitElement {
       directory: false,
       multiple: false,
       filters: credentialFileFilters.get(credential_name),
-      title: "Please select a google application credentials JSON file",
+      title: credentialFileDialogTitle.get(credential_name),
     })
       .then((file) => {
         if (Array.isArray(file)) {
