@@ -215,6 +215,63 @@ impl Program {
         if location.insecure_tls {
             args.push(Cow::Borrowed(OsStr::new("--insecure-tls")));
         }
+        if location.prefix == "sftp" {
+            let mut ssh_args: Vec<String> = Vec::new();
+
+            for credential in &location.credentials {
+                if credential.value.is_empty() {
+                    continue;
+                }
+
+                match credential.name.as_str() {
+                    "SFTP_IDENTITY_FILE" => {
+                        let path = if cfg!(windows) {
+                            credential.value.replace('\\', "/")
+                        } else {
+                            credential.value.clone()
+                        };
+                        ssh_args.push("-i".to_string());
+                        ssh_args.push(format!("'{}'", path.replace('\'', "'\\''")));
+
+                        ssh_args.push("-o".to_string());
+                        ssh_args.push("IdentitiesOnly=yes".to_string());
+                    }
+
+                    "SFTP_PORT" => {
+                        ssh_args.push("-p".to_string());
+                        ssh_args.push(credential.value.clone());
+                    }
+
+                    "KNOWN_HOSTS_FILE" => {
+                        let path = if cfg!(windows) {
+                            credential.value.replace('\\', "/")
+                        } else {
+                            credential.value.clone()
+                        };
+                        ssh_args.push("-o".to_string());
+                        ssh_args.push(format!(
+                            "UserKnownHostsFile==\'{}\'",
+                            path.replace('\'', "'\\''")
+                        ));
+
+                        ssh_args.push("-o".to_string());
+                        ssh_args.push("StrictHostKeyChecking=yes".to_string());
+                    }
+
+                    _ => {}
+                }
+            }
+
+            if !ssh_args.is_empty() {
+                let sftp_args = ssh_args.iter().cloned().collect::<Vec<_>>().join(" ");
+
+                args.push(Cow::Borrowed(OsStr::new("-o")));
+                args.push(Cow::Owned(OsString::from(format!(
+                    "sftp.args={}",
+                    sftp_args
+                ))));
+            }
+        }
         args
     }
 
@@ -243,8 +300,11 @@ impl Program {
         // ensure that only RESTIC_PASSWORD is set: restic else may use the password file
         envs.insert("RESTIC_PASSWORD_FILE".to_string(), "".to_string());
         // set all extra credentials for the location
-        for credential in location.credentials.clone() {
-            envs.insert(credential.name, credential.value);
+        // not used for sftp, we constructed an argument string for sftp instead
+        if location.prefix != "sftp" {
+            for credential in location.credentials.clone() {
+                envs.insert(credential.name, credential.value);
+            }
         }
         envs
     }

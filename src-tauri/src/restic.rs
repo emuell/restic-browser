@@ -18,7 +18,12 @@ pub use snapshot::*;
 pub fn supported_location_types() -> Vec<LocationTypeInfo> {
     vec![
         LocationTypeInfo::new(LocationType::Local, "", "Local Path", &[]),
-        LocationTypeInfo::new(LocationType::SFtp, "sftp", "SFTP", &[]),
+        LocationTypeInfo::new(
+            LocationType::SFtp,
+            "sftp",
+            "SFTP",
+            &["SFTP_IDENTITY_FILE", "KNOWN_HOSTS_FILE", "SFTP_PORT"],
+        ),
         LocationTypeInfo::new(
             LocationType::Rest,
             "rest",
